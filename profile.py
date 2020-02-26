@@ -642,15 +642,18 @@ class Morfostvor(object):
         if self.waterline and type(self.waterline) != str:
             self.fig_profile.draw_waterline(self.waterline, color='blue', linestyle='-')
 
+        # Проверяем наличие временной папки
+        try:
+            os.stat('temp')
+        except:
+            os.mkdir('temp')
 
-
-        # self.draw_qh(self.levels_result_sectors)
         print('    — Сохраняем график профиля ... ', end='')
-        self.fig_profile.fig.savefig('out/Profile.png', dpi=config.FIG_DPI)
+        self.fig_profile.fig.savefig('temp/Profile.png', dpi=config.FIG_DPI)
         print('успешно!')
 
         print('    — Сохраняем график гидравлической кривой ... ', end='')
-        self.fig_QH.fig.savefig('out/QH.png', dpi=config.FIG_DPI)
+        self.fig_QH.fig.savefig('temp/QH.png', dpi=config.FIG_DPI)
         print('успешно!')
 
         # Очистка графика
@@ -660,10 +663,10 @@ class Morfostvor(object):
 
         # Добавляем изображения профиля и гидравлической кривой
         print('    — Вставляем графику (профиль и кривую)... ', end='')
-        doc.add_picture('out/Profile.png', width=Cm(16.5))
+        doc.add_picture('temp/Profile.png', width=Cm(16.5))
         setLastParagraphStyle('Р-рисунок', doc)
 
-        doc.add_picture('out/QH.png', width=Cm(16.5))
+        doc.add_picture('temp/QH.png', width=Cm(16.5))
         setLastParagraphStyle('Р-рисунок', doc)
         insertPageBreak(doc)
         print('успешно!')
@@ -752,8 +755,9 @@ class Morfostvor(object):
             sys.exit(1)
 
         try:
-            os.remove('out/QH.png')
-            os.remove('out/Profile.png')
+            os.remove('temp/QH.png')
+            os.remove('temp/Profile.png')
+            os.rmdir('temp')
         except:
             pass
 

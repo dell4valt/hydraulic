@@ -122,6 +122,9 @@ result/*
 # MS Office temp files
 assets/~$*
 
+# Temp folder
+temp/
+
 # Code runner temp file
 *tempCodeRunnerFile.py
 
