@@ -1725,36 +1725,18 @@ class ProfileGraphic(object):
         self.ax_bottom_overlay.cla()
         self.__y_limits = []
 
-
-def xls_calculate_single(in_filename, out_filename, page=0, **kwargs):
+def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     """
-    Расчёт с переливом через бровку одного профиля из xls файла.
+    Выполнение гидравлических расчетов и создание отчета по результатам расчетов.
+    Исходные данные представлены в in_filename (xls файл). По умолчанию расчеты производятся
+    для всех листов xls файла. Если задан параметр page, расчет производится толька для указанной страницы.
+    По результат создается out_filename (результирующий отчет в формате docx).
 
-        :param self: 
-        :param in_filename: *.xls файл с исходными данными
-        :param out_filename: *.docx файл с выходными данными 
-        :param page=0: номер страницы для расчёта, по умолчанию 0
+        :param in_filename: Входные данные по створам (.xls или .xlsx файл)
+        :param out_filename: Результаты расчетов  (.docx файл)
+        :param page=None: Номер страницы в xls файле, по умолчанию None (расчеты производятся для всего документа)
     """
-    if config.REWRITE_DOC_FILE:
-        try:
-            os.remove(out_filename)
-        except:
-            pass
-
-    profile = Morfostvor()
-    profile.read_xls(in_filename, page)
-    profile.calculate()
-    profile.doc_export(out_filename)
-
-def xls_calculate_full(in_filename, out_filename):
-    """
-    Расчёт с переливом через бровку всех профилей из xls файла.
-
-        :param selfin_filename: *.xls файл с исходными данными
-        :param out_filename: *.docx файл с выходными данными
-        :param rewrite_doc: перезапиисать файл
-    """
-
+    # Удаляем предыдущий отчет, если включена перезапись файла
     if config.REWRITE_DOC_FILE:
         try:
             os.remove(out_filename)
@@ -1764,10 +1746,23 @@ def xls_calculate_full(in_filename, out_filename):
     page_quantity = get_xls_sheet_quantity(in_filename)
     stvors = []
 
-    for i in range(page_quantity):
-        stvors.append(Morfostvor())
-        stvors[i].read_xls(in_filename, i)
-        stvors[i].calculate()
-        stvors[i].doc_export(out_filename)
+    # Расчет для всех листов xls файла
+    if page == None:
+        for i in range(page_quantity):
+            stvors.append(Morfostvor())
+            stvors[i].read_xls(in_filename, i)
+            stvors[i].calculate()
+            stvors[i].doc_export(out_filename)
 
-    insert_summary_QV_tables(stvors, out_filename)
+        # Вставка сводных таблиц
+        insert_summary_QV_tables(stvors, out_filename)
+
+    # Расчет только одного листа xls файла
+    elif type(page) == int:
+        stvor = Morfostvor()
+        stvor.read_xls(in_filename, page)
+        stvor.calculate()
+        stvor.doc_export(out_filename)
+    else:
+        print('Номер листа должен быть int.')
+        sys.exit(0)
