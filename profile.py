@@ -638,7 +638,7 @@ class Morfostvor(object):
         self.fig_profile.draw_levels_on_profile(self.levels_result)
 
 
-        self.fig_profile.update_limit()
+        self.fig_profile._update_limit()
         if self.waterline and type(self.waterline) != str:
             self.fig_profile.draw_waterline(self.waterline, color='blue', linestyle='-')
 
@@ -1004,11 +1004,35 @@ class Morfostvor(object):
 
 
 @dataclass
-class GraphQH(object):
-    morfostvor: Morfostvor = Morfostvor    
-    fig: plt.figure = plt.figure(2, figsize=(16.5, 11))
-    ax: plt.subplot = fig.add_subplot(111)
+class Graph(object):
+    _fig_size = (16.5, 11)
+    _y_limits = []
+    _fig_num = 0
+    _y_lim = (0, 100)
 
+    morfostvor: Morfostvor = Morfostvor
+    fig: plt.figure = plt.figure(num=_fig_num, figsize=_fig_size)
+    ax: plt.subplot = fig.add_subplot(111) 
+
+    def __post_init__(self):
+        pass
+
+    def clean(self):
+        """Очистка осей графика и обнуление связанных переменых
+        """
+        # Очищаем все оси
+        for ax in vars(self):
+            if ax.startswith('ax'):
+                command = "self." + ax + ".cla()"
+                exec(command)
+                
+        # Обнуляем границы y
+        self._y_limits = []
+        self._y_limits = []
+
+@dataclass
+class GraphQH(Graph):
+    _fig_num = 1
     def __post_init__(self):
         self.clean()
         morfostvor = self.morfostvor
@@ -1124,18 +1148,15 @@ class GraphQH(object):
             print('Внимание! Вывод расчётных уровней на график не возможен!')
         pass
 
-    def clean(self):
-        self.ax.cla()
-
 
 @dataclass
-class GraphProfile(object):
-    morfostvor: Morfostvor = Morfostvor
-    fig: plt.figure = plt.figure(1, figsize=(16.5, 12))
+class GraphProfile(Graph):
+    _fig_size =(16.5, 12)
+    _fig_num = 2
+
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
 
     __gs = gridspec.GridSpec(80, 3)
-    __y_limits = []
-    __y_lim = (0, 100)
 
     ax_top: plt.subplot = fig.add_subplot(__gs[0, :], frame_on=False)
     ax: plt.subplot = fig.add_subplot(__gs[1:62, :])
@@ -1148,222 +1169,206 @@ class GraphProfile(object):
         self.clean()
 
         # Настройка параметров графиков и их инициализация
-        morfostvor = self.morfostvor
-        fig = self.fig
-        ax_top = self.ax_top
-        ax = self.ax
-        ax_bottom = self.ax_bottom
-        ax_bottom_overlay = self.ax_bottom_overlay
-        fig.subplots_adjust(bottom=0.08, left=0.08, right=0.9)
+        self.fig.subplots_adjust(bottom=0.08, left=0.08, right=0.9)
 
         # Добавляем в список границ максимальную и минимальную отметки
-        self.__y_limits.append(max(morfostvor.y))
-        self.__y_limits.append(min(morfostvor.y))
+        self._y_limits.append(max(self.morfostvor.y))
+        self._y_limits.append(min(self.morfostvor.y))
 
-    
-        def draw_sectors(self):
-            """
-            Отрисовка различной информации связанной с участками профиля.
-
-            :param fill: [bool] - заливка полигонов участков на профиле соответствующими цветами
-            :param bottom: [bool] - заливка линии дна соответствующими участкам цветами
-            :param label: [bool] - отрисовка названий участков, их длин и стрелок обозначающих границы участков
-            :return: Отрисовка графической информации по участкам профиля на графике ax_profile.
-            """
-
-            h_max = np.floor(max(morfostvor.y)) + 1
-
-            for sector in morfostvor.sectors:
-                points = []
-
-                for i in range(len(sector.coord[0])):
-                    points.append((sector.coord[0][i], sector.coord[1][i]))
-
-                points.insert(0, (sector.coord[0][0], h_max))
-                points.append((sector.coord[0][-1], h_max))
-
-                polygon = matplotlib.patches.Polygon(
-                    points, alpha=0.04, linestyle='--', label=sector.name)
-                polygon.set_color(sector.color)
-
-                # Подписи названий и длин участокв со стрелками
-                if config.PROFILE_SECTOR_LABEL:
-                    p0 = 1
-                    p1 = 2
-                    p3 = 3
-
-                    # Расчёт середины участка (для центровки текста)
-                    cent_x = sector.coord[0][-1] - \
-                        ((sector.coord[0][-1] - sector.coord[0][0]) / 2)
-
-                    # Вывод ширины участка
-                    ax_top.text(
-                        cent_x, p1, '{:d} м'.format(round(sector.length)), color=config.COLOR['sector_text'],
-                        verticalalignment='center', horizontalalignment='center',
-                        bbox={'facecolor': 'white', 'edgecolor': 'white', 'alpha': 1, 'pad': 2.5})
-
-                    ax_top.text(cent_x, 6, sector.name, color=config.COLOR['sector_text'],
-                                        verticalalignment='center', horizontalalignment='center',)
-
-                    # Вывод разделителя участков профиля
-                    ax_top.plot([sector.coord[0][0], sector.coord[0][0]], [p0, p3], color=config.COLOR['sector_line'],
-                                        linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная слева
-                    ax_top.plot([sector.coord[0][-1], sector.coord[0][-1]], [p0, p3], color=config.COLOR['sector_line'],
-                                        linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная справа
-
-                    ax_top.plot([sector.coord[0][0], cent_x], [p1, p1], color=config.COLOR['sector_line'],
-                                        linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная слева
-                    ax_top.plot([cent_x, sector.coord[0][-1]], [p1, p1], color=config.COLOR['sector_line'],
-                                        linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная справа
-
-                # Заливка на профиле участков
-                if config.PROFILE_SECTOR_FILL:
-                    ax.add_patch(polygon)
-
-                # Цвет линии дна по участкам
-                if config.PROFILE_SECTOR_BOTTOM_LINE:
-                    ax.plot(
-                        sector.coord[0], sector.coord[1], '-', color=sector.color)
-
-        def draw_profile_bottom(self):
-            """
-            Отрисовка дна профиля.
-
-            :return: Отрисовыает дно профиля на графике ax_profile.
-            """
-
-            ax.plot(morfostvor.x, morfostvor.y,
-                            color=config.COLOR['profile_bottom'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid', )
-
-        def draw_profile_footer(self):
-            """
-            Отрисовка подвала с информацией о профиле.
-
-                :param self: 
-            """
-            # Подписи Данных в подвале
-            if config.PROFILE_LEVELS_TABLE:
-                ax_bottom.set_xlabel(
-                    'ПК, м\n\nОтм. м\n\nРасст. м\n\nКоэфф. n',
-                    color=config.COLOR['bottom_text'],
-                    fontsize=config.FONT_SIZE['bottom_description'],
-                    fontstyle='italic', horizontalalignment='left')
-
-                ax_bottom.xaxis.set_label_coords(1.02, 0.92)
-            # Горизонтальные разделители подвала (полная рамка)
-            ax_bottom_overlay.plot((morfostvor.x[0], morfostvor.x[-1]), (0, 0), color=config.COLOR['border'],
-                                        linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-            ax_bottom_overlay.plot((morfostvor.x[0], morfostvor.x[-1]), (5, 5), color=config.COLOR['border'],
-                                        linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-            ax_bottom_overlay.plot((morfostvor.x[0], morfostvor.x[-1]), (10, 10),
-                                        color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-            ax_bottom_overlay.plot((morfostvor.x[0], morfostvor.x[-1]), (15, 15),
-                                        color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-            ax_bottom_overlay.plot(
-                (morfostvor.x[0], morfostvor.x[-1]), (20, 20), alpha=0)
-
-            # Технический разделитель (для увеличения размера границ)
-            ax_bottom.plot(
-                (morfostvor.x[0], morfostvor.x[0]), (30, 40), alpha=0)
-
-            # Цикл по всем точкам
-            for i in range(len(morfostvor.x)):
-                x = morfostvor.x[i]
-                y = morfostvor.y[i]
-
-                # Разделители расстояний между точками
-                ax_bottom.plot(
-                    (x, x), (10, 20), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-
-                # Подписи отметок
-                ax_bottom.text(x, 25, '{:.2f}'.format(
-                    y), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_small'], verticalalignment='center', horizontalalignment='center', rotation='90')
-
-            # Цикл по точкам до предпоследней
-            for i in range(len(morfostvor.x) - 1):
-                x = morfostvor.x[i]
-                x1 = morfostvor.x[i + 1]
-                y = morfostvor.y[i]
-
-                # Подписи расстояний между точками
-                ax_bottom.text((x + x1) / 2, 15, '{:d}'.format(round(
-                    x1 - x)), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center',)
-
-            # Цикл по участкам
-            for sector in morfostvor.sectors:
-                x = morfostvor.x[sector.start_point]
-                x1 = morfostvor.x[sector.end_point]
-
-                # Подписи коэффициентов шероховатости по участкам
-                try:
-                    ax_bottom.text((x + x1) / 2, 5, '{:.3f}'.format(
-                        sector.roughness),  color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center')
-                except ValueError:
-                    print('\nОшибка в указании параметров участков (коэффициент шероховатости или разделение на участки). Проверить данные.')
-                    sys.exit(1)
-
-                # Разделители коэффициентов шероховатости
-                ax_bottom.plot(
-                    (x, x), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-                ax_bottom.plot(
-                    (x1, x1), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-
-        self.update_limit()
+        self._update_limit()
         self.set_style()
 
-        draw_profile_footer(self)
-        draw_sectors(self)
-        draw_profile_bottom(self)
-        pass
-       
+        self.draw_profile_footer()
+        self.draw_sectors()
+        self.draw_profile_bottom()
+
+    def draw_profile_bottom(self):
+        """
+        Отрисовка дна профиля.
+
+        :return: Отрисовыает дно профиля на графике ax_profile.
+        """
+
+        self.ax.plot(self.morfostvor.x, self.morfostvor.y,
+                        color=config.COLOR['profile_bottom'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid', )
+
+    def draw_profile_footer(self):
+        """
+        Отрисовка подвала с информацией о профиле.
+
+            :param self: 
+        """
+        # Подписи Данных в подвале
+        if config.PROFILE_LEVELS_TABLE:
+            self.ax_bottom.set_xlabel(
+                'ПК, м\n\nОтм. м\n\nРасст. м\n\nКоэфф. n',
+                color=config.COLOR['bottom_text'],
+                fontsize=config.FONT_SIZE['bottom_description'],
+                fontstyle='italic', horizontalalignment='left')
+
+            self.ax_bottom.xaxis.set_label_coords(1.02, 0.92)
+        # Горизонтальные разделители подвала (полная рамка)
+        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (0, 0), color=config.COLOR['border'],
+                                    linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (5, 5), color=config.COLOR['border'],
+                                    linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (10, 10),
+                                    color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (15, 15),
+                                    color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (20, 20), alpha=0)
+
+        # Технический разделитель (для увеличения размера границ)
+        self.ax_bottom.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[0]), (30, 40), alpha=0)
+
+        # Цикл по всем точкам
+        for i in range(len(self.morfostvor.x)):
+            x = self.morfostvor.x[i]
+            y = self.morfostvor.y[i]
+
+            # Разделители расстояний между точками
+            self.ax_bottom.plot(
+                (x, x), (10, 20), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+
+            # Подписи отметок
+            self.ax_bottom.text(x, 25, '{:.2f}'.format(
+                y), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_small'], verticalalignment='center', horizontalalignment='center', rotation='90')
+
+        # Цикл по точкам до предпоследней
+        for i in range(len(self.morfostvor.x) - 1):
+            x = self.morfostvor.x[i]
+            x1 = self.morfostvor.x[i + 1]
+            y = self.morfostvor.y[i]
+
+            # Подписи расстояний между точками
+            self.ax_bottom.text((x + x1) / 2, 15, '{:d}'.format(round(
+                x1 - x)), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center',)
+
+        # Цикл по участкам
+        for sector in self.morfostvor.sectors:
+            x = self.morfostvor.x[sector.start_point]
+            x1 = self.morfostvor.x[sector.end_point]
+
+            # Подписи коэффициентов шероховатости по участкам
+            try:
+                self.ax_bottom.text((x + x1) / 2, 5, '{:.3f}'.format(
+                    sector.roughness),  color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center')
+            except ValueError:
+                print('\nОшибка в указании параметров участков (коэффициент шероховатости или разделение на участки). Проверить данные.')
+                sys.exit(1)
+
+            # Разделители коэффициентов шероховатости
+            self.ax_bottom.plot(
+                (x, x), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+            self.ax_bottom.plot(
+                (x1, x1), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+
+    def draw_sectors(self):
+        """
+        Отрисовка различной информации связанной с участками профиля.
+
+        :param fill: [bool] - заливка полигонов участков на профиле соответствующими цветами
+        :param bottom: [bool] - заливка линии дна соответствующими участкам цветами
+        :param label: [bool] - отрисовка названий участков, их длин и стрелок обозначающих границы участков
+        :return: Отрисовка графической информации по участкам профиля на графике ax_profile.
+        """
+
+        h_max = np.floor(max(self.morfostvor.y)) + 1
+
+        for sector in self.morfostvor.sectors:
+            points = []
+
+            for i in range(len(sector.coord[0])):
+                points.append((sector.coord[0][i], sector.coord[1][i]))
+
+            points.insert(0, (sector.coord[0][0], h_max))
+            points.append((sector.coord[0][-1], h_max))
+
+            polygon = matplotlib.patches.Polygon(
+                points, alpha=0.04, linestyle='--', label=sector.name)
+            polygon.set_color(sector.color)
+
+            # Подписи названий и длин участокв со стрелками
+            if config.PROFILE_SECTOR_LABEL:
+                p0 = 1
+                p1 = 2
+                p3 = 3
+
+                # Расчёт середины участка (для центровки текста)
+                cent_x = sector.coord[0][-1] - \
+                    ((sector.coord[0][-1] - sector.coord[0][0]) / 2)
+
+                # Вывод ширины участка
+                self.ax_top.text(
+                    cent_x, p1, '{:d} м'.format(round(sector.length)), color=config.COLOR['sector_text'],
+                    verticalalignment='center', horizontalalignment='center',
+                    bbox={'facecolor': 'white', 'edgecolor': 'white', 'alpha': 1, 'pad': 2.5})
+
+                self.ax_top.text(cent_x, 6, sector.name, color=config.COLOR['sector_text'],
+                                    verticalalignment='center', horizontalalignment='center',)
+
+                # Вывод разделителя участков профиля
+                self.ax_top.plot([sector.coord[0][0], sector.coord[0][0]], [p0, p3], color=config.COLOR['sector_line'],
+                                    linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная слева
+                self.ax_top.plot([sector.coord[0][-1], sector.coord[0][-1]], [p0, p3], color=config.COLOR['sector_line'],
+                                    linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная справа
+
+                self.ax_top.plot([sector.coord[0][0], cent_x], [p1, p1], color=config.COLOR['sector_line'],
+                                    linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная слева
+                self.ax_top.plot([cent_x, sector.coord[0][-1]], [p1, p1], color=config.COLOR['sector_line'],
+                                    linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная справа
+
+            # Заливка на профиле участков
+            if config.PROFILE_SECTOR_FILL:
+                self.ax.add_patch(polygon)
+
+            # Цвет линии дна по участкам
+            if config.PROFILE_SECTOR_BOTTOM_LINE:
+                self.ax.plot(
+                    sector.coord[0], sector.coord[1], '-', color=sector.color)
 
     def set_style(self):
         # Устанавливаем заголовки графиков
-        morfostvor = self.morfostvor
-        fig = self.fig
-        ax_top = self.ax_top
-        ax = self.ax
-        ax_bottom = self.ax_bottom
-        ax_bottom_overlay = self.ax_bottom_overlay
-
-        ax.set_title(
-            morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
-        ax.set_ylim(self.__y_lim)
+        self.ax.set_title(
+            self.morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
+        self.ax.set_ylim(self._y_lim)
 
 
         # Настравиааем границы и толщину линий границ
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_linewidth(config.LINE_WIDTH['ax_border'])
-        ax.spines['bottom'].set_linewidth(config.LINE_WIDTH['ax_border'])
+        self.ax.spines['top'].set_visible(False)
+        self.ax.spines['right'].set_visible(False)
+        self.ax.spines['left'].set_linewidth(config.LINE_WIDTH['ax_border'])
+        self.ax.spines['bottom'].set_linewidth(config.LINE_WIDTH['ax_border'])
 
-        ax_bottom.spines['top'].set_visible(False)
-        ax_bottom.spines['right'].set_linewidth(
+        self.ax_bottom.spines['top'].set_visible(False)
+        self.ax_bottom.spines['right'].set_linewidth(
             config.LINE_WIDTH['ax_border'])
-        ax_bottom.spines['left'].set_linewidth(
+        self.ax_bottom.spines['left'].set_linewidth(
             config.LINE_WIDTH['ax_border'])
-        ax_bottom.spines['bottom'].set_linewidth(
+        self.ax_bottom.spines['bottom'].set_linewidth(
             config.LINE_WIDTH['ax_border'])
 
         # Устанавливаем отступы в графиках
-        ax.margins(0.025)
-        ax_top.margins(0.025)
-        ax_bottom.margins(0.025, 0)
-        ax_bottom_overlay.margins(0)
+        self.ax.margins(0.025)
+        self.ax_top.margins(0.025)
+        self.ax_bottom.margins(0.025, 0)
+        self.ax_bottom_overlay.margins(0)
 
         # Устанавливаем прозрачность заливки фона
-        ax_top.patch.set_alpha(0)
-        ax_bottom.patch.set_alpha(0)
-        ax_bottom_overlay.patch.set_alpha(0)
+        self.ax_top.patch.set_alpha(0)
+        self.ax_bottom.patch.set_alpha(0)
+        self.ax_bottom_overlay.patch.set_alpha(0)
 
         # Включаем отображение сетки
-        ax.grid(True, which='both')
+        self.ax.grid(True, which='both')
 
         # Включаем отображение второстепенных засечек на осях
-        ax.minorticks_on()
+        self.ax.minorticks_on()
 
         # Устанавливаем параметры засечек на основых осях
-        ax.tick_params(
+        self.ax.tick_params(
             which='major',
             direction='out',
             width=2,
@@ -1372,7 +1377,7 @@ class GraphProfile(object):
             labelcolor=config.COLOR['ax_label_text'],
             labelsize=config.FONT_SIZE['ax_major'])
 
-        ax.tick_params(
+        self.ax.tick_params(
             which='minor',
             direction='out',
             width=1.5,
@@ -1382,31 +1387,31 @@ class GraphProfile(object):
             labelsize=config.FONT_SIZE['ax_minor'])
 
         # Отключаем засечки и подписи на осях вспомогательных графиков
-        ax_bottom.set_xticks([])
-        ax_bottom.set_yticks([])
-        ax_bottom_overlay.set_xticks([])
-        ax_bottom_overlay.set_yticks([])
-        ax_top.set_xticks([])
-        ax_top.set_yticks([])
+        self.ax_bottom.set_xticks([])
+        self.ax_bottom.set_yticks([])
+        self.ax_bottom_overlay.set_xticks([])
+        self.ax_bottom_overlay.set_yticks([])
+        self.ax_top.set_xticks([])
+        self.ax_top.set_yticks([])
 
         # Устанавливаем параметры подписей осей
-        ax.set_ylabel(
+        self.ax.set_ylabel(
             'H, м', color=config.COLOR['ax_label_text'], fontsize=config.FONT_SIZE['ax_label'], fontstyle='italic')
-        ax.yaxis.set_label_coords(-0.025, 1.08)
+        self.ax.yaxis.set_label_coords(-0.025, 1.08)
 
         # Устанавливает параметры вывода значений осей
-        ax.yaxis.set_major_formatter(
+        self.ax.yaxis.set_major_formatter(
             matplotlib.ticker.FormatStrFormatter('%.10g'))
 
         # Настройка параметров отображение сетки
-        ax.grid(
+        self.ax.grid(
             which='major', color=config.COLOR['ax_grid'], linestyle=':', linewidth=1, alpha=0.9)
-        ax.grid(
+        self.ax.grid(
             which='minor', color=config.COLOR['ax_grid_sub'], linestyle=':', linewidth=1, alpha=0.9)
 
-        ax.set_title(
-            morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
-        ax.set_ylim(self.__y_lim)
+        self.ax.set_title(
+            self.morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
+        self.ax.set_ylim(self._y_lim)
 
     def draw_profile_point_lines(self):
         """
@@ -1416,7 +1421,7 @@ class GraphProfile(object):
         for i in range(len(self.morfostvor.x)):
             self.ax.plot(
                 (self.morfostvor.x[i], self.morfostvor.x[i]),
-                (self.morfostvor.y[i], self.__y_lim[0]),
+                (self.morfostvor.y[i], self._y_lim[0]),
                 color=config.COLOR['profile_point_line'],
                 linewidth=config.LINE_WIDTH['profile_point_line'],
                 linestyle='solid')
@@ -1459,8 +1464,8 @@ class GraphProfile(object):
         self.ax.plot([x1, x2], [h, h], color=config.COLOR['erosion_limit_line'],
                         linestyle='--', linewidth=config.LINE_WIDTH['erosion_limit_line'])
         # Добавляем в список границ отметку
-        self.__y_limits.append(h)
-        self.update_limit()
+        self._y_limits.append(h)
+        self._update_limit()
 
     def draw_top_limit(self, h, x1=None, x2=None, text='{}\nH = {:.2f}'):
         y_step = self.ax.get_yticks()[1] - self.ax.get_yticks()[0]
@@ -1495,8 +1500,8 @@ class GraphProfile(object):
         self.ax.plot([x1, x2], [h, h], color=config.COLOR['top_limit_line'],
                         linestyle='-.', linewidth=config.LINE_WIDTH['top_limit_line'])
         
-        self.__y_limits.append(h)
-        self.update_limit()
+        self._y_limits.append(h)
+        self._update_limit()
 
     def draw_waterline(self, h, color=config.COLOR['water_line'], linestyle='--', linewidth=config.LINE_WIDTH['water_line']):
         """
@@ -1505,7 +1510,6 @@ class GraphProfile(object):
         :param water: Исходный водный объект, содержащий координаты границ воды.
         :return: Отрисовывает урез на графике профиля (ax_profile).
         """
-        morfostvor = self.morfostvor
 
         def draw_line(self):
             for boundry in water.boundry():
@@ -1522,12 +1526,12 @@ class GraphProfile(object):
                                     facecolor=config.COLOR['water_fill'], alpha=0.2)
 
         if config.PERELIV:
-            water = WaterSection(morfostvor.x, morfostvor.y, h)
+            water = WaterSection(self.morfostvor.x, self.morfostvor.y, h)
             draw_line(self)
 
         else:
             # Рисуем урезы на каждом участке
-            for sector in morfostvor.sectors:
+            for sector in self.morfostvor.sectors:
                 x = sector.coord[0]
                 y = sector.coord[1]
 
@@ -1535,19 +1539,8 @@ class GraphProfile(object):
                     water = WaterSection(x, y, h)
                     draw_line(self)
         
-
-
-
-
-        # Отрисовк дна (одним цветом)
-        # draw_profile_bottom(self)
-        # self.fig = fig
-        # self.morfostvor = morfostvor
-        # return fig_profile
-        
-        self.update_limit()
+        self._update_limit()
         self.set_style()
-        # self.update_limit()
 
     def draw_levels_on_profile(self, levels):
         """
@@ -1559,7 +1552,6 @@ class GraphProfile(object):
         label = []
 
         for index, row in levels.iterrows():
-            morfostvor = self.morfostvor
             # Отрисовка уреза
             water_level = row['H']
 
@@ -1567,9 +1559,9 @@ class GraphProfile(object):
 
             if config.PROFILE_LEVELS_TITLE:
                 # Подпись уровня воды на профиле
-                water = WaterSection(morfostvor.x, morfostvor.y, water_level)
+                water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
                 try:
-                    water = WaterSection(morfostvor.x, morfostvor.y, water_level)
+                    water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
                 except:
                     print('Ошибка! При отрисовке расчётных уровней на профиле. \n')
 
@@ -1596,11 +1588,11 @@ class GraphProfile(object):
             except ValueError:
                 label.append('${} = {:.2f}$ м\n'.format(row['P'], water_level))
 
-        if morfostvor.waterline:
-            label.append('\nУВ = {} м\n'.format(morfostvor.waterline))
+        if self.morfostvor.waterline:
+            label.append('\nУВ = {} м\n'.format(self.morfostvor.waterline))
         
-            if morfostvor.date:
-                label.append('({})'.format(morfostvor.date))
+            if self.morfostvor.date:
+                label.append('({})'.format(self.morfostvor.date))
 
         # Вывод таблицы уровней с разными обеспеченностями (справа)
         self.ax.annotate(''.join(label).rstrip(),
@@ -1612,32 +1604,31 @@ class GraphProfile(object):
     def draw_wet_perimeter(self):
         """Функция отрисовки смоченного периметра на графике поперечного профиля
         """
-        morfostvor = self.morfostvor
 
         # Проверяем задан ли расчётный шаг в исходных данных
-        if isinstance(morfostvor.dH, str) or morfostvor.dH == 0:
-            morfostvor.dH = 1
-            dH = morfostvor.dH
+        if isinstance(self.morfostvor.dH, str) or self.morfostvor.dH == 0:
+            self.morfostvor.dH = 1
+            dH = self.morfostvor.dH
         else:
-            dH = morfostvor.dH
+            dH = self.morfostvor.dH
 
         # Переводим сантиметры приращения в метры
         dH = dH / 100
 
-        min_sector = morfostvor.get_min_sector()
+        min_sector = self.morfostvor.get_min_sector()
 
         # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
         calc_sectors = [min_sector[0]]
 
         # Уровень воды, с минимальным отступом
-        water_level = min(morfostvor.y) + dH
+        water_level = min(self.morfostvor.y) + dH
 
 
         # Цикл расчёта до максимальнjго уровня воды
-        while water_level < morfostvor.gidraulic_result['УВ'].max():
+        while water_level < self.morfostvor.gidraulic_result['УВ'].max():
             if config.PERELIV:
                 for i in calc_sectors:
-                    sector = morfostvor.sectors[i]
+                    sector = self.morfostvor.sectors[i]
                     x = sector.coord[0]
                     y = sector.coord[1]
 
@@ -1678,7 +1669,7 @@ class GraphProfile(object):
                                             water.water_section_y[0], water.water_section_y[-1]], ':', linewidth=1, color='black',)
             else:
                 # Отрисовка с заполнением по участкам
-                for sector in morfostvor.sectors:
+                for sector in self.morfostvor.sectors:
                     x = sector.coord[0]
                     y = sector.coord[1]
 
@@ -1694,13 +1685,13 @@ class GraphProfile(object):
 
             water_level += dH
 
-    def update_limit(self):
+    def _update_limit(self):
         # Шаг засечек по вертикали
         y_step = self.ax.get_yticks()[1] - self.ax.get_yticks()[0]
 
         # Минимальное и максимальное значения из списка границ
-        min_y = min(self.__y_limits)
-        max_y = max(self.__y_limits)
+        min_y = min(self._y_limits)
+        max_y = max(self._y_limits)
 
         # Нижняя граница
         self.bottom_limit = np.ceil(min_y) - y_step
@@ -1714,16 +1705,10 @@ class GraphProfile(object):
             self.top_limit = round((max_y // y_step * y_step) + y_step * 2, 3)         
         
         # Устанавливаем границы отображения   
-        self.__y_lim = (self.bottom_limit, self.top_limit)     
-        self.ax.set_ylim(self.__y_lim)
+        self._y_lim = (self.bottom_limit, self.top_limit)     
+        self.ax.set_ylim(self._y_lim)
         self.draw_profile_point_lines()
 
-    def clean(self):
-        self.ax_top.cla()
-        self.ax.cla()
-        self.ax_bottom.cla()
-        self.ax_bottom_overlay.cla()
-        self.__y_limits = []
 
 
 def xls_calculate_hydraulic(in_filename, out_filename, page=None):
