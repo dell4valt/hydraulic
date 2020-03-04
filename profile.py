@@ -619,8 +619,8 @@ class Morfostvor(object):
                 doc = DocxTemplate('assets/report_template.docx')
 
         # self.fig_QH = qhGraph(self, self)
-        self.fig_QH = QHGraph(self)
-        self.fig_profile = ProfileGraphic(self)
+        self.fig_QH = GraphQH(self)
+        self.fig_profile = GraphProfile(self)
 
         # Отрисовка смоченного периметра
         if config.PROFILE_WET_PERIMITER:
@@ -1003,9 +1003,8 @@ class Morfostvor(object):
         self.gidraulic_result = df
 
 
-
 @dataclass
-class QHGraph(object):
+class GraphQH(object):
     morfostvor: Morfostvor = Morfostvor    
     fig: plt.figure = plt.figure(2, figsize=(16.5, 11))
     ax: plt.subplot = fig.add_subplot(111)
@@ -1128,8 +1127,9 @@ class QHGraph(object):
     def clean(self):
         self.ax.cla()
 
+
 @dataclass
-class ProfileGraphic(object):
+class GraphProfile(object):
     morfostvor: Morfostvor = Morfostvor
     fig: plt.figure = plt.figure(1, figsize=(16.5, 12))
 
@@ -1724,6 +1724,7 @@ class ProfileGraphic(object):
         self.ax_bottom.cla()
         self.ax_bottom_overlay.cla()
         self.__y_limits = []
+
 
 def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     """
