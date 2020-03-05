@@ -1030,6 +1030,7 @@ class Graph(object):
         self._y_limits = []
         self._y_limits = []
 
+
 @dataclass
 class GraphQH(Graph):
     _fig_num = 1
