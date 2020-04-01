@@ -212,14 +212,14 @@ def insert_summary_QV_tables(stvors, out_filename):
         lev_cell = lev_table.add_row().cells
         lev_cell[0].text = str(stvor_num)
         lev_cell[1].text = str(stvor.title)
-        lev_cell[2].text = '{:.2f}'.format(stvor.ele_min)
-        lev_cell[3].text = str('{}'.format(stvor.waterline))
+        lev_cell[2].text = str('{:.2f}'.format(stvor.ele_min))
+        lev_cell[3].text = str('{:.2f}'.format(stvor.waterline))
 
         spd_cell = spd_table.add_row().cells
         spd_cell[0].text = str(stvor_num)
         spd_cell[1].text = str(stvor.title)
-        spd_cell[2].text = '{:.2f}'.format(stvor.ele_min)
-        spd_cell[3].text = str('{}'.format(stvor.waterline))
+        spd_cell[2].text = str('{:.2f}'.format(stvor.ele_min))
+        spd_cell[3].text = str('{:.2f}'.format(stvor.waterline))
 
         for i in range(4, len(levels) + 4):
             try:

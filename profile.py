@@ -409,10 +409,6 @@ class Morfostvor(object):
                 'Неверно выбран тип расчёта в конфигурационном файле. Программа будет завершена.')
             sys.exit(0)
 
-        # Проверяем задан ли урез текстом, если нет округляем до 2 знаков
-        if type(self.waterline) is not str:
-            self.waterline = round(self.waterline, 2)
-
         self.qh_title = 'Кривая расхода {} Q = f(H)'.format(
             self.strings['type'])
 
@@ -530,7 +526,13 @@ class Morfostvor(object):
         print('    — Устанавливаем основные параметры морфоствора ... ', end='')
         self.title = __raw_data[2][__descript_col]  # Заголовк профиля
         self.date = __raw_data[3][__descript_col]  # Дата профиля
+
         self.waterline = __raw_data[4][__descript_col]  # Отметка уреза воды
+        # Проверяем задан ли урез текстом, если нет округляем до 2 знаков        
+        if type(self.waterline) is not str:
+            self.waterline = round(self.waterline, 2)
+
+        
         self.dH = __raw_data[5][__descript_col]  # Расчётный шаг по глубине
         self.coords = __raw_data[6][__descript_col]  # Координаты
         self.erosion_limit = __raw_data[7][__descript_col]  # Предел размыва
@@ -618,7 +620,6 @@ class Morfostvor(object):
                     print('    — Файл не найден! Создаём новый.')
                 doc = DocxTemplate('assets/report_template.docx')
 
-        # self.fig_QH = qhGraph(self, self)
         self.fig_QH = GraphQH(self)
         self.fig_profile = GraphProfile(self)
 
@@ -640,7 +641,7 @@ class Morfostvor(object):
 
         self.fig_profile._update_limit()
         if self.waterline and type(self.waterline) != str:
-            self.fig_profile.draw_waterline(self.waterline, color='blue', linestyle='-')
+            self.fig_profile.draw_waterline(round(self.waterline, 2), color='blue', linestyle='-')
 
         # Проверяем наличие временной папки
         try:
@@ -1590,7 +1591,7 @@ class GraphProfile(Graph):
                 label.append('${} = {:.2f}$ м\n'.format(row['P'], water_level))
 
         if self.morfostvor.waterline:
-            label.append('\nУВ = {} м\n'.format(self.morfostvor.waterline))
+            label.append('\nУВ = {:.2f} м\n'.format(self.morfostvor.waterline))
         
             if self.morfostvor.date:
                 label.append('({})'.format(self.morfostvor.date))
