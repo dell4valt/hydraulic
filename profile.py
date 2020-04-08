@@ -620,7 +620,11 @@ class Morfostvor(object):
                     print('    — Файл не найден! Создаём новый.')
                 doc = DocxTemplate('assets/report_template.docx')
 
-        self.fig_QH = GraphQH(self)
+        if config.GIDRAULIC_CURVE:
+            self.fig_QH = GraphQH(self)
+        if config.SPEED_CURVE:
+            self.fig_QV = GraphQV(self)
+
         self.fig_profile = GraphProfile(self)
 
         # Отрисовка смоченного периметра
@@ -653,13 +657,7 @@ class Morfostvor(object):
         self.fig_profile.fig.savefig('temp/Profile.png', dpi=config.FIG_DPI)
         print('успешно!')
 
-        print('    — Сохраняем график гидравлической кривой ... ', end='')
-        self.fig_QH.fig.savefig('temp/QH.png', dpi=config.FIG_DPI)
-        print('успешно!')
-
-        # Очистка графика
-        # self.fig_QH.clf()
-
+        # Вставляем заголовк профиля
         doc.add_paragraph(self.title, style='З-приложение-подзаголовок')
 
         # Добавляем изображения профиля и гидравлической кривой
@@ -667,10 +665,32 @@ class Morfostvor(object):
         doc.add_picture('temp/Profile.png', width=Cm(16.5))
         setLastParagraphStyle('Р-рисунок', doc)
 
-        doc.add_picture('temp/QH.png', width=Cm(16.5))
-        setLastParagraphStyle('Р-рисунок', doc)
-        insertPageBreak(doc)
-        print('успешно!')
+        if config.GRAPHICS_TITLES_TEXT:
+                doc.add_paragraph('Рисунок — ' + self.fig_profile.morfostvor.title, style='Р-название')
+
+        if config.GIDRAULIC_CURVE:
+            print('    — Сохраняем график гидравлической кривой ... ', end='')
+            self.fig_QH.fig.savefig('temp/QH.png', dpi=config.FIG_DPI)
+            print('успешно!')
+
+            doc.add_picture('temp/QH.png', width=Cm(16.5))
+            setLastParagraphStyle('Р-рисунок', doc)
+
+            if config.GRAPHICS_TITLES_TEXT:
+                doc.add_paragraph('Рисунок — ' + self.fig_QH._ax_title_text, style='Р-название')
+
+        if config.SPEED_CURVE:
+            print('    — Сохраняем график кривой скоростей ... ', end='')
+            self.fig_QV.fig.savefig('temp/QV.png', dpi=config.FIG_DPI)
+            print('успешно!')
+
+            doc.add_picture('temp/QV.png', width=Cm(16.5))
+            setLastParagraphStyle('Р-рисунок', doc)
+            print('успешно!')
+
+            if config.GRAPHICS_TITLES_TEXT:
+                doc.add_paragraph('Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
+
 
         # Вывод таблицы расчётных уровней воды
         print('    — Записываем таблицу уровней воды ... ', end='')
@@ -757,6 +777,7 @@ class Morfostvor(object):
 
         try:
             os.remove('temp/QH.png')
+            os.remove('temp/QV.png')
             os.remove('temp/Profile.png')
             os.rmdir('temp')
         except:
@@ -1011,30 +1032,14 @@ class Graph(object):
     _fig_num = 0
     _y_lim = (0, 100)
 
+    _x_label_text = ''
+    _y_label_text = ''
+    _ax_title_text = ''
+
     morfostvor: Morfostvor = Morfostvor
-    fig: plt.figure = plt.figure(num=_fig_num, figsize=_fig_size)
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111) 
 
-    def __post_init__(self):
-        pass
-
-    def clean(self):
-        """Очистка осей графика и обнуление связанных переменых
-        """
-        # Очищаем все оси
-        for ax in vars(self):
-            if ax.startswith('ax'):
-                command = "self." + ax + ".cla()"
-                exec(command)
-                
-        # Обнуляем границы y
-        self._y_limits = []
-        self._y_limits = []
-
-
-@dataclass
-class GraphQH(Graph):
-    _fig_num = 1
     def __post_init__(self):
         self.clean()
         morfostvor = self.morfostvor
@@ -1043,11 +1048,13 @@ class GraphQH(Graph):
         self.sector_colors = {}
         for sector in morfostvor.sectors:
             self.sector_colors[sector.name] = sector.color
-
-        self.draw_gidraulic_curve()
-        self.draw_water_levels()
+        
+        # Выполняем отрисовку содержимого
+        self.draw()
         self.set_style()
-
+    
+    def draw(self):
+        pass
 
     def set_style(self):
         fig = self.fig
@@ -1055,7 +1062,11 @@ class GraphQH(Graph):
 
         fig.subplots_adjust(bottom=0.08, left=0.08, right=0.9)
 
-        # Настройка стилей отрисовки графика
+        # Устанавливаем заголовки графиков
+        if config.GRAPHICS_TITLES:
+            ax.set_title(
+                self._ax_title_text, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
+
         # Настравиааем границы и толщину линий границ
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -1085,10 +1096,10 @@ class GraphQH(Graph):
             labelsize=config.FONT_SIZE['ax_minor'])
 
         # Устанавливаем параметры подписей осей
-        ax.set_xlabel('Q, м³/с', color=config.COLOR['ax_label_text'],
+        ax.set_xlabel(self._x_label_text, color=config.COLOR['ax_label_text'],
                         fontsize=config.FONT_SIZE['ax_label'], fontstyle='italic')
         ax.xaxis.set_label_coords(1.05, -0.025)
-        ax.set_ylabel('H, м', color=config.COLOR['ax_label_text'],
+        ax.set_ylabel(self._y_label_text, color=config.COLOR['ax_label_text'],
                         fontsize=config.FONT_SIZE['ax_label'], fontstyle='italic')
         ax.yaxis.set_label_coords(-0.025, 1.08)
 
@@ -1101,6 +1112,30 @@ class GraphQH(Graph):
                 color=config.COLOR['ax_grid'], linestyle=':', linewidth=1, alpha=0.9)
         ax.grid(which='minor',
                 color=config.COLOR['ax_grid_sub'], linestyle=':', linewidth=1, alpha=0.9)
+
+    def clean(self):
+        """Очистка осей графика и обнуление связанных переменых
+        """
+        # Очищаем все оси
+        for ax in vars(self):
+            if ax.startswith('ax'):
+                command = "self." + ax + ".cla()"
+                exec(command)
+                
+        # Обнуляем границы y
+        self._y_limits = []
+        self._y_limits = []
+
+
+@dataclass
+class GraphQH(Graph):
+    # Номер рисунка
+    _fig_num = 2
+
+    # Подписи осей
+    _x_label_text = 'Q, м³/с'
+    _y_label_text = 'H, м'
+    _ax_title_text = 'Гидравлическая кривая'
 
     def draw_gidraulic_curve(self):
         morfostvor = self.morfostvor
@@ -1117,8 +1152,6 @@ class GraphQH(Graph):
                     label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
 
         ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
-
-        pass
 
     def draw_water_levels(self):
         morfostvor = self.morfostvor
@@ -1150,11 +1183,48 @@ class GraphQH(Graph):
             print('Внимание! Вывод расчётных уровней на график не возможен!')
         pass
 
+    def draw(self):
+        self.draw_gidraulic_curve()
+        self.draw_water_levels()        
+
+
+@dataclass
+class GraphQV(Graph):
+    # Номер рисунка
+    _fig_num = 3
+    _fig_size = (16.5, 11)
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    ax: plt.subplot = fig.add_subplot(111)
+
+    # Подписи осей
+    _x_label_text = 'Q, м³/с'
+    _y_label_text = 'V, м/c'
+    _ax_title_text = 'Кривая скоростей'
+
+    def draw_speed_curve(self):
+        morfostvor = self.morfostvor
+        ax = self.ax
+        result_sectors = morfostvor.levels_result_sectors
+
+        # Отрисовка суммирующей кривой на графике
+        ax.plot(morfostvor.gidraulic_result['Q'],
+                morfostvor.gidraulic_result['V'], label='Сумма', linewidth=3, color='red')
+        
+        # Отрисовка кривых по участкам
+        for sector in result_sectors:
+            ax.plot(result_sectors[sector]['Q'], result_sectors[sector]['V'], '--',
+                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
+        
+        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
+
+    def draw(self):
+        self.draw_speed_curve()
+
 
 @dataclass
 class GraphProfile(Graph):
     _fig_size =(16.5, 12)
-    _fig_num = 2
+    _fig_num = 1
 
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
 
@@ -1333,8 +1403,10 @@ class GraphProfile(Graph):
 
     def set_style(self):
         # Устанавливаем заголовки графиков
-        self.ax.set_title(
-            self.morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
+        if config.GRAPHICS_TITLES:        
+            self.ax.set_title(
+                self.morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
+
         self.ax.set_ylim(self._y_lim)
 
 
@@ -1411,9 +1483,6 @@ class GraphProfile(Graph):
         self.ax.grid(
             which='minor', color=config.COLOR['ax_grid_sub'], linestyle=':', linewidth=1, alpha=0.9)
 
-        self.ax.set_title(
-            self.morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
-        self.ax.set_ylim(self._y_lim)
 
     def draw_profile_point_lines(self):
         """

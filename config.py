@@ -9,7 +9,11 @@ PROFILE_WATER_FILL = True # Заливка урезов
 PROFILE_WET_PERIMITER = False # Отрисовка смоченоого периметра (для отладки)
 PROFILE_EROSION_LIMIT = True # Отрисовка отметки предельного размыва
 PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающее сооружения
+GIDRAULIC_CURVE = True # Отрисовка графика гидравлической кривой
 GIDRAULIC_CURVE_LEVELS = True # Отрисовка расчётных уровней на графике гидравлической кривой
+SPEED_CURVE = False # Отрисовка графика кривой скоростей
+GRAPHICS_TITLES = True # Отрисовка названия на графиках
+GRAPHICS_TITLES_TEXT = False # Подпись графиков текстом
 REWRITE_DOC_FILE = True # Перезапись экспортируемого файла
 DOC_TABLE_SHORT = True # Укороченный вариант таблицы гидравлической кривой
 
