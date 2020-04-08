@@ -129,6 +129,9 @@ def insert_summary_QV_tables(stvors, out_filename):
 
     insertPageBreak(doc)
 
+    doc.add_paragraph('Сводные таблицы', style='З-приложение-подзаголовок')
+
+
     param_levels = (['№', 'Описание', 'Мин. отм', 'УВ'],
         [0.85, 6, 1.25, 1.25],
         ['', '', ':.2f', ':.2f'])
