@@ -1638,7 +1638,7 @@ class GraphProfile(Graph):
 
                 padding = 0.01
                 x = water.water_section_x[0] + 2 * padding
-                y = water_level + padding
+                y = water_level + padding        
 
                 try:
                     # Если обеспеченность записана цифрами
@@ -1658,6 +1658,38 @@ class GraphProfile(Graph):
                     row['P'], water_level))
             except ValueError:
                 label.append('${} = {:.2f}$ м\n'.format(row['P'], water_level))
+
+            # Вывод линий сноск от уровней воды к таблице
+            if config.PROFILE_LEVELS_TABLE_LINES:
+                water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
+
+                # Горизонтальные точкии линий сносок
+                x_step = (water.water_section_x[-1] - water.water_section_x[0]) / len(self.morfostvor.probability)
+                x0 = water.water_section_x[0] + (x_step * (index + 1) / 2)  # Нижняя координата x 
+                x1 = x0 + (x0 / 8 * (index + 1))  # Верхняя координата x 
+                x_lim = self.ax.get_xlim()  # Получаем границы графика
+                x3 = x_lim[1]  # Координата x границы справа
+                self.ax.set_xlim(x_lim)  # Возвращаем границы на исходные
+
+
+                # Вертикальные точки линий сносок
+                y_step = ((self.top_limit - self.bottom_limit) / 100)  # 1% вертикальный от графика
+                y0 = water_level  # Нижняя кордината y (отметка уреза воды)
+                if index == 0:
+                    y1 = self.top_limit - (y_step / 2.7) - (y_step * 3 * (index))   # Верхняя координата y для первой линии уреза
+                else:
+                    y1 = self.top_limit - (y_step * 2.95 * (index))   # Верхняя координата y для последующих линий уреза
+
+                # Устанавливаем параметры отображения линий сносок
+                color=config.COLOR['water_reference_line']
+                linestyle='--'
+                linewidth=config.LINE_WIDTH['water_line'] / 1.75
+                alpha = 0.8
+
+                # Отрисовываем линии снососк
+                self.ax.plot([x0, x1], [y0, y1], color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)
+                self.ax.plot([x1, x3], [y1, y1], color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)  
+
 
         if self.morfostvor.waterline and type(self.morfostvor.waterline) is not str:
             label.append('\nУВ = {:.2f} м\n'.format(self.morfostvor.waterline))
