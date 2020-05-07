@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 PROFILE_LEVELS_TABLE = True # Отображение уровней воды различных обесп. на графике профиля
+PROFILE_WATER_LEVEL_NOTE = True  # Отображение примечания о урезе воды
 PROFILE_LEVELS_TITLE = False # Отоборажение подписи уровней воды на профилях
 PROFILE_SECTOR_LABEL = True # Отображение названия, длины и разделителя по участкам
 PROFILE_SECTOR_FILL = False # Заливка участков профиля на графике
@@ -12,6 +13,7 @@ PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающ
 GIDRAULIC_CURVE = True # Отрисовка графика гидравлической кривой
 GIDRAULIC_CURVE_LEVELS = True # Отрисовка расчётных уровней на графике гидравлической кривой
 SPEED_CURVE = False # Отрисовка графика кривой скоростей
+SPEED_CURVE_LEVELS = True # Отрисовка расчётных скоростей на графике кривой скоростей
 GRAPHICS_TITLES = True # Отрисовка названия на графиках
 GRAPHICS_TITLES_TEXT = False # Подпись графиков текстом
 REWRITE_DOC_FILE = True # Перезапись экспортируемого файла

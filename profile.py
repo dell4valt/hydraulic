@@ -1659,11 +1659,15 @@ class GraphProfile(Graph):
             except ValueError:
                 label.append('${} = {:.2f}$ м\n'.format(row['P'], water_level))
 
-        if self.morfostvor.waterline:
+        if self.morfostvor.waterline and type(self.morfostvor.waterline) is not str:
             label.append('\nУВ = {:.2f} м\n'.format(self.morfostvor.waterline))
         
             if self.morfostvor.date:
                 label.append('({})'.format(self.morfostvor.date))
+        
+        if config.PROFILE_WATER_LEVEL_NOTE:
+            if self.morfostvor.waterline == '-' or self.morfostvor.waterline == '':
+                label.append('\nПримечание: на\nмомент съёмки\nсток отсутствует')
 
         # Вывод таблицы уровней с разными обеспеченностями (справа)
         self.ax.annotate(''.join(label).rstrip(),
