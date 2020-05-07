@@ -8,7 +8,7 @@
 Пример запуска расчётов.
 Входные данные в Excel файле _example/example_profile.xlsx_, результирующий отчёт записать в файл _result/test.docx'_.
 
-'''
+```python
 #!/usr/bin/env python3
 import profile
 
@@ -16,5 +16,5 @@ in_filename = 'example/example_profile.xlsx'
 out_filename = 'result/test.docx'
 
 profile.xls_calculate_hydraulic(in_filename, out_filename)
-'''
+```
 
