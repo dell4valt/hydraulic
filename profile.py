@@ -678,6 +678,9 @@ class Morfostvor(object):
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph('Рисунок — ' + self.fig_QH._ax_title_text, style='Р-название')
+        
+        # Вставляем разрыв страницы
+        insertPageBreak(doc)
 
         if config.SPEED_CURVE:
             print('    — Сохраняем график кривой скоростей ... ', end='')
