@@ -1511,35 +1511,38 @@ class GraphProfile(Graph):
             x2 {[float]} -- Координа конца линии (default: {None})
             text {[string]} -- Текст подписи линии (default: {'▼$H_{{разм.}} = {h:.2f}$'})
         """
-        # if config.PROFILE_EROSION_LIMIT and not isinstance(self.morfostvor.erosion_limit, str):
-        # Исходное ограничение линии предельного размыва по всему профилю
+        if config.PROFILE_EROSION_LIMIT and not isinstance(self.morfostvor.erosion_limit, str):
+            # Ограничение линии предельного размыва по всему профилю если параметр config.PROFILE_EROSION_LIMIT_FULL = true
+            if config.PROFILE_EROSION_LIMIT_FULL:
+                x1 = min(self.morfostvor.x)
+                x2 = max(self.morfostvor.x)
+            # Если координаты начала и конца линии не заданы, устанавливаем по границе профиля
+            # если есть участки 'Левая пойма', 'Правая пойма' задаем граиницы линии по участкам            
+            else:
+                if x1 == None:
+                    x1 = min(self.morfostvor.x)
+                    for sector in self.morfostvor.sectors:
+                        if sector.name == 'Левая пойма':
+                            x1 = sector.coord[0][-1]
+                if x2 == None:
+                    x2 = max(self.morfostvor.x)
+                    for sector in self.morfostvor.sectors:
+                        if sector.name == 'Правая пойма':
+                            x2 = sector.coord[0][0]
 
-        # Если координаты начала и конца линии не заданы, устанавливаем по границе профиля
-        # если есть участки 'Левая пойма', 'Правая пойма' задаем граиницы линии по участкам
-        if x1 == None:
-            x1 = min(self.morfostvor.x)
-            for sector in self.morfostvor.sectors:
-                if sector.name == 'Левая пойма':
-                    x1 = sector.coord[0][-1]
-        if x2 == None:
-            x2 = max(self.morfostvor.x)
-            for sector in self.morfostvor.sectors:
-                if sector.name == 'Правая пойма':
-                    x2 = sector.coord[0][0]
+            # Подпись текста
+            erosioin_limit_text = self.ax.text(x2 - 1, h + 0.01, text.format(
+                h=h), color=config.COLOR['erosion_limit_text'], fontsize=config.FONT_SIZE['erosion_limit'], weight='bold')
+            # Обводка текста
+            erosioin_limit_text.set_path_effects([path_effects.Stroke(
+                linewidth=3, foreground='white', alpha=0.95), path_effects.Normal()])
 
-        # Подпись текста
-        erosioin_limit_text = self.ax.text(x2 - 1, h + 0.01, text.format(
-            h=h), color=config.COLOR['erosion_limit_text'], fontsize=config.FONT_SIZE['erosion_limit'], weight='bold')
-        # Обводка текста
-        erosioin_limit_text.set_path_effects([path_effects.Stroke(
-            linewidth=3, foreground='white', alpha=0.95), path_effects.Normal()])
-
-        # Отрисовка линии предельного размыва
-        self.ax.plot([x1, x2], [h, h], color=config.COLOR['erosion_limit_line'],
-                        linestyle='--', linewidth=config.LINE_WIDTH['erosion_limit_line'])
-        # Добавляем в список границ отметку
-        self._y_limits.append(h)
-        self._update_limit()
+            # Отрисовка линии предельного размыва
+            self.ax.plot([x1, x2], [h, h], color=config.COLOR['erosion_limit_line'],
+                            linestyle='--', linewidth=config.LINE_WIDTH['erosion_limit_line'])
+            # Добавляем в список границ отметку
+            self._y_limits.append(h)
+            self._update_limit()
 
     def draw_top_limit(self, h, x1=None, x2=None, text='{}\nH = {:.2f}'):
         y_step = self.ax.get_yticks()[1] - self.ax.get_yticks()[0]

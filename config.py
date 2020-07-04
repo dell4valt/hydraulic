@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
 PROFILE_LEVELS_TABLE = True # Отображение уровней воды различных обесп. на графике профиля
-PROFILE_LEVELS_TABLE_LINES = True # Линии сносок от урезов воды к значению в таблицу уровней
+PROFILE_LEVELS_TABLE_LINES = False # Линии сносок от урезов воды к значению в таблицу уровней
 PROFILE_WATER_LEVEL_NOTE = True  # Отображение примечания о урезе воды
-PROFILE_LEVELS_TITLE = False # Отоборажение подписи уровней воды на профилях
+PROFILE_LEVELS_TITLE = True # Отоборажение подписи уровней воды на профилях
 PROFILE_SECTOR_LABEL = True # Отображение названия, длины и разделителя по участкам
 PROFILE_SECTOR_FILL = False # Заливка участков профиля на графике
 PROFILE_SECTOR_BOTTOM_LINE = True # Цвет линии дна по участкам
 PROFILE_WATER_FILL = True # Заливка урезов
 PROFILE_WET_PERIMITER = False # Отрисовка смоченоого периметра (для отладки)
 PROFILE_EROSION_LIMIT = True # Отрисовка отметки предельного размыва
+PROFILE_EROSION_LIMIT_FULL = False # Линия предельного размыва во всю длину профиля (если false то только по участкам русла и протоки)
 PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающее сооружения
 GIDRAULIC_CURVE = True # Отрисовка графика гидравлической кривой
 GIDRAULIC_CURVE_LEVELS = True # Отрисовка расчётных уровней на графике гидравлической кривой
