@@ -414,6 +414,7 @@ class Morfostvor(object):
 
     def read_xls(self, file_path, page=0):
         """Функция чтения из xls файла."""
+        # TODO: сделать проверку типа данных для коэффициента шероховатости
 
         try:
             data_file = xlrd.open_workbook(file_path)  # Открываем xls файл
@@ -693,6 +694,9 @@ class Morfostvor(object):
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph('Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
+
+
+
 
 
         # Вывод таблицы расчётных уровней воды
@@ -1808,8 +1812,15 @@ class GraphProfile(Graph):
 
         # Нижняя граница
         self.bottom_limit = np.ceil(min_y) - y_step
-        while (self.morfostvor.ele_min - self.bottom_limit) < (y_step/3):
-            self.bottom_limit -= y_step
+        if self.morfostvor.erosion_limit:
+            self.bottom_limit = np.ceil(self.morfostvor.erosion_limit) - y_step
+            while (self.morfostvor.erosion_limit - self.bottom_limit) < (y_step/3):
+                self.bottom_limit -= y_step
+        else:
+            self.bottom_limit = np.ceil(min_y) - y_step
+
+            while (self.morfostvor.ele_min - self.bottom_limit) < (y_step/3):
+                self.bottom_limit -= y_step
         
         # Верхняя граница
         if (y_step > 0.5):
