@@ -1175,7 +1175,7 @@ class GraphQH(Graph):
                         water_level_text.set_path_effects([path_effects.Stroke(
                             linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
                     except ValueError:
-                        water_level_text = ax.text(0.002, row['H'], '▼{} = {H:.2f}'.format(
+                        water_level_text = ax.text(0.002, row['H'], '▼${} = {H:.2f}$'.format(
                             row['P'], H=row['H']), color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
                         water_level_text.set_path_effects([path_effects.Stroke(
                             linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
