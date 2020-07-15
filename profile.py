@@ -1713,7 +1713,7 @@ class GraphProfile(Graph):
 
         # Вывод таблицы уровней с разными обеспеченностями (справа)
         self.ax.annotate(''.join(label).rstrip(),
-                                xy=(1.01, 0.8), xycoords='axes fraction',
+                                xy=(1, 1), ha="left", va="top", xycoords='axes fraction',
                                 size=config.FONT_SIZE['levels_table'],
                                 color=config.COLOR['levels_table'],
                                 bbox=dict(boxstyle="round", fc='white', ec="none"))
