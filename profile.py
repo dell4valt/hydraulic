@@ -264,7 +264,11 @@ class WaterSection(object):
             depth.append(water_level - water_section_y[i])
 
         # Средняя глубина
-        self.average_depth = self.area / self.width # TODO: Сделать проверку деления на 0
+        if self.area > 0 and self.width > 0:
+            self.average_depth = self.area / self.width
+        else:
+            self.average_depth = 0
+            
         if self.average_depth == 0:  # Костыль
             self.average_depth = 0.00001
 
@@ -277,7 +281,11 @@ class WaterSection(object):
         self.w_perimeter = np.sqrt(sum_sqr)
 
         # Гидравлический радиус
-        self.r_gidraulic = self.area / self.w_perimeter # TODO: Сделать проверку деления на 0
+        if self.area > 0 and self.w_perimeter > 0:
+            self.r_gidraulic = self.area / self.w_perimeter
+        else:
+            self.r_gidraulic = 0
+
         if self.r_gidraulic == 0:  # Костыль
             self.r_gidraulic = 0.00001
 
