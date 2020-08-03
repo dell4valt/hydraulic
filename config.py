@@ -12,14 +12,20 @@ PROFILE_WET_PERIMITER = False # Отрисовка смоченоого пери
 PROFILE_EROSION_LIMIT = True # Отрисовка отметки предельного размыва
 PROFILE_EROSION_LIMIT_FULL = False # Линия предельного размыва во всю длину профиля (если false то только по участкам русла и протоки)
 PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающее сооружения
+PROFILE_SAVE_PICTURES = True  # Сохранение рисунков поперечников в отдельные файлы
 GIDRAULIC_CURVE = True # Отрисовка графика гидравлической кривой
 GIDRAULIC_CURVE_LEVELS = True # Отрисовка расчётных уровней на графике гидравлической кривой
+GIDRAULIC_CURVE_SAVE_PICTURES = False  # Сохранение рисунков гидравлической кривой в отдельные файлы
 SPEED_CURVE = False # Отрисовка графика кривой скоростей
 SPEED_CURVE_LEVELS = True # Отрисовка расчётных скоростей на графике кривой скоростей
+SPEED_CURVE_SAVE_PICTURES = False  # Сохранение рисунков кривой скоростей в отдельные файлы
 GRAPHICS_TITLES = True # Отрисовка названия на графиках
 GRAPHICS_TITLES_TEXT = False # Подпись графиков текстом
 REWRITE_DOC_FILE = True # Перезапись экспортируемого файла
 DOC_TABLE_SHORT = True # Укороченный вариант таблицы гидравлической кривой
+
+TEMP_DIR_NAME = 'TEMP'
+GRAPHICS_DIR_NAME = 'Графика'
 
 # Формула расчёта скорости движения
 # 1 — Расчёт обычной воды; 2 — Расчёт водокаемнного селевого потока; 3 — Расчёт грязкаменного селевого потока

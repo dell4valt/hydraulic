@@ -658,14 +658,16 @@ class Morfostvor(object):
         if self.waterline and type(self.waterline) != str:
             self.fig_profile.draw_waterline(round(self.waterline, 2), color='blue', linestyle='-')
 
-        # Проверяем наличие временной папки
-        try:
-            os.stat('temp')
-        except:
-            os.mkdir('temp')
+        # Создаем временную папку, и папку для графики если они не существуют
+        Path(config.TEMP_DIR_NAME).mkdir(parents=True, exist_ok=True)
+        
+        # Создаем папку для сохранения отдельных изображений
+        if config.PROFILE_SAVE_PICTURES:
+            out_filename_dir = Path(str(Path(out_filename).parents[0]) + '\\' + config.GRAPHICS_DIR_NAME)
+            out_filename_dir.mkdir(parents=True, exist_ok=True)
 
         print('    — Сохраняем график профиля ... ', end='')
-        self.fig_profile.fig.savefig('temp/Profile.png', dpi=config.FIG_DPI)
+        self.fig_profile.fig.savefig('{temp_dir}/Profile.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
         print('успешно!')
 
         # Вставляем заголовк профиля
@@ -673,18 +675,21 @@ class Morfostvor(object):
 
         # Добавляем изображения профиля и гидравлической кривой
         print('    — Вставляем графику (профиль и кривую)... ', end='')
-        doc.add_picture('temp/Profile.png', width=Cm(16.5))
+        doc.add_picture('{temp_dir}/Profile.png'.format(temp_dir = config.TEMP_DIR_NAME), width=Cm(16.5))
         setLastParagraphStyle('Р-рисунок', doc)
 
+        # Подпись рисунков
         if config.GRAPHICS_TITLES_TEXT:
-                doc.add_paragraph('Рисунок — ' + self.fig_profile.morfostvor.title, style='Р-название')
+            doc.add_paragraph('Рисунок — ' + self.fig_profile.morfostvor.title, style='Р-название')
+
+        print('успешно!')
 
         if config.GIDRAULIC_CURVE:
             print('    — Сохраняем график гидравлической кривой ... ', end='')
-            self.fig_QH.fig.savefig('temp/QH.png', dpi=config.FIG_DPI)
+            self.fig_QH.fig.savefig('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
             print('успешно!')
 
-            doc.add_picture('temp/QH.png', width=Cm(16.5))
+            doc.add_picture('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME), width=Cm(16.5))
             setLastParagraphStyle('Р-рисунок', doc)
 
             if config.GRAPHICS_TITLES_TEXT:
@@ -695,18 +700,26 @@ class Morfostvor(object):
 
         if config.SPEED_CURVE:
             print('    — Сохраняем график кривой скоростей ... ', end='')
-            self.fig_QV.fig.savefig('temp/QV.png', dpi=config.FIG_DPI)
+            self.fig_QV.fig.savefig('{temp_dir}/QV.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
             print('успешно!')
 
-            doc.add_picture('temp/QV.png', width=Cm(16.5))
+            doc.add_picture('{temp_dir}/QV.png'.format(temp_dir = config.TEMP_DIR_NAME), width=Cm(16.5))
             setLastParagraphStyle('Р-рисунок', doc)
             print('успешно!')
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph('Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
 
+        # Проверяем имя файла
+        profile_name = sanitize_filename(self.title)
 
-
+        # Сохраняем картинки в отдельные файлы в папку graphics
+        if config.PROFILE_SAVE_PICTURES:            
+            self.fig_profile.fig.savefig('{graphics_dir}/{profile_name}.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
+        if config.GIDRAULIC_CURVE_SAVE_PICTURES:
+            self.fig_QH.fig.savefig('{graphics_dir}/{profile_name}_QH.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
+        if config.SPEED_CURVE_SAVE_PICTURES:
+            self.fig_QV.fig.savefig('{graphics_dir}/{profile_name}_QV.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
 
 
         # Вывод таблицы расчётных уровней воды
@@ -793,10 +806,10 @@ class Morfostvor(object):
             sys.exit(1)
 
         try:
-            os.remove('temp/QH.png')
-            os.remove('temp/QV.png')
-            os.remove('temp/Profile.png')
-            os.rmdir('temp')
+            os.remove('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME))
+            os.remove('{temp_dir}/QV.png'.format(temp_dir = config.TEMP_DIR_NAME))
+            os.remove('{temp_dir}/Profile.png'.format(temp_dir = config.TEMP_DIR_NAME))
+            os.rmdir('{temp_dir}'.format(temp_dir = config.TEMP_DIR_NAME))
         except:
             pass
 
