@@ -2,6 +2,7 @@
 import sys
 import os
 import re
+from pathlib import Path
 from dataclasses import dataclass, field
 
 # matplotlib.use("TkAgg")
@@ -12,6 +13,7 @@ import matplotlib.patheffects as path_effects
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
+from pathvalidate import sanitize_filename
 
 from docxtpl import DocxTemplate
 from docx import Document
@@ -1854,6 +1856,10 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         :param out_filename: Результаты расчетов  (.docx файл)
         :param page=None: Номер страницы в xls файле, по умолчанию None (расчеты производятся для всего документа)
     """
+
+    # Создаем родительскую папку, если она не существует
+    Path(out_filename).parents[0].mkdir(parents=True, exist_ok=True)
+
     # Удаляем предыдущий отчет, если включена перезапись файла
     if config.REWRITE_DOC_FILE:
         try:
