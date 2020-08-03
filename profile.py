@@ -1709,7 +1709,7 @@ class GraphProfile(Graph):
                 y_step = ((self.top_limit - self.bottom_limit) / 100)  # 1% вертикальный от графика
                 y0 = water_level  # Нижняя кордината y (отметка уреза воды)
                 if index == 0:
-                    y1 = self.top_limit - (y_step / 2.7) - (y_step * 3 * (index))   # Верхняя координата y для первой линии уреза
+                    y1 = self.top_limit - (y_step) - (y_step * 3 * (index))   # Верхняя координата y для первой линии уреза
                 else:
                     y1 = self.top_limit - (y_step * 2.95 * (index))   # Верхняя координата y для последующих линий уреза
 
