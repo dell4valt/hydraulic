@@ -89,7 +89,7 @@ class WaterSection(object):
         :param average_depth: Средняя глубина
         :param max_depth: Максимальная глубина
         :param wet_perimeter: Смоченный периметр
-        :pararm r_gidraulic: Гидравлический радиус
+        :pararm r_hydraulic: Гидравлический радиус
         :param start_point: Точка начала расчёта [point_index, y]
 
     """
@@ -103,16 +103,16 @@ class WaterSection(object):
     average_depth: float = 0.0
     max_depth: float = 0.0
     wet_perimeter: float = 0.0
-    r_gidraulic: float = 0.0
+    r_hydraulic: float = 0.0
     start_point: list = field(default_factory=list)
 
     def __post_init__(self):
         # start_point=[self.y.index(min(self.y)), min(self.y)]
-        boundry = self.boundry()
-        if len(boundry) > 1:
-            for water_boundry in boundry:
+        boundary = self.boundary()
+        if len(boundary) > 1:
+            for water_boundary in boundary:
                 try:
-                    self._calculate_parameters(water_boundry)
+                    self._calculate_parameters(water_boundary)
                 except IndexError:
                     print(
                         'Ошибка в определении границ урезов! Программа будет завершена.')
@@ -124,20 +124,20 @@ class WaterSection(object):
             self.average_depth = np.average(self.average_depth)
             self.max_depth = max(self.max_depth)
             self.wet_perimeter = sum(self.wet_perimeter)
-            self.r_gidraulic = sum(self.r_gidraulic)
+            self.r_hydraulic = sum(self.r_hydraulic)
 
         else:
             try:
-                self._calculate_parameters(boundry[0])
+                self._calculate_parameters(boundary[0])
             except IndexError:
                 print('Ошибка в определении границ урезов! Программа будет завершена.')
                 sys.exit(2)
 
-    def boundry(self):
+    def boundary(self):
         x = self.x
         y = self.y
         water_level = self.water_level  # Отметка уреза воды
-        water_boundry_x, water_boundry_y, water_boundry_points = [], [], []
+        water_boundary_x, water_boundary_y, water_boundary_points = [], [], []
         result = []
         start_point = self.start_point
 
@@ -154,9 +154,9 @@ class WaterSection(object):
             for i in range(start_point[0], -1, -1):
                 # Если индекс минимальной отметки совпадает с левой правой участка
                 if start_point[0] == 0 and y[start_point[0]] <= water_level:
-                    water_boundry_x.append(x[0])
-                    water_boundry_y.append(water_level)
-                    water_boundry_points.append(0)
+                    water_boundary_x.append(x[0])
+                    water_boundary_y.append(water_level)
+                    water_boundary_points.append(0)
                     break
 
                 # Условие пересечения уреза с дном
@@ -167,17 +167,17 @@ class WaterSection(object):
                     # Нахождение координаты x уреза между точками дна
                     f = interpolate.interp1d([y1, y2], [x1, x2])
                     # Находим координату x, зная y (точка пересечения уреза с дном)
-                    water_boundry_x.append(float(f(water_level)))
-                    water_boundry_y.append(water_level)
+                    water_boundary_x.append(float(f(water_level)))
+                    water_boundary_y.append(water_level)
                     # Присоединяем номер точки дна с границей воды
-                    water_boundry_points.append(i - 1)
+                    water_boundary_points.append(i - 1)
                     break  # Прерываем поиск если нашли пересечение
 
                 # Условие отсутствия пересечения с дном и дохождения до начала участка
                 elif i - 1 == 0 and y[i - 1] <= water_level:
-                    water_boundry_x.append(x[i - 1])
-                    water_boundry_y.append(water_level)
-                    water_boundry_points.append(i - 1)
+                    water_boundary_x.append(x[i - 1])
+                    water_boundary_y.append(water_level)
+                    water_boundary_points.append(i - 1)
                     break  # Прерываем поиск если нашли пересечение
 
             # Цикл вправо от стартовой точки
@@ -190,30 +190,30 @@ class WaterSection(object):
                     # Нахождение координаты x уреза между точками дна
                     f = interpolate.interp1d([y1, y2], [x1, x2])
                     # Находим координату x, зная y (точка пересечения уреза с дном)
-                    water_boundry_x.append(float(f(water_level)))
-                    water_boundry_y.append(water_level)
+                    water_boundary_x.append(float(f(water_level)))
+                    water_boundary_y.append(water_level)
                     # Присоединяем номер точки дна с границей воды
-                    water_boundry_points.append(i)
+                    water_boundary_points.append(i)
                     break  # Прерываем поиск если нашли пересечение
 
                 elif i + 1 == len(y) - 1 and y[len(y) - 1] <= water_level:
-                    water_boundry_x.append(x[len(x) - 1])
-                    water_boundry_y.append(water_level)
-                    water_boundry_points.append(i + 1)
+                    water_boundary_x.append(x[len(x) - 1])
+                    water_boundary_y.append(water_level)
+                    water_boundary_points.append(i + 1)
                     break  # Прерываем поиск если нашли пересечение
 
             # Если индекс минимальной отметки совпадает с правой границой участка
             if start_point[0] == len(y) - 1 and y[start_point[0]] <= water_level:
-                water_boundry_x.append(x[len(y) - 1])
-                water_boundry_y.append(water_level)
-                water_boundry_points.append(len(y) - 1)
+                water_boundary_x.append(x[len(y) - 1])
+                water_boundary_y.append(water_level)
+                water_boundary_points.append(len(y) - 1)
 
-            result.append([water_boundry_x, water_boundry_y,
-                           water_boundry_points, 0])
+            result.append([water_boundary_x, water_boundary_y,
+                           water_boundary_points, 0])
         return result
 
     # Функция выполняющая основные вычисления по данному водному сечению
-    def _calculate_parameters(self, water_boundry):
+    def _calculate_parameters(self, water_boundary):
         sum_sqr = 0
         water_level = self.water_level
         x = self.x
@@ -222,12 +222,12 @@ class WaterSection(object):
 
         # Обрабатываем урезы по две точки (со второй до третьей пропускам)
         # Вводим служебные координаты (первая и последняя точки)
-        x1, x2 = water_boundry[0][0], water_boundry[0][1]
-        y1, y2 = water_boundry[1][0], water_boundry[1][1]
+        x1, x2 = water_boundary[0][0], water_boundary[0][1]
+        y1, y2 = water_boundary[1][0], water_boundary[1][1]
 
         # Точки смоченного периметра (номера точек под урезом)
-        water_section_x = x[water_boundry[2][0] + 1: water_boundry[2][1] + 1]
-        water_section_y = y[water_boundry[2][0] + 1: water_boundry[2][1] + 1]
+        water_section_x = x[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
+        water_section_y = y[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
 
         water_section_x.insert(0, x1)
         water_section_x.insert(len(water_section_x), x2)
@@ -237,8 +237,8 @@ class WaterSection(object):
 
         # Если первая точка УВ выше первой точки дна, вставляем точку дна на второе место
         # TODO: Костыль для определения полигона водной поверхности для расчёта с переливом и одновременным заполнением, нужно продумать как исправить
-        if config.PERELIV:  # исходные данные точек x и y по всему профилю
-            if water_level > y[water_boundry[2][0]]:
+        if config.OVERFLOW:  # исходные данные точек x и y по всему профилю
+            if water_level > y[water_boundary[2][0]]:
                 water_section_x.insert(1, x[0])
                 water_section_y.insert(1, y[0])
         else:  # исходные данные точек x и y по участкам
@@ -247,7 +247,7 @@ class WaterSection(object):
                 water_section_y.insert(1, y[0])
 
         # Если последняя точка УВ выше последней точки дна, вставляем точку на предпоследнее место
-        if water_boundry[3] > 1 and water_level > y[-1]:
+        if water_boundary[3] > 1 and water_level > y[-1]:
             water_section_x.insert(len(water_section_x) - 1, x[-1])
             water_section_y.insert(len(water_section_y) - 1, y[-1])
 
@@ -284,12 +284,12 @@ class WaterSection(object):
 
         # Гидравлический радиус
         if self.area > 0 and self.w_perimeter > 0:
-            self.r_gidraulic = self.area / self.w_perimeter
+            self.r_hydraulic = self.area / self.w_perimeter
         else:
-            self.r_gidraulic = 0
+            self.r_hydraulic = 0
 
-        if self.r_gidraulic == 0:  # Костыль
-            self.r_gidraulic = 0.00001
+        if self.r_hydraulic == 0:  # Костыль
+            self.r_hydraulic = 0.00001
 
 
 @dataclass
@@ -404,7 +404,7 @@ class Morfostvor(object):
 
     levels_result: pd.DataFrame = pd.DataFrame
     levels_result_sectors: pd.DataFrame = pd.DataFrame
-    gidraulic_result: pd.DataFrame = pd.DataFrame
+    hydraulic_result: pd.DataFrame = pd.DataFrame
 
     def __post_init__(self):
         # Выбор варианта расчёта
@@ -452,10 +452,10 @@ class Morfostvor(object):
         __x_coord_col = 0
         __y_coord_col = 1
         __sector_name_col = 2
-        __rougness_col = 3
+        __roughness_col = 3
         __slope_col = 4
         __situation_col = 5
-        __descript_col = 8
+        __description_col = 8
 
         def get_sectors(self):
             """Функция считывания участоков и их параметров из исходных файлов."""
@@ -479,14 +479,14 @@ class Morfostvor(object):
             # Перебираем все строки xls файла и ищем участки
             for line in range(lines_num):
                 name = __raw_data[line][__sector_name_col]  # Описание профиля
-                rougness = __raw_data[line][__rougness_col]  # Коэффициент шероховатости
+                roughness = __raw_data[line][__roughness_col]  # Коэффициент шероховатости
                 slope = __raw_data[line][__slope_col]  # Уклон
 
                 # По первой строке создаём первый сектор
                 if line == 0:
                     coord = []
                     sectors.append(ProfileSector(
-                        num, name, line, line, rougness, slope, coord))
+                        num, name, line, line, roughness, slope, coord))
 
                 # Сравниваем имя предыдущего участка с текущим, и если не совпадают то создаем новый сектор:
                 elif name != sectors[num - 1].name:
@@ -499,7 +499,7 @@ class Morfostvor(object):
 
                     num += 1  # Увеличиваем номер сектора на 1
                     sectors.append(ProfileSector(
-                        num, name, sectors[num - 2].end_point, line, rougness, slope, coord))
+                        num, name, sectors[num - 2].end_point, line, roughness, slope, coord))
 
             # Номер последней точки в последнем секторе
             sectors[-1].end_point = len(x) - 1
@@ -535,21 +535,21 @@ class Morfostvor(object):
 
         # Устанавливаем основные параметры морфоствора
         print('    — Устанавливаем основные параметры морфоствора ... ', end='')
-        self.title = __raw_data[2][__descript_col]  # Заголовок профиля
-        self.date = __raw_data[3][__descript_col]  # Дата профиля
+        self.title = __raw_data[2][__description_col]  # Заголовок профиля
+        self.date = __raw_data[3][__description_col]  # Дата профиля
 
-        self.waterline = __raw_data[4][__descript_col]  # Отметка уреза воды
+        self.waterline = __raw_data[4][__description_col]  # Отметка уреза воды
         # Проверяем задан ли урез текстом, если нет округляем до 2 знаков        
         if type(self.waterline) is not str:
             self.waterline = round(self.waterline, 2)
 
         
-        self.dH = __raw_data[5][__descript_col]  # Расчётный шаг по глубине
-        self.coords = __raw_data[6][__descript_col]  # Координаты
-        self.erosion_limit = __raw_data[7][__descript_col]  # Предел размыва
-        self.top_limit = __raw_data[8][__descript_col]  # Верхняя граница
+        self.dH = __raw_data[5][__description_col]  # Расчётный шаг по глубине
+        self.coords = __raw_data[6][__description_col]  # Координаты
+        self.erosion_limit = __raw_data[7][__description_col]  # Предел размыва
+        self.top_limit = __raw_data[8][__description_col]  # Верхняя граница
         # Описание верхней границы
-        self.top_limit_description = __raw_data[9][__descript_col]
+        self.top_limit_description = __raw_data[9][__description_col]
         print('успешно!')
 
         # Считываем и записываем все точки x и y профиля
@@ -631,7 +631,7 @@ class Morfostvor(object):
                     print('    — Файл не найден! Создаём новый.')
                 doc = DocxTemplate('assets/report_template.docx')
 
-        if config.GIDRAULIC_CURVE:
+        if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
         if config.SPEED_CURVE:
             self.fig_QV = GraphQV(self)
@@ -684,7 +684,7 @@ class Morfostvor(object):
 
         print('успешно!')
 
-        if config.GIDRAULIC_CURVE:
+        if config.HYDRAULIC_CURVE:
             print('    — Сохраняем график гидравлической кривой ... ', end='')
             self.fig_QH.fig.savefig('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
             print('успешно!')
@@ -716,7 +716,7 @@ class Morfostvor(object):
         # Сохраняем картинки в отдельные файлы в папку graphics
         if config.PROFILE_SAVE_PICTURES:            
             self.fig_profile.fig.savefig('{graphics_dir}/{profile_name}.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
-        if config.GIDRAULIC_CURVE_SAVE_PICTURES:
+        if config.HYDRAULIC_CURVE_SAVE_PICTURES:
             self.fig_QH.fig.savefig('{graphics_dir}/{profile_name}_QH.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
         if config.SPEED_CURVE_SAVE_PICTURES:
             self.fig_QV.fig.savefig('{graphics_dir}/{profile_name}_QV.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
@@ -759,7 +759,7 @@ class Morfostvor(object):
                  (5, 5, 5, 5, 5, 5, 5),
                  (':.2f', ':.3f', ':.3f', ':.3f', ':.3f', ':.3f', ':.3f'))
 
-        table = self.gidraulic_result
+        table = self.hydraulic_result
         table_round = table.round(3)  # Округляем
         # Убираем столбец с коэффициентами Шези
         table_round = table_round.drop(columns=['Shezi'])
@@ -787,8 +787,8 @@ class Morfostvor(object):
 
         # Записываем только чётные элементы таблицы
         table_round = table_round[table_round.index % divider == 0]
-        summ_gidraulic = table_round.values.tolist()  # Переводим в список
-        write_table(doc, summ_gidraulic, param,
+        sum_hydraulic = table_round.values.tolist()  # Переводим в список
+        write_table(doc, sum_hydraulic, param,
                     'Таблица - Параметры расчёта кривой расхода {}'.format(self.strings['type']))
         doc.add_paragraph('Расчётный шаг: {:g} см. В таблице приведён каждый {}-й результат расчёта.'.format(
             self.dH, divider), style='Т-примечание')
@@ -869,19 +869,19 @@ class Morfostvor(object):
             area_list = list()
             summ_result = [[], [], [], [], [], [], [], []]
 
-            if config.PERELIV:
+            if config.OVERFLOW:
                 for i in calc_sectors:
                     sector = self.sectors[i]
                     x = sector.coord[0]
                     y = sector.coord[1]
 
                     # Максимальная отметка слева
-                    previus_min_ele = max(chunk_list(y, 2)[0])
+                    previous_min_ele = max(chunk_list(y, 2)[0])
                     # Максимальная отметка справа
                     next_min_ele = max(chunk_list(y, 2)[1])
 
                     # Проверка на перелив через границы участка
-                    if (water_level >= previus_min_ele) and (i - 1 not in calc_sectors) and (i - 1 >= 0):
+                    if (water_level >= previous_min_ele) and (i - 1 not in calc_sectors) and (i - 1 >= 0):
                         calc_sectors.append(i - 1)
                     if (water_level >= next_min_ele) and (i + 1 not in calc_sectors) and (i + 1 <= len(self.sectors) - 1):
                         calc_sectors.append(i + 1)
@@ -1052,7 +1052,7 @@ class Morfostvor(object):
             )
         self.levels_result = result
         self.levels_result_sectors = df_list
-        self.gidraulic_result = df
+        self.hydraulic_result = df
 
 
 @dataclass
@@ -1167,14 +1167,14 @@ class GraphQH(Graph):
     _y_label_text = 'H, м'
     _ax_title_text = 'Гидравлическая кривая'
 
-    def draw_gidraulic_curve(self):
+    def draw_hydraulic_curve(self):
         morfostvor = self.morfostvor
         ax = self.ax
         result_sectors = morfostvor.levels_result_sectors
 
         # Отрисовка суммирующей кривой на графике
-        ax.plot(morfostvor.gidraulic_result['Q'],
-                morfostvor.gidraulic_result['УВ'], label='Сумма', linewidth=3, color='red')
+        ax.plot(morfostvor.hydraulic_result['Q'],
+                morfostvor.hydraulic_result['УВ'], label='Сумма', linewidth=3, color='red')
 
         # Отрисовка кривых по участкам
         for sector in result_sectors:
@@ -1188,8 +1188,8 @@ class GraphQH(Graph):
         ax = self.ax
         # Вывод расчётных уровней
         try:
-            if config.GIDRAULIC_CURVE_LEVELS:
-                min_h = min(morfostvor.gidraulic_result['УВ'])
+            if config.HYDRAULIC_CURVE_LEVELS:
+                min_h = min(morfostvor.hydraulic_result['УВ'])
 
                 for index, row in morfostvor.levels_result.iterrows():
                     x1, x2 = 0, row['Q']
@@ -1214,7 +1214,7 @@ class GraphQH(Graph):
         pass
 
     def draw(self):
-        self.draw_gidraulic_curve()
+        self.draw_hydraulic_curve()
         self.draw_water_levels()        
 
 
@@ -1237,8 +1237,8 @@ class GraphQV(Graph):
         result_sectors = morfostvor.levels_result_sectors
 
         # Отрисовка суммирующей кривой на графике
-        ax.plot(morfostvor.gidraulic_result['Q'],
-                morfostvor.gidraulic_result['V'], label='Сумма', linewidth=3, color='red')
+        ax.plot(morfostvor.hydraulic_result['Q'],
+                morfostvor.hydraulic_result['V'], label='Сумма', linewidth=3, color='red')
         
         # Отрисовка кривых по участкам
         for sector in result_sectors:
@@ -1558,10 +1558,10 @@ class GraphProfile(Graph):
                             x2 = sector.coord[0][0]
 
             # Подпись текста
-            erosioin_limit_text = self.ax.text(x2 - 1, h + 0.01, text.format(
+            erosion_limit_text = self.ax.text(x2 - 1, h + 0.01, text.format(
                 h=h), color=config.COLOR['erosion_limit_text'], fontsize=config.FONT_SIZE['erosion_limit'], weight='bold')
             # Обводка текста
-            erosioin_limit_text.set_path_effects([path_effects.Stroke(
+            erosion_limit_text.set_path_effects([path_effects.Stroke(
                 linewidth=3, foreground='white', alpha=0.95), path_effects.Normal()])
 
             # Отрисовка линии предельного размыва
@@ -1616,10 +1616,10 @@ class GraphProfile(Graph):
         """
 
         def draw_line(self):
-            for boundry in water.boundry():
+            for boundary in water.boundary():
                 # Вводим служебные координаты
-                x1, x2 = boundry[0][0], boundry[0][1]  # Начало и конец x
-                y1, y2 = boundry[1][0], boundry[1][1]  # отметки уреза
+                x1, x2 = boundary[0][0], boundary[0][1]  # Начало и конец x
+                y1, y2 = boundary[1][0], boundary[1][1]  # отметки уреза
 
                 # Рисуем урез воды
                 self.ax.plot([x1, x2], [y1, y2], color=color,
@@ -1629,7 +1629,7 @@ class GraphProfile(Graph):
                     self.ax.fill(water.water_section_x, water.water_section_y,
                                     facecolor=config.COLOR['water_fill'], alpha=0.2)
 
-        if config.PERELIV:
+        if config.OVERFLOW:
             water = WaterSection(self.morfostvor.x, self.morfostvor.y, h)
             draw_line(self)
 
@@ -1765,20 +1765,20 @@ class GraphProfile(Graph):
 
 
         # Цикл расчёта до максимального уровня воды
-        while water_level < self.morfostvor.gidraulic_result['УВ'].max():
-            if config.PERELIV:
+        while water_level < self.morfostvor.hydraulic_result['УВ'].max():
+            if config.OVERFLOW:
                 for i in calc_sectors:
                     sector = self.morfostvor.sectors[i]
                     x = sector.coord[0]
                     y = sector.coord[1]
 
                     # Максимальная отметка слева
-                    previus_min_ele = max(chunk_list(y, 2)[0])
+                    previous_min_ele = max(chunk_list(y, 2)[0])
                     # Максимальная отметка справа
                     next_min_ele = max(chunk_list(y, 2)[1])
 
                     # Проверка на перелив через границы участка
-                    if (water_level >= previus_min_ele) and (i - 1 not in calc_sectors) and (i - 1 >= 0):
+                    if (water_level >= previous_min_ele) and (i - 1 not in calc_sectors) and (i - 1 >= 0):
                         calc_sectors.append(i - 1)
                     if (water_level >= next_min_ele) and (i + 1 not in calc_sectors) and (i + 1 <= len(morfostvor.sectors) - 1):
                         calc_sectors.append(i + 1)
