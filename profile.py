@@ -25,7 +25,7 @@ import config
 from lib import *
 
 
-# Скрываем предуприждение matplotlib
+# Скрываем предупреждение matplotlib
 import warnings
 import matplotlib.cbook
 # warnings.filterwarnings("ignore",category=matplotlib.cbook.mplDeprecation)
@@ -40,7 +40,7 @@ class ProfileSector(object):
         :param start_point: Номер первой точки участка
         :param end_point: Номер последней точки участка
         :param roughness: Коэффициент шероховатости n
-        :param slope: Уклон данного учаcтка I, ‰
+        :param slope: Уклон данного участка I, ‰
         :param coord: Список с двумя подсписками координат x и y участка    
     """
     id: int
@@ -81,14 +81,14 @@ class WaterSection(object):
 
         :param x: Точки x всего профиля
         :param y: Точки y всего профиля
-        :param water_level: Уровнь воды
+        :param water_level: Уровень воды
         :param water_section_x: Точки x водного сечения
         :param water_section_y: Точки y водного сечения
         :param width: Ширина водного сечения
         :param area: Площадь водного сечения
         :param average_depth: Средняя глубина
         :param max_depth: Максимальная глубина
-        :param wet_perimeter: Смоченный периметер
+        :param wet_perimeter: Смоченный периметр
         :pararm r_gidraulic: Гидравлический радиус
         :param start_point: Точка начала расчёта [point_index, y]
 
@@ -147,7 +147,7 @@ class WaterSection(object):
         # Проверка на ошибку расположения уреза под поверхностью дна
         if water_level < min(y):
             print(
-                'Ошибка! Уровень воды ниже низжей точки дна. Программа будет завершена с ошибкой.')
+                'Ошибка! Уровень воды ниже низшей точки дна. Программа будет завершена с ошибкой.')
             sys.exit(1)
         else:
             # Цикл влево от стартовой точки
@@ -173,7 +173,7 @@ class WaterSection(object):
                     water_boundry_points.append(i - 1)
                     break  # Прерываем поиск если нашли пересечение
 
-                # Условие непересекания дна и дохождения до начала участка
+                # Условие отсутствия пересечения с дном и дохождения до начала участка
                 elif i - 1 == 0 and y[i - 1] <= water_level:
                     water_boundry_x.append(x[i - 1])
                     water_boundry_y.append(water_level)
@@ -221,7 +221,7 @@ class WaterSection(object):
         depth = []
 
         # Обрабатываем урезы по две точки (со второй до третьей пропускам)
-        # Вводим служебые координаты (первая и последняя точки)
+        # Вводим служебные координаты (первая и последняя точки)
         x1, x2 = water_boundry[0][0], water_boundry[0][1]
         y1, y2 = water_boundry[1][0], water_boundry[1][1]
 
@@ -236,7 +236,7 @@ class WaterSection(object):
         water_section_y.insert(len(water_section_y), y2)
 
         # Если первая точка УВ выше первой точки дна, вставляем точку дна на второе место
-        # TODO: Костыль для определние полигона водной поверхности для расчёта с переливом и одновременным заполнением, нужно продумать как исправить
+        # TODO: Костыль для определения полигона водной поверхности для расчёта с переливом и одновременным заполнением, нужно продумать как исправить
         if config.PERELIV:  # исходные данные точек x и y по всему профилю
             if water_level > y[water_boundry[2][0]]:
                 water_section_x.insert(1, x[0])
@@ -339,7 +339,7 @@ class Calculation(object):
         # Расчёт расхода воды
         self.q = self.a * self.v
 
-    # Коэффициент Шези по формуле Н. Н. Павловского, стпенной коэффициент по формуле Железнякова
+    # Коэффициент Шези по формуле Н. Н. Павловского, степенной коэффициент по формуле Железнякова
     def __shezi_pavlovskij_zheleznjakov(self):
         # Показатель сетепени по формуле Г. В. Железнякова
         y = 1/np.log10(self.h) * np.log10(
@@ -438,7 +438,7 @@ class Morfostvor(object):
             sheet = data_file.sheet_by_index(page)
         except IndexError:
             print(
-                'Неверно указан индекс листа .xls файла. Проверьта параметры запуска расчёта.')
+                'Неверно указан индекс листа .xls файла. Проверьте параметры запуска расчёта.')
             sys.exit(1)
 
         sheet_title = sheet.name
@@ -464,7 +464,7 @@ class Morfostvor(object):
             # №, Описание участка, номер первой точки, номер последней точки, коэффициент шероховатости, уклон ‰, координата x, координаты y
             lines_num = 0
 
-            # Считываем количество строк с не пустыми координамтами
+            # Считываем количество строк с не пустыми координатами
             for line in __raw_data:
                 if type(line[__x_coord_col]) != str:
                     lines_num += 1
@@ -473,7 +473,7 @@ class Morfostvor(object):
             x = self.x  # Координаты профиля X
             y = self.y  # Координаты профиля Y
 
-            num = 1  # Номера участокв
+            num = 1  # Номера участков
 
             ###
             # Перебираем все строки xls файла и ищем участки
@@ -488,13 +488,13 @@ class Morfostvor(object):
                     sectors.append(ProfileSector(
                         num, name, line, line, rougness, slope, coord))
 
-                # Cравниваем имя предыдущего участка с текущим, и если не совпадают то создаем новый сектор:
+                # Сравниваем имя предыдущего участка с текущим, и если не совпадают то создаем новый сектор:
                 elif name != sectors[num - 1].name:
                     if sectors[num - 1].id == 1:  # Если первый участок
                         # Записываем номер последний точки - 1
                         sectors[num - 1].end_point = line
                     else:  # Если все остальные участки
-                        # Записываем номер последний точки в предыдщий участок для всех остальных участокв
+                        # Записываем номер последний точки в предыдущий участок для всех остальных участков
                         sectors[num - 1].end_point = line
 
                     num += 1  # Увеличиваем номер сектора на 1
@@ -508,7 +508,7 @@ class Morfostvor(object):
             for sector in sectors:
                 sector.coord = (
                     (x[sector.start_point: sector.end_point + 1], y[sector.start_point: sector.end_point + 1]))  # Координаты из начальной и конечной точек
-                # Длины полученнные из разницы координат по x
+                # Длины полученные из разницы координат по x
                 sector.length = sector.get_length()
 
             try:
@@ -535,7 +535,7 @@ class Morfostvor(object):
 
         # Устанавливаем основные параметры морфоствора
         print('    — Устанавливаем основные параметры морфоствора ... ', end='')
-        self.title = __raw_data[2][__descript_col]  # Заголовк профиля
+        self.title = __raw_data[2][__descript_col]  # Заголовок профиля
         self.date = __raw_data[3][__descript_col]  # Дата профиля
 
         self.waterline = __raw_data[4][__descript_col]  # Отметка уреза воды
@@ -573,7 +573,7 @@ class Morfostvor(object):
         # Удаляем пустые обеспеченности из списка обеспеченностей
         self.probability = [x for x in self.probability if x != ['', '']]
 
-        print('успешно, найдено {} обспеченностей.'.format(len(self.probability)))
+        print('успешно, найдено {} обеспеченностей.'.format(len(self.probability)))
 
         # Обработка и получение данных по секторам из "сырых" данных
         self.sectors = get_sectors(self)
@@ -670,7 +670,7 @@ class Morfostvor(object):
         self.fig_profile.fig.savefig('{temp_dir}/Profile.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
         print('успешно!')
 
-        # Вставляем заголовк профиля
+        # Вставляем заголовок профиля
         doc.add_paragraph(self.title, style='З-приложение-подзаголовок')
 
         # Добавляем изображения профиля и гидравлической кривой
@@ -1097,7 +1097,7 @@ class Graph(object):
             ax.set_title(
                 self._ax_title_text, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
 
-        # Настравиааем границы и толщину линий границ
+        # Настраиваем границы и толщину линий границ
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['left'].set_linewidth(config.LINE_WIDTH['ax_border'])
@@ -1106,7 +1106,7 @@ class Graph(object):
         # Устанавливаем отступы в графиках
         ax.margins(0.025)
 
-        # Устанавливаем параметры засечек на основых осях
+        # Устанавливаем параметры засечек на основных осях
         ax.tick_params(
             which='major',
             direction='out',
@@ -1144,7 +1144,7 @@ class Graph(object):
                 color=config.COLOR['ax_grid_sub'], linestyle=':', linewidth=1, alpha=0.9)
 
     def clean(self):
-        """Очистка осей графика и обнуление связанных переменых
+        """Очистка осей графика и обнуление связанных переменных
         """
         # Очищаем все оси
         for ax in vars(self):
@@ -1392,7 +1392,7 @@ class GraphProfile(Graph):
                 points, alpha=0.04, linestyle='--', label=sector.name)
             polygon.set_color(sector.color)
 
-            # Подписи названий и длин участокв со стрелками
+            # Подписи названий и длин участков со стрелками
             if config.PROFILE_SECTOR_LABEL:
                 p0 = 1
                 p1 = 2
@@ -1440,7 +1440,7 @@ class GraphProfile(Graph):
         self.ax.set_ylim(self._y_lim)
 
 
-        # Настравиааем границы и толщину линий границ
+        # Настраиваем границы и толщину линий границ
         self.ax.spines['top'].set_visible(False)
         self.ax.spines['right'].set_visible(False)
         self.ax.spines['left'].set_linewidth(config.LINE_WIDTH['ax_border'])
@@ -1471,7 +1471,7 @@ class GraphProfile(Graph):
         # Включаем отображение второстепенных засечек на осях
         self.ax.minorticks_on()
 
-        # Устанавливаем параметры засечек на основых осях
+        # Устанавливаем параметры засечек на основных осях
         self.ax.tick_params(
             which='major',
             direction='out',
@@ -1535,7 +1535,7 @@ class GraphProfile(Graph):
         
         Keyword Arguments:
             x1 {[float]} -- Координата начала линии (default: {None})
-            x2 {[float]} -- Координа конца линии (default: {None})
+            x2 {[float]} -- Координата конца линии (default: {None})
             text {[string]} -- Текст подписи линии (default: {'▼$H_{{разм.}} = {h:.2f}$'})
         """
         if config.PROFILE_EROSION_LIMIT and not isinstance(self.morfostvor.erosion_limit, str):
@@ -1544,7 +1544,7 @@ class GraphProfile(Graph):
                 x1 = min(self.morfostvor.x)
                 x2 = max(self.morfostvor.x)
             # Если координаты начала и конца линии не заданы, устанавливаем по границе профиля
-            # если есть участки 'Левая пойма', 'Правая пойма' задаем граиницы линии по участкам            
+            # если есть участки 'Левая пойма', 'Правая пойма' задаем границы линии по участкам            
             else:
                 if x1 == None:
                     x1 = min(self.morfostvor.x)
@@ -1574,7 +1574,7 @@ class GraphProfile(Graph):
     def draw_top_limit(self, h, x1=None, x2=None, text='{}\nH = {:.2f}'):
         y_step = self.ax.get_yticks()[1] - self.ax.get_yticks()[0]
         # Если координаты начала и конца линии не заданы, устанавливаем по границе профиля
-        # если есть участки 'Левая пойма', 'Правая пойма' задаем граиницы линии по участкам
+        # если есть участки 'Левая пойма', 'Правая пойма' задаем границы линии по участкам
         if x1 == None:
             x1 = min(self.morfostvor.x)
             for sector in self.morfostvor.sectors:
@@ -1612,12 +1612,12 @@ class GraphProfile(Graph):
         Функция отрисовки уреза воды по границам водного объекта.
 
         :param water: Исходный водный объект, содержащий координаты границ воды.
-        :return: Отрисовывает урез на графике профиля (ax_profile).
+        :return: урез на графике профиля (ax_profile).
         """
 
         def draw_line(self):
             for boundry in water.boundry():
-                # Вводим служебые координаты
+                # Вводим служебные координаты
                 x1, x2 = boundry[0][0], boundry[0][1]  # Начало и конец x
                 y1, y2 = boundry[1][0], boundry[1][1]  # отметки уреза
 
@@ -1692,11 +1692,11 @@ class GraphProfile(Graph):
             except ValueError:
                 label.append('${} = {:.2f}$ м\n'.format(row['P'], water_level))
 
-            # Вывод линий сноск от уровней воды к таблице
+            # Вывод линий сносок от уровней воды к таблице
             if config.PROFILE_LEVELS_TABLE_LINES:
                 water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
 
-                # Горизонтальные точкии линий сносок
+                # Горизонтальные точки линий сносок
                 x_step = (water.water_section_x[-1] - water.water_section_x[0]) / len(self.morfostvor.probability)
                 x0 = water.water_section_x[0] + (x_step * (index + 1) / 2)  # Нижняя координата x 
                 x1 = x0 + (x0 / 8 * (index + 1))  # Верхняя координата x 
@@ -1707,7 +1707,7 @@ class GraphProfile(Graph):
 
                 # Вертикальные точки линий сносок
                 y_step = ((self.top_limit - self.bottom_limit) / 100)  # 1% вертикальный от графика
-                y0 = water_level  # Нижняя кордината y (отметка уреза воды)
+                y0 = water_level  # Нижняя координата y (отметка уреза воды)
                 if index == 0:
                     y1 = self.top_limit - (y_step) - (y_step * 3 * (index))   # Верхняя координата y для первой линии уреза
                 else:
@@ -1719,7 +1719,7 @@ class GraphProfile(Graph):
                 linewidth=config.LINE_WIDTH['water_line'] / 1.75
                 alpha = 0.8
 
-                # Отрисовываем линии снососк
+                # Линии сносок
                 self.ax.plot([x0, x1], [y0, y1], color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)
                 self.ax.plot([x1, x3], [y1, y1], color=color, linestyle=linestyle, linewidth=linewidth, alpha=alpha)  
 
@@ -1764,7 +1764,7 @@ class GraphProfile(Graph):
         water_level = min(self.morfostvor.y) + dH
 
 
-        # Цикл расчёта до максимальнjго уровня воды
+        # Цикл расчёта до максимального уровня воды
         while water_level < self.morfostvor.gidraulic_result['УВ'].max():
             if config.PERELIV:
                 for i in calc_sectors:
@@ -1862,7 +1862,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     """
     Выполнение гидравлических расчетов и создание отчета по результатам расчетов.
     Исходные данные представлены в in_filename (xls файл). По умолчанию расчеты производятся
-    для всех листов xls файла. Если задан параметр page, расчет производится толька для указанной страницы.
+    для всех листов xls файла. Если задан параметр page, расчет производится только для указанной страницы.
     По результат создается out_filename (результирующий отчет в формате docx).
 
         :param in_filename: Входные данные по створам (.xls или .xlsx файл)
