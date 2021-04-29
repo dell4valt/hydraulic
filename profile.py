@@ -663,7 +663,7 @@ class Morfostvor(object):
         
         # Создаем папку для сохранения отдельных изображений
         if config.PROFILE_SAVE_PICTURES:
-            out_filename_dir = Path(str(Path(out_filename).parents[0]) + '\\' + config.GRAPHICS_DIR_NAME)
+            out_filename_dir = Path(str(Path(str(Path(out_filename).parents[0]) + '/' + config.GRAPHICS_DIR_NAME)))
             out_filename_dir.mkdir(parents=True, exist_ok=True)
 
         print('    — Сохраняем график профиля ... ', end='')
