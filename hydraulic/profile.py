@@ -21,8 +21,8 @@ from docx.shared import Cm
 
 import xlrd
 
-import config
-from lib import *
+import hydraulic.config as config
+from hydraulic.lib import *
 
 
 # Скрываем предупреждение matplotlib
@@ -629,7 +629,7 @@ class Morfostvor(object):
                         '    — Включена перезапись файла, удаляем старый и создаём новый.')
                 else:
                     print('    — Файл не найден! Создаём новый.')
-                doc = DocxTemplate('assets/report_template.docx')
+                doc = DocxTemplate('hydraulic/assets/report_template.docx')
 
         if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
