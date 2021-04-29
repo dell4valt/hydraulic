@@ -134,3 +134,11 @@ example/test_2.xlsx
 
 # Main executive
 *main.py
+
+# Macos General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Macos Thumbnails
+._*
