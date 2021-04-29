@@ -6,6 +6,7 @@ import numpy as np
 from docx.shared import Cm
 from docx import Document
 from docx.enum.text import WD_BREAK
+from pathlib import Path
 
 def insertPageBreak(Document):                   
     paragraphs = Document.paragraphs
@@ -246,3 +247,13 @@ def insert_summary_QV_tables(stvors, out_filename):
     
     print('успешно!')
     doc.save(out_filename)
+
+def rmdir(dir):
+    directory = Path(str(dir))
+
+    for item in directory.iterdir():
+        if item.is_dir():
+            rmdir(item)
+        else:
+            item.unlink()
+    directory.rmdir()
