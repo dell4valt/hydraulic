@@ -616,7 +616,7 @@ class Morfostvor(object):
         doc_file = out_filename
 
         if r:
-            doc = DocxTemplate('assets/report_template.docx')
+            doc = DocxTemplate(Path('hydraulic/assets/report_template.docx'))
         else:
             if os.path.isfile(doc_file):
                 doc = Document(doc_file)
@@ -629,7 +629,7 @@ class Morfostvor(object):
                         '    — Включена перезапись файла, удаляем старый и создаём новый.')
                 else:
                     print('    — Файл не найден! Создаём новый.')
-                doc = DocxTemplate('hydraulic/assets/report_template.docx')
+                doc = DocxTemplate(Path('hydraulic/assets/report_template.docx'))
 
         if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
@@ -663,11 +663,11 @@ class Morfostvor(object):
         
         # Создаем папку для сохранения отдельных изображений
         if config.PROFILE_SAVE_PICTURES:
-            out_filename_dir = Path(str(Path(str(Path(out_filename).parents[0]) + '/' + config.GRAPHICS_DIR_NAME)))
-            out_filename_dir.mkdir(parents=True, exist_ok=True)
+            picture_dir = Path(str(Path(out_filename).parents[0]) + '/' + config.GRAPHICS_DIR_NAME)
+            picture_dir.mkdir(parents=True, exist_ok=True)
 
         print('    — Сохраняем график профиля ... ', end='')
-        self.fig_profile.fig.savefig('{temp_dir}/Profile.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
+        self.fig_profile.fig.savefig(Path('{temp_dir}/Profile.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI))
         print('успешно!')
 
         # Вставляем заголовок профиля
@@ -686,7 +686,7 @@ class Morfostvor(object):
 
         if config.HYDRAULIC_CURVE:
             print('    — Сохраняем график гидравлической кривой ... ', end='')
-            self.fig_QH.fig.savefig('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
+            self.fig_QH.fig.savefig(Path('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME)), dpi=config.FIG_DPI)
             print('успешно!')
 
             doc.add_picture('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME), width=Cm(16.5))
@@ -700,7 +700,7 @@ class Morfostvor(object):
 
         if config.SPEED_CURVE:
             print('    — Сохраняем график кривой скоростей ... ', end='')
-            self.fig_QV.fig.savefig('{temp_dir}/QV.png'.format(temp_dir = config.TEMP_DIR_NAME), dpi=config.FIG_DPI)
+            self.fig_QV.fig.savefig(Path('{temp_dir}/QV.png'.format(temp_dir = config.TEMP_DIR_NAME)), dpi=config.FIG_DPI)
             print('успешно!')
 
             doc.add_picture('{temp_dir}/QV.png'.format(temp_dir = config.TEMP_DIR_NAME), width=Cm(16.5))
@@ -715,11 +715,11 @@ class Morfostvor(object):
 
         # Сохраняем картинки в отдельные файлы в папку graphics
         if config.PROFILE_SAVE_PICTURES:            
-            self.fig_profile.fig.savefig('{graphics_dir}/{profile_name}.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
+            self.fig_profile.fig.savefig(Path('{graphics_dir}/{profile_name}.png'.format(graphics_dir = picture_dir, profile_name = profile_name)), dpi=config.FIG_DPI)
         if config.HYDRAULIC_CURVE_SAVE_PICTURES:
-            self.fig_QH.fig.savefig('{graphics_dir}/{profile_name}_QH.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
+            self.fig_QH.fig.savefig(Path('{graphics_dir}/{profile_name}_QH.png'.format(graphics_dir = picture_dir, profile_name = profile_name)), dpi=config.FIG_DPI)
         if config.SPEED_CURVE_SAVE_PICTURES:
-            self.fig_QV.fig.savefig('{graphics_dir}/{profile_name}_QV.png'.format(graphics_dir = out_filename_dir, profile_name = profile_name), dpi=config.FIG_DPI)
+            self.fig_QV.fig.savefig(Path('{graphics_dir}/{profile_name}_QV.png'.format(graphics_dir = picture_dir, profile_name = profile_name)), dpi=config.FIG_DPI)
 
 
         # Вывод таблицы расчётных уровней воды
@@ -805,7 +805,10 @@ class Morfostvor(object):
             print('Возможно записываемый файл уже существует и открыт.')
             sys.exit(1)
 
+        # Удаляем временную папку со всем содержимым
         print('    — Удаляем временную папку ... ', end='')
+        rmdir(Path('{temp_dir}'.format(temp_dir = config.TEMP_DIR_NAME)))
+        print('успешно!')
 
         print(
             '\nФайл {filename} сохранён успешно.\n-------------------------------------\n'.format(filename=doc_file))
