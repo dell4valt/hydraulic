@@ -805,13 +805,7 @@ class Morfostvor(object):
             print('Возможно записываемый файл уже существует и открыт.')
             sys.exit(1)
 
-        try:
-            os.remove('{temp_dir}/QH.png'.format(temp_dir = config.TEMP_DIR_NAME))
-            os.remove('{temp_dir}/QV.png'.format(temp_dir = config.TEMP_DIR_NAME))
-            os.remove('{temp_dir}/Profile.png'.format(temp_dir = config.TEMP_DIR_NAME))
-            os.rmdir('{temp_dir}'.format(temp_dir = config.TEMP_DIR_NAME))
-        except:
-            pass
+        print('    — Удаляем временную папку ... ', end='')
 
         print(
             '\nФайл {filename} сохранён успешно.\n-------------------------------------\n'.format(filename=doc_file))
