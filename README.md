@@ -10,7 +10,7 @@
 
 ```python
 #!/usr/bin/env python3
-import profile
+from hydraulic import profile
 
 in_filename = 'example/example_profile.xlsx'
 out_filename = 'result/test.docx'
