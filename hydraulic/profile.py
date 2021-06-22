@@ -1181,6 +1181,7 @@ class Graph(object):
         self._y_limits = []
         self._y_limits = []
 
+@dataclass
 class GraphCurve(Graph):
     def draw_water_levels(self, morfostvor, ax, x='Q', y='H'):
         """Функция выводит на график ax отметку и линии пересечения
@@ -1236,6 +1237,20 @@ class GraphCurve(Graph):
         except:
             print('Внимание! Вывод расчётных уровней на график не возможен!')
 
+    def draw_curve(self, morfostvor, ax, x='Q', y='УВ'):
+        result_sectors = morfostvor.levels_result_sectors
+
+        # Отрисовка кривой на графике
+        ax.plot(morfostvor.hydraulic_result[x],
+                morfostvor.hydraulic_result[y], label='Сумма', linewidth=3, color='red')
+
+        # Отрисовка кривых по участкам
+        for sector in result_sectors:
+            ax.plot(result_sectors[sector]['Q'], result_sectors[sector][y], '--',
+                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
+
+        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
+
 @dataclass
 class GraphQH(GraphCurve):
     # Номер рисунка
@@ -1246,24 +1261,8 @@ class GraphQH(GraphCurve):
     _y_label_text = 'H, м'
     _ax_title_text = 'Гидравлическая кривая'
 
-    def draw_hydraulic_curve(self):
-        morfostvor = self.morfostvor
-        ax = self.ax
-        result_sectors = morfostvor.levels_result_sectors
-
-        # Отрисовка суммирующей кривой на графике
-        ax.plot(morfostvor.hydraulic_result['Q'],
-                morfostvor.hydraulic_result['УВ'], label='Сумма', linewidth=3, color='red')
-
-        # Отрисовка кривых по участкам
-        for sector in result_sectors:
-            ax.plot(result_sectors[sector]['Q'], result_sectors[sector]['УВ'], '--',
-                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
-
-        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
-
     def draw(self):
-        self.draw_hydraulic_curve()
+        self.draw_curve(self.morfostvor, self.ax, 'Q', 'УВ')
         self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H')
 
 
@@ -1280,25 +1279,9 @@ class GraphQV(GraphCurve):
     _y_label_text = 'V, м/c'
     _ax_title_text = 'Кривая скоростей'
 
-    def draw_speed_curve(self):
-        morfostvor = self.morfostvor
-        ax = self.ax
-        result_sectors = morfostvor.levels_result_sectors
-
-        # Отрисовка суммирующей кривой на графике
-        ax.plot(morfostvor.hydraulic_result['Q'],
-                morfostvor.hydraulic_result['V'], label='Сумма', linewidth=3, color='red')
-
-        # Отрисовка кривых по участкам
-        for sector in result_sectors:
-            ax.plot(result_sectors[sector]['Q'], result_sectors[sector]['V'], '--',
-                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
-
-        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
-
     def draw(self):
-        self.draw_speed_curve()
-        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H')
+        self.draw_curve(self.morfostvor, self.ax, 'Q', 'V')
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'V')
 
 
 @dataclass
@@ -1314,25 +1297,9 @@ class GraphQF(GraphCurve):
     _y_label_text = 'F, м²'
     _ax_title_text = 'Кривая площадей'
 
-    def draw_area_curve(self):
-        morfostvor = self.morfostvor
-        ax = self.ax
-        result_sectors = morfostvor.levels_result_sectors
-
-        # Отрисовка суммирующей кривой на графике
-        ax.plot(morfostvor.hydraulic_result['Q'],
-                morfostvor.hydraulic_result['F'], label='Сумма', linewidth=3, color='red')
-
-        # Отрисовка кривых по участкам
-        for sector in result_sectors:
-            ax.plot(result_sectors[sector]['Q'], result_sectors[sector]['F'], '--',
-                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
-
-        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
-
     def draw(self):
-        self.draw_area_curve()
-        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H')
+        self.draw_curve(self.morfostvor, self.ax, 'Q', 'F')
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'F')
 
 
 @dataclass
