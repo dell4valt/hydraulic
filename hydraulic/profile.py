@@ -629,6 +629,8 @@ class Morfostvor(object):
             self.fig_QH = GraphQH(self)
         if config.SPEED_CURVE:
             self.fig_QV = GraphQV(self)
+        if config.AREA_CURVE:
+            self.fig_QF = GraphQF(self)
 
         self.fig_profile = GraphProfile(self)
 
@@ -714,6 +716,21 @@ class Morfostvor(object):
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
                     'Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
+
+        if config.AREA_CURVE:
+            print('    — Сохраняем график кривой площадей ... ', end='')
+            self.fig_QF.fig.savefig(Path(
+                '{temp_dir}/QF.png'.format(temp_dir=config.TEMP_DIR_NAME)), dpi=config.FIG_DPI)
+            print('успешно!')
+
+            doc.add_picture(
+                '{temp_dir}/QF.png'.format(temp_dir=config.TEMP_DIR_NAME), width=Cm(16.5))
+            setLastParagraphStyle('Р-рисунок', doc)
+            print('успешно!')
+
+            if config.GRAPHICS_TITLES_TEXT:
+                doc.add_paragraph(
+                    'Рисунок — ' + self.fig_QF._ax_title_text, style='Р-название')
 
         # Проверяем имя файла
         profile_name = sanitize_filename(self.title)
@@ -1038,22 +1055,26 @@ class Morfostvor(object):
 
         # Находим H от Q
         result = pd.DataFrame(
-            columns=['P', 'Q', 'H']
+            columns=['P', 'Q', 'H', 'f']
         )
 
         for element in self.probability:
             fQ = interpolate.interp1d(df['Q'], df['УВ'])
             fV = interpolate.interp1d(df['Q'], df['V'])
+            fF = interpolate.interp1d(df['Q'], df['F'])
             h = float(fQ(element[1]))
             v = float(fV(element[1]))
+            f = float(fF(element[1]))
 
             result = result.append(
                 {'P': element[0],
                  'H': h,
                  'Q': element[1],
                  'V': v,
+                 'F': f,
                  }, ignore_index=True
             )
+
         self.levels_result = result
         self.levels_result_sectors = df_list
         self.hydraulic_result = df
@@ -1253,6 +1274,39 @@ class GraphQV(Graph):
 
     def draw(self):
         self.draw_speed_curve()
+
+
+@dataclass
+class GraphQF(Graph):
+    # Номер рисунка
+    _fig_num = 4
+    _fig_size = (16.5, 11)
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    ax: plt.subplot = fig.add_subplot(111)
+
+    # Подписи осей
+    _x_label_text = 'Q, м³/с'
+    _y_label_text = 'F, м²'
+    _ax_title_text = 'Кривая площадей'
+
+    def draw_area_curve(self):
+        morfostvor = self.morfostvor
+        ax = self.ax
+        result_sectors = morfostvor.levels_result_sectors
+
+        # Отрисовка суммирующей кривой на графике
+        ax.plot(morfostvor.hydraulic_result['Q'],
+                morfostvor.hydraulic_result['F'], label='Сумма', linewidth=3, color='red')
+
+        # Отрисовка кривых по участкам
+        for sector in result_sectors:
+            ax.plot(result_sectors[sector]['Q'], result_sectors[sector]['F'], '--',
+                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
+
+        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
+
+    def draw(self):
+        self.draw_area_curve()
 
 
 @dataclass
