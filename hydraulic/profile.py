@@ -1342,7 +1342,9 @@ class GraphProfile(Graph):
         """
 
         self.ax.plot(self.morfostvor.x, self.morfostvor.y,
-                     color=config.COLOR['profile_bottom'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid', )
+                     color=config.COLOR['profile_bottom'],
+                     linewidth=config.LINE_WIDTH['profile_bottom'],
+                     linestyle='solid')
 
     def draw_profile_footer(self):
         """
@@ -1359,13 +1361,32 @@ class GraphProfile(Graph):
                 fontstyle='italic', horizontalalignment='left')
 
             self.ax_bottom.xaxis.set_label_coords(1.02, 0.92)
+
         # Горизонтальные разделители подвала (полная рамка)
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (0, 0), color=config.COLOR['border'],
-                                    linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (5, 5), color=config.COLOR['border'],
-                                    linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (10, 10),
-                                    color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+        self.ax_bottom_overlay.plot((
+            self.morfostvor.x[0],
+            self.morfostvor.x[-1]),
+            (0, 0),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot((
+            self.morfostvor.x[0],
+            self.morfostvor.x[-1]),
+            (5, 5),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot((
+            self.morfostvor.x[0],
+            self.morfostvor.x[-1]),
+            (10, 10),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
         self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (15, 15),
                                     color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
         self.ax_bottom_overlay.plot(
@@ -1373,7 +1394,9 @@ class GraphProfile(Graph):
 
         # Технический разделитель (для увеличения размера границ)
         self.ax_bottom.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[0]), (30, 40), alpha=0)
+            (self.morfostvor.x[0], self.morfostvor.x[0]),
+            (30, 40),
+            alpha=0)
 
         # Цикл по всем точкам
         for i in range(len(self.morfostvor.x)):
@@ -1382,11 +1405,19 @@ class GraphProfile(Graph):
 
             # Разделители расстояний между точками
             self.ax_bottom.plot(
-                (x, x), (10, 20), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+                (x, x), (10, 20),
+                color=config.COLOR['border'],
+                linewidth=config.LINE_WIDTH['profile_bottom'],
+                linestyle='solid')
 
             # Подписи отметок
-            self.ax_bottom.text(x, 25, '{:.2f}'.format(
-                y), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_small'], verticalalignment='center', horizontalalignment='center', rotation='90')
+            self.ax_bottom.text(
+                x, 25, '{:.2f}'.format(y),
+                color=config.COLOR['bottom_text'],
+                fontsize=config.FONT_SIZE['bottom_small'],
+                verticalalignment='center',
+                horizontalalignment='center',
+                rotation='90')
 
         # Цикл по точкам до предпоследней
         for i in range(len(self.morfostvor.x) - 1):
@@ -1395,8 +1426,12 @@ class GraphProfile(Graph):
             y = self.morfostvor.y[i]
 
             # Подписи расстояний между точками
-            self.ax_bottom.text((x + x1) / 2, 15, '{:d}'.format(round(
-                x1 - x)), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center',)
+            self.ax_bottom.text(
+                (x + x1) / 2, 15, '{:d}'.format(round(x1 - x)),
+                color=config.COLOR['bottom_text'],
+                fontsize=config.FONT_SIZE['bottom_main'],
+                verticalalignment='center',
+                horizontalalignment='center')
 
         # Цикл по участкам
         for sector in self.morfostvor.sectors:
@@ -1405,17 +1440,28 @@ class GraphProfile(Graph):
 
             # Подписи коэффициентов шероховатости по участкам
             try:
-                self.ax_bottom.text((x + x1) / 2, 5, '{:.3f}'.format(
-                    sector.roughness),  color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center')
+                self.ax_bottom.text(
+                    (x + x1) / 2, 5, '{:.3f}'.format(sector.roughness),
+                    color=config.COLOR['bottom_text'],
+                    fontsize=config.FONT_SIZE['bottom_main'],
+                    verticalalignment='center',
+                    horizontalalignment='center')
             except ValueError:
                 print('\nОшибка в указании параметров участков (коэффициент шероховатости или разделение на участки). Проверить данные.')
                 sys.exit(1)
 
             # Разделители коэффициентов шероховатости
             self.ax_bottom.plot(
-                (x, x), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+                (x, x), (0, 10),
+                color=config.COLOR['border'],
+                linewidth=config.LINE_WIDTH['profile_bottom'],
+                linestyle='solid')
+
             self.ax_bottom.plot(
-                (x1, x1), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+                (x1, x1), (0, 10),
+                color=config.COLOR['border'],
+                linewidth=config.LINE_WIDTH['profile_bottom'],
+                linestyle='solid')
 
     def draw_sectors(self):
         """
@@ -1462,15 +1508,29 @@ class GraphProfile(Graph):
                                  verticalalignment='center', horizontalalignment='center',)
 
                 # Вывод разделителя участков профиля
-                self.ax_top.plot([sector.coord[0][0], sector.coord[0][0]], [p0, p3], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная слева
-                self.ax_top.plot([sector.coord[0][-1], sector.coord[0][-1]], [p0, p3], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная справа
+                self.ax_top.plot([
+                    sector.coord[0][0], sector.coord[0][0]], [p0, p3],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная слева
 
-                self.ax_top.plot([sector.coord[0][0], cent_x], [p1, p1], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная слева
-                self.ax_top.plot([cent_x, sector.coord[0][-1]], [p1, p1], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная справа
+                self.ax_top.plot([
+                    sector.coord[0][-1], sector.coord[0][-1]], [p0, p3],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная справа
+
+                self.ax_top.plot(
+                    [sector.coord[0][0], cent_x], [p1, p1],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная слева
+
+                self.ax_top.plot(
+                    [cent_x, sector.coord[0][-1]], [p1, p1],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная справа
 
             # Заливка на профиле участков
             if config.PROFILE_SECTOR_FILL:
@@ -1479,13 +1539,17 @@ class GraphProfile(Graph):
             # Цвет линии дна по участкам
             if config.PROFILE_SECTOR_BOTTOM_LINE:
                 self.ax.plot(
-                    sector.coord[0], sector.coord[1], '-', color=sector.color)
+                    sector.coord[0], sector.coord[1],
+                    '-', color=sector.color)
 
     def set_style(self):
         # Устанавливаем заголовки графиков
         if config.GRAPHICS_TITLES:
             self.ax.set_title(
-                self.morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
+                self.morfostvor.title,
+                color=config.COLOR['title_text'],
+                fontsize=config.FONT_SIZE['title'],
+                y=1.1)
 
         self.ax.set_ylim(self._y_lim)
 
@@ -1549,7 +1613,11 @@ class GraphProfile(Graph):
 
         # Устанавливаем параметры подписей осей
         self.ax.set_ylabel(
-            'H, м', color=config.COLOR['ax_label_text'], fontsize=config.FONT_SIZE['ax_label'], fontstyle='italic')
+            'H, м',
+            color=config.COLOR['ax_label_text'],
+            fontsize=config.FONT_SIZE['ax_label'],
+            fontstyle='italic')
+            
         self.ax.yaxis.set_label_coords(-0.025, 1.08)
 
         # Устанавливает параметры вывода значений осей
@@ -1558,9 +1626,18 @@ class GraphProfile(Graph):
 
         # Настройка параметров отображение сетки
         self.ax.grid(
-            which='major', color=config.COLOR['ax_grid'], linestyle=':', linewidth=1, alpha=0.9)
+            which='major',
+            color=config.COLOR['ax_grid'],
+            linestyle=':',
+            linewidth=1,
+            alpha=0.9)
+
         self.ax.grid(
-            which='minor', color=config.COLOR['ax_grid_sub'], linestyle=':', linewidth=1, alpha=0.9)
+            which='minor',
+            color=config.COLOR['ax_grid_sub'],
+            linestyle=':',
+            linewidth=1,
+            alpha=0.9)
 
     def draw_profile_point_lines(self):
         """
