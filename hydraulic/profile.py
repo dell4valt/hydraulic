@@ -1181,9 +1181,63 @@ class Graph(object):
         self._y_limits = []
         self._y_limits = []
 
+class GraphCurve(Graph):
+    def draw_water_levels(self, morfostvor, ax, x='Q', y='H'):
+        """Функция выводит на график ax отметку и линии пересечения
+           x и y.
+
+        Args:
+            morfostvor (Morfostvor): Объект из которого необходимо брать данные.
+            ax (ax): График для нанесения отметок.
+            x (str, optional): Ось x. Defaults to 'Q'.
+            y (str, optional): Ось y. Defaults to 'H'.
+        """
+        try:
+            if config.HYDRAULIC_CURVE_LEVELS:
+                min_h = min(morfostvor.hydraulic_result['УВ'])
+
+                for index, row in morfostvor.levels_result.iterrows():
+                    x1, x2 = 0, row[x]
+                    y1, y2 = row[y], row[y]
+
+                    # Вывод значений округленных, проверка на содержание значений
+                    try:
+                        water_level_text = ax.text(
+                            0.002,
+                            row[y],
+                            '▼$P_{{{:.2g}\%}} = {H:.2f}$'.format(row['P'], H=row[y]),
+                            color=config.COLOR['water_level_text'],
+                            fontsize=config.FONT_SIZE['water_level'],
+                            weight='bold')
+
+                        water_level_text.set_path_effects([
+                            path_effects.Stroke(
+                                linewidth=3,
+                                foreground='white',
+                                alpha=0.55),
+                            path_effects.Normal()])
+
+                    except ValueError:
+                        water_level_text = ax.text(
+                            0.002,
+                            row[y],
+                            '▼${} = {H:.2f}$'.format(
+                                row['P'],
+                                H=row[y]),
+                            color=config.COLOR['water_level_text'],
+                            fontsize=config.FONT_SIZE['water_level'],
+                            weight='bold')
+
+                        water_level_text.set_path_effects([path_effects.Stroke(
+                            linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
+
+                    ax.plot([x1, x2, x2, x2], [y1, y2, min_h, min_h], linestyle='-',
+                            color='mediumturquoise', marker='o', linewidth=1, markersize=1)
+        except:
+            print('Внимание! Вывод расчётных уровней на график не возможен!')
 
 @dataclass
-class GraphQH(Graph):
+class GraphQH(GraphCurve):
     # Номер рисунка
     _fig_num = 2
 
@@ -1208,43 +1262,13 @@ class GraphQH(Graph):
 
         ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
 
-    def draw_water_levels(self):
-        morfostvor = self.morfostvor
-        ax = self.ax
-        # Вывод расчётных уровней
-        try:
-            if config.HYDRAULIC_CURVE_LEVELS:
-                min_h = min(morfostvor.hydraulic_result['УВ'])
-
-                for index, row in morfostvor.levels_result.iterrows():
-                    x1, x2 = 0, row['Q']
-                    y1, y2 = row['H'], row['H']
-
-                    # Вывод значений округленных, проверка на содержание значений
-                    try:
-                        water_level_text = ax.text(0.002, row['H'], '▼$P_{{{:.2g}\%}} = {H:.2f}$'.format(
-                            row['P'], H=row['H']), color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
-                        water_level_text.set_path_effects([path_effects.Stroke(
-                            linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
-                    except ValueError:
-                        water_level_text = ax.text(0.002, row['H'], '▼${} = {H:.2f}$'.format(
-                            row['P'], H=row['H']), color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
-                        water_level_text.set_path_effects([path_effects.Stroke(
-                            linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
-
-                    ax.plot([x1, x2, x2, x2], [y1, y2, min_h, min_h], linestyle='-',
-                            color='mediumturquoise', marker='o', linewidth=1, markersize=1)
-        except:
-            print('Внимание! Вывод расчётных уровней на график не возможен!')
-        pass
-
     def draw(self):
         self.draw_hydraulic_curve()
-        self.draw_water_levels()
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H')
 
 
 @dataclass
-class GraphQV(Graph):
+class GraphQV(GraphCurve):
     # Номер рисунка
     _fig_num = 3
     _fig_size = (16.5, 11)
@@ -1274,10 +1298,11 @@ class GraphQV(Graph):
 
     def draw(self):
         self.draw_speed_curve()
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H')
 
 
 @dataclass
-class GraphQF(Graph):
+class GraphQF(GraphCurve):
     # Номер рисунка
     _fig_num = 4
     _fig_size = (16.5, 11)
@@ -1307,6 +1332,7 @@ class GraphQF(Graph):
 
     def draw(self):
         self.draw_area_curve()
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H')
 
 
 @dataclass
