@@ -60,8 +60,10 @@ class ProfileSector(object):
         elif floodplain:
             color = [np.random.uniform(.3, 1), 0, 0]
         else:
-            color = [np.random.uniform(0, 1), np.random.uniform(
-                0, 1), np.random.uniform(0, 1)]
+            color = [
+                np.random.uniform(0, 1),
+                np.random.uniform(0, 1),
+                np.random.uniform(0, 1)]
         return color
 
     def get_length(self):
@@ -219,8 +221,8 @@ class WaterSection(object):
         y1, y2 = water_boundary[1][0], water_boundary[1][1]
 
         # Точки смоченного периметра (номера точек под урезом)
-        water_section_x = x[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
-        water_section_y = y[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
+        water_section_x = x[water_boundary[2][0]+1: water_boundary[2][1]+1]
+        water_section_y = y[water_boundary[2][0]+1: water_boundary[2][1]+1]
 
         water_section_x.insert(0, x1)
         water_section_x.insert(len(water_section_x), x2)
@@ -241,15 +243,15 @@ class WaterSection(object):
 
         # Если последняя точка УВ выше последней точки дна, вставляем точку на предпоследнее место
         if water_boundary[3] > 1 and water_level > y[-1]:
-            water_section_x.insert(len(water_section_x) - 1, x[-1])
-            water_section_y.insert(len(water_section_y) - 1, y[-1])
+            water_section_x.insert(len(water_section_x)-1, x[-1])
+            water_section_y.insert(len(water_section_y)-1, y[-1])
 
         # Координаты x и y смоченного периметра
         self.water_section_x = water_section_x
         self.water_section_y = water_section_y
 
         # Определяем ширину водной поверхности
-        self.width = x2 - x1
+        self.width = x2-x1
 
         # Площадь воды
         self.area = poly_area(water_section_x, water_section_y)
@@ -260,7 +262,7 @@ class WaterSection(object):
 
         # Средняя глубина
         if self.area > 0 and self.width > 0:
-            self.average_depth = self.area / self.width
+            self.average_depth = self.area/self.width
         else:
             self.average_depth = 0
 
@@ -272,12 +274,12 @@ class WaterSection(object):
 
         # Смоченный периметр
         for i in range(len(water_section_x) - 1):
-            sum_sqr += (water_section_x[i + 1] - water_section_x[i]) ** 2
+            sum_sqr += (water_section_x[i+1] - water_section_x[i])**2
         self.w_perimeter = np.sqrt(sum_sqr)
 
         # Гидравлический радиус
         if self.area > 0 and self.w_perimeter > 0:
-            self.r_hydraulic = self.area / self.w_perimeter
+            self.r_hydraulic = self.area/self.w_perimeter
         else:
             self.r_hydraulic = 0
 
@@ -336,12 +338,10 @@ class Calculation(object):
     def __shezi_pavlovskij_zheleznjakov(self):
         # Показатель сетепени по формуле Г. В. Железнякова
         y = 1/np.log10(self.h) * np.log10(
-            (1/2 - (self.n * np.sqrt(self.__g)/0.26) * (1 - np.log10(self.h))) +
-            self.n*np.sqrt(
-                1/4 * (1/self.n - np.sqrt(self.__g)/0.13 * (
-                    1 - np.log10(self.h)))**2 +
-                np.sqrt(self.__g)/0.13 * (
-                    1/self.n + np.sqrt(self.__g) * np.log10(self.h))))
+                (1/2 - (self.n * np.sqrt(self.__g)/0.26) * (1 - np.log10(self.h))) +
+                self.n*np.sqrt(1/4 * (1/self.n - np.sqrt(self.__g)/0.13 *
+                (1 - np.log10(self.h)))**2 + np.sqrt(self.__g)/0.13 * 
+                (1/self.n + np.sqrt(self.__g) * np.log10(self.h))))
 
         self.shezi = (1/self.n) * self.h**y
         self.type__ = 'Коэффициент Шези определён по формуле Павловского, показатель степени определён по формуле Железнякова'
@@ -586,8 +586,8 @@ class Morfostvor(object):
             if min(sector.coord[1]) < min(min_sector.coord[1]):
                 min_sector = sector
                 id = i
-            i = i + 1
-        return [id, min_sector]
+            i += 1
+        return (id, min_sector)
 
     def get_q_max(self):
         """
@@ -602,7 +602,7 @@ class Morfostvor(object):
                 q_max = Q[1]
                 obsp = Q[0]
 
-        return [obsp, q_max]
+        return (obsp, q_max)
 
     def doc_export(self, out_filename, r=False):
         print('\n\nФормируем doc файл: ')
