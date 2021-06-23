@@ -1183,7 +1183,7 @@ class Graph(object):
 
 @dataclass
 class GraphCurve(Graph):
-    def draw_water_levels(self, morfostvor, ax, x='Q', y='H'):
+    def draw_water_levels(self, morfostvor, ax, x='Q', y='H', y_min=0):
         """Функция выводит на график ax отметку и линии пересечения
            x и y.
 
@@ -1195,8 +1195,6 @@ class GraphCurve(Graph):
         """
         try:
             if config.HYDRAULIC_CURVE_LEVELS:
-                min_h = min(morfostvor.hydraulic_result['УВ'])
-
                 for index, row in morfostvor.levels_result.iterrows():
                     x1, x2 = 0, row[x]
                     y1, y2 = row[y], row[y]
@@ -1232,7 +1230,7 @@ class GraphCurve(Graph):
                         water_level_text.set_path_effects([path_effects.Stroke(
                             linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
 
-                    ax.plot([x1, x2, x2, x2], [y1, y2, min_h, min_h], linestyle='-',
+                    ax.plot([x1, x2, x2, x2], [y1, y2, y_min, y_min], linestyle='-',
                             color='mediumturquoise', marker='o', linewidth=1, markersize=1)
         except:
             print('Внимание! Вывод расчётных уровней на график не возможен!')
@@ -1262,8 +1260,9 @@ class GraphQH(GraphCurve):
     _ax_title_text = 'Гидравлическая кривая'
 
     def draw(self):
+        y_min = min(self.morfostvor.hydraulic_result['УВ'])
         self.draw_curve(self.morfostvor, self.ax, 'Q', 'УВ')
-        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H')
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H', y_min)
 
 
 @dataclass
