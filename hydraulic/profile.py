@@ -57,8 +57,8 @@ class ProfileSector(object):
             color = [0, .5, 1]
         elif protoka:
             color = [0, np.random.uniform(0, .5), np.random.uniform(.5, 1)]
-        elif floodplain:
-            color = [np.random.uniform(.3, 1), 0, 0]
+        # elif floodplain:
+            # color = [np.random.uniform(.3, 1), 0, 0]
         else:
             color = [
                 np.random.uniform(0, 1),
