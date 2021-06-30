@@ -1341,39 +1341,37 @@ class GraphProfile(Graph):
             self.ax_bottom.xaxis.set_label_coords(1.02, 0.92)
 
         # Горизонтальные разделители подвала (полная рамка)
-        self.ax_bottom_overlay.plot((
-            self.morfostvor.x[0],
-            self.morfostvor.x[-1]),
-            (0, 0),
-            color=config.COLOR['border'],
-            linewidth=config.LINE_WIDTH['profile_bottom'],
-            linestyle='solid')
-
-        self.ax_bottom_overlay.plot((
-            self.morfostvor.x[0],
-            self.morfostvor.x[-1]),
-            (5, 5),
-            color=config.COLOR['border'],
-            linewidth=config.LINE_WIDTH['profile_bottom'],
-            linestyle='solid')
-
-        self.ax_bottom_overlay.plot((
-            self.morfostvor.x[0],
-            self.morfostvor.x[-1]),
-            (10, 10),
-            color=config.COLOR['border'],
-            linewidth=config.LINE_WIDTH['profile_bottom'],
-            linestyle='solid')
-
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (15, 15),
-                                    color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
         self.ax_bottom_overlay.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[-1]), (20, 20), alpha=0)
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (0, 0),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (5, 5),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (10, 10),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (15, 15),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (20, 20),
+            alpha=0)
 
         # Технический разделитель (для увеличения размера границ)
         self.ax_bottom.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[0]),
-            (30, 40),
+            (self.morfostvor.x[0], self.morfostvor.x[0]), (30, 40),
             alpha=0)
 
         # Цикл по всем точкам
@@ -1424,6 +1422,7 @@ class GraphProfile(Graph):
                     fontsize=config.FONT_SIZE['bottom_main'],
                     verticalalignment='center',
                     horizontalalignment='center')
+
             except ValueError:
                 print('\nОшибка в указании параметров участков (коэффициент шероховатости или разделение на участки). Проверить данные.')
                 sys.exit(1)
@@ -1486,14 +1485,14 @@ class GraphProfile(Graph):
                                  verticalalignment='center', horizontalalignment='center',)
 
                 # Вывод разделителя участков профиля
-                self.ax_top.plot([
-                    sector.coord[0][0], sector.coord[0][0]], [p0, p3],
+                self.ax_top.plot(
+                    [sector.coord[0][0], sector.coord[0][0]], [p0, p3],
                     color=config.COLOR['sector_line'],
                     linestyle='-',
                     linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная слева
 
-                self.ax_top.plot([
-                    sector.coord[0][-1], sector.coord[0][-1]], [p0, p3],
+                self.ax_top.plot(
+                    [sector.coord[0][-1], sector.coord[0][-1]], [p0, p3],
                     color=config.COLOR['sector_line'],
                     linestyle='-',
                     linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная справа
@@ -1700,12 +1699,12 @@ class GraphProfile(Graph):
             weight='bold',
             horizontalalignment='center',
             verticalalignment='center')
-        # top_limit_text.set_path_effects([path_effects.Stroke(
-        #     linewidth=3, foreground='white', alpha=0.95), path_effects.Normal()])
-        # top_limit_text.set_path_effects([path_effects.Stroke(
-        # linewidth=3, foreground='white', alpha=0.95), path_effects.Normal()])
-        self.ax.plot([x1, x2], [h, h], color=config.COLOR['top_limit_line'],
-                     linestyle='-.', linewidth=config.LINE_WIDTH['top_limit_line'])
+
+        self.ax.plot(
+            [x1, x2], [h, h],
+            color=config.COLOR['top_limit_line'],
+            linestyle='-.',
+            linewidth=config.LINE_WIDTH['top_limit_line'])
 
         self._y_limits.append(h)
         self._update_limit()
@@ -1789,9 +1788,16 @@ class GraphProfile(Graph):
                         linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
                 except ValueError:
                     # Если обеспеченность записана строкой
-                    waterline_text = self.ax.text(x, y, f"{row['P']} = {row['H']:.2f}", color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
+                    waterline_text = self.ax.text(
+                        x, y,
+                        f"{row['P']} = {row['H']:.2f}",
+                        color=config.COLOR['water_level_text'],
+                        fontsize=config.FONT_SIZE['water_level'],
+                        weight='bold')
+
                     waterline_text.set_path_effects([path_effects.Stroke(
-                        linewidth=1.8, foreground='white', alpha=0.55), path_effects.Normal()])
+                        linewidth=1.8, foreground='white', alpha=0.55),
+                        path_effects.Normal()])
 
             try:
                 label.append(f"$P_{{{row['P']:2g}\%}} = {water_level:.2f}$ м\n")
