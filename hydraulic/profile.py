@@ -549,7 +549,7 @@ class Morfostvor(object):
                 self.x.append(__raw_data[i][__x_coord_col])
                 self.y.append(__raw_data[i][__y_coord_col])
                 self.situation.append(__raw_data[i][__situation_col])
-        print("успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]} м")
+        print(f"успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]:.2f} м")
 
         self.ele_min = min(self.y)  # Минимальная отметка профиля
         self.ele_max = max(self.y)  # Максимальная отметка профиля
@@ -603,9 +603,20 @@ class Morfostvor(object):
     def doc_export(self, out_filename, r=False):
         print('\n\nФормируем doc файл: ')
         doc_file = out_filename
+        template_file = Path('hydraulic/assets/report_template.docx')
+
+        # Создаем временную папку, и папку для графики если они не существуют
+        temp_dir = Path(config.TEMP_DIR_NAME)
+        temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Создаем папку для сохранения отдельных изображений
+        if config.PROFILE_SAVE_PICTURES:
+            picture_dir = Path(
+                str(Path(out_filename).parents[0]) + '/' + config.GRAPHICS_DIR_NAME)
+            picture_dir.mkdir(parents=True, exist_ok=True)        
 
         if r:
-            doc = DocxTemplate(Path('hydraulic/assets/report_template.docx'))
+            doc = DocxTemplate(template_file)
         else:
             if os.path.isfile(doc_file):
                 doc = Document(doc_file)
@@ -614,12 +625,10 @@ class Morfostvor(object):
                 run.add_break(WD_BREAK.PAGE)
             else:
                 if config.REWRITE_DOC_FILE:
-                    print(
-                        '    — Включена перезапись файла, удаляем старый и создаём новый.')
+                    print('    — Включена перезапись файла, удаляем старый и создаём новый.')
                 else:
                     print('    — Файл не найден! Создаём новый.')
-                doc = DocxTemplate(
-                    Path('hydraulic/assets/report_template.docx'))
+                doc = DocxTemplate(template_file)
 
         if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
@@ -651,15 +660,6 @@ class Morfostvor(object):
             self.fig_profile.draw_waterline(
                 round(self.waterline, 2), color='blue', linestyle='-')
 
-        # Создаем временную папку, и папку для графики если они не существуют
-        Path(config.TEMP_DIR_NAME).mkdir(parents=True, exist_ok=True)
-
-        # Создаем папку для сохранения отдельных изображений
-        if config.PROFILE_SAVE_PICTURES:
-            picture_dir = Path(
-                str(Path(out_filename).parents[0]) + '/' + config.GRAPHICS_DIR_NAME)
-            picture_dir.mkdir(parents=True, exist_ok=True)
-
         print('    — Сохраняем график профиля ... ', end='')
         self.fig_profile.fig.savefig(Path(f"{config.TEMP_DIR_NAME}/Profile.png", dpi=config.FIG_DPI))
         print('успешно!')
@@ -674,8 +674,7 @@ class Morfostvor(object):
 
         # Подпись рисунков
         if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                'Рисунок — ' + self.fig_profile.morfostvor.title, style='Р-название')
+            doc.add_paragraph('Рисунок — ' + self.fig_profile.morfostvor.title, style='Р-название')
 
         print('успешно!')
 
@@ -704,8 +703,7 @@ class Morfostvor(object):
             print('успешно!')
 
             if config.GRAPHICS_TITLES_TEXT:
-                doc.add_paragraph(
-                    'Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
+                doc.add_paragraph('Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
 
         if config.AREA_CURVE:
             print('    — Сохраняем график кривой площадей ... ', end='')
@@ -717,8 +715,7 @@ class Morfostvor(object):
             print('успешно!')
 
             if config.GRAPHICS_TITLES_TEXT:
-                doc.add_paragraph(
-                    'Рисунок — ' + self.fig_QF._ax_title_text, style='Р-название')
+                doc.add_paragraph('Рисунок — ' + self.fig_QF._ax_title_text, style='Р-название')
 
         # Проверяем имя файла
         profile_name = sanitize_filename(self.title)
@@ -740,10 +737,8 @@ class Morfostvor(object):
         print('успешно!')
 
         # levels_result = self.levels_result
-        levels_result = self.levels_result[[
-            'P', 'Q', 'H']].round(3).values.tolist()
-        write_table(doc, levels_result, param,
-                    f"Таблица - Расчётные уровни {self.strings['type']}")
+        levels_result = self.levels_result[['P', 'Q', 'H']].round(3).values.tolist()
+        write_table(doc, levels_result, param, f"Таблица - Расчётные уровни {self.strings['type']}")
 
         # Вывод таблицы участков
         print('    — Записываем таблицу участков ... ', end='')
@@ -757,8 +752,7 @@ class Morfostvor(object):
             sectors.append([i, sector.name, sector.slope, sector.roughness])
             i += 1
 
-        write_table(doc, sectors, param,
-                    'Таблица - Расчётные участки и их параметры')
+        write_table(doc, sectors, param, 'Таблица - Расчётные участки и их параметры')
         print('успешно!')
 
         print('    — Записываем таблицу кривой расхода воды ... ', end='')
@@ -906,12 +900,10 @@ class Morfostvor(object):
                     # Расчетный участок находится справа от начального
                     # начинаем заполнять с крайней левой точки
                     elif sector.id > min_sector[1].id:
-                        water = WaterSection(
-                            x, y, water_level, start_point=[0, y[0]])
+                        water = WaterSection(x, y, water_level, start_point=[0, y[0]])
 
                     # Расчёт параметров для воды
-                    cc = Calculation(
-                        h=water.average_depth, n=sector.roughness, i=sector.slope, a=water.area)
+                    cc = Calculation(h=water.average_depth, n=sector.roughness, i=sector.slope, a=water.area)
 
                     # Добавляем в список с результирующими значениями значения по секторам для последующего суммирования/вычисления средних значений
                     # TODO: создать датафрейм с результатами
