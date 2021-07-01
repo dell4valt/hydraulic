@@ -1102,9 +1102,9 @@ class Morfostvor(object):
         df_result.loc[ (a, 'Сумма'), 'Hмакс'] = df_result.groupby(level=0)['Hмакс'].transform('max')
         df_result.loc[ (a, 'Сумма'), 'Q'] = df_result.groupby(level=0)['Q'].transform('sum')
         df_result.loc[ (a, 'Сумма'), 'V'] = (df_result.groupby(level=0)['Q'].transform('sum') / df_result.groupby(level=0)['F'].transform('sum'))
-        df_result.loc[ (a, 'Сумма'), 'Shezi'] = df_result.groupby(level=0)['Shezi'].transform('mean')
+        df_result.loc[ (a, 'Сумма'), 'Shezi'] = df_result.groupby(level=0)['Shezi'].transform('sum') / (df_result.groupby(level=0)['Shezi'].transform('count') - 1)
 
-        print(df_result)
+        # print(df_result)
 
 @dataclass
 class Graph(object):
