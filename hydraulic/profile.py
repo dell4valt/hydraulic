@@ -1242,12 +1242,18 @@ class GraphQV(Graph):
 
         # Отрисовка суммирующей кривой на графике
         ax.plot(morfostvor.hydraulic_result['Q'],
-                morfostvor.hydraulic_result['V'], label='Сумма', linewidth=3, color='red')
+                morfostvor.hydraulic_result['V'],
+                label='Сумма',
+                linewidth=3,
+                color='red')
 
         # Отрисовка кривых по участкам
         for sector in result_sectors:
-            ax.plot(result_sectors[sector]['Q'], result_sectors[sector]['V'], '--',
-                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
+            ax.plot(result_sectors[sector]['Q'],
+                    result_sectors[sector]['V'],
+                    '--',
+                    label=sector,
+                    color=self.sector_colors[sector])
 
         ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
 
@@ -1313,8 +1319,11 @@ class GraphProfile(Graph):
 
             self.ax_bottom.xaxis.set_label_coords(1.02, 0.92)
         # Горизонтальные разделители подвала (полная рамка)
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (0, 0), color=config.COLOR['border'],
-                                    linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]),
+                                    (0, 0),
+                                    color=config.COLOR['border'],
+                                    linewidth=config.LINE_WIDTH['profile_bottom'],
+                                    linestyle='solid')
         self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (5, 5), color=config.COLOR['border'],
                                     linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
         self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (10, 10),
