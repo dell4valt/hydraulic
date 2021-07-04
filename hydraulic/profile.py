@@ -57,11 +57,13 @@ class ProfileSector(object):
             color = [0, .5, 1]
         elif protoka:
             color = [0, np.random.uniform(0, .5), np.random.uniform(.5, 1)]
-        elif floodplain:
-            color = [np.random.uniform(.3, 1), 0, 0]
+        # elif floodplain:
+            # color = [np.random.uniform(.3, 1), 0, 0]
         else:
-            color = [np.random.uniform(0, 1), np.random.uniform(
-                0, 1), np.random.uniform(0, 1)]
+            color = [
+                np.random.uniform(0, 1),
+                np.random.uniform(0, 1),
+                np.random.uniform(0, 1)]
         return color
 
     def get_length(self):
@@ -219,8 +221,8 @@ class WaterSection(object):
         y1, y2 = water_boundary[1][0], water_boundary[1][1]
 
         # Точки смоченного периметра (номера точек под урезом)
-        water_section_x = x[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
-        water_section_y = y[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
+        water_section_x = x[water_boundary[2][0]+1: water_boundary[2][1]+1]
+        water_section_y = y[water_boundary[2][0]+1: water_boundary[2][1]+1]
 
         water_section_x.insert(0, x1)
         water_section_x.insert(len(water_section_x), x2)
@@ -241,15 +243,15 @@ class WaterSection(object):
 
         # Если последняя точка УВ выше последней точки дна, вставляем точку на предпоследнее место
         if water_boundary[3] > 1 and water_level > y[-1]:
-            water_section_x.insert(len(water_section_x) - 1, x[-1])
-            water_section_y.insert(len(water_section_y) - 1, y[-1])
+            water_section_x.insert(len(water_section_x)-1, x[-1])
+            water_section_y.insert(len(water_section_y)-1, y[-1])
 
         # Координаты x и y смоченного периметра
         self.water_section_x = water_section_x
         self.water_section_y = water_section_y
 
         # Определяем ширину водной поверхности
-        self.width = x2 - x1
+        self.width = x2-x1
 
         # Площадь воды
         self.area = poly_area(water_section_x, water_section_y)
@@ -260,7 +262,7 @@ class WaterSection(object):
 
         # Средняя глубина
         if self.area > 0 and self.width > 0:
-            self.average_depth = self.area / self.width
+            self.average_depth = self.area/self.width
         else:
             self.average_depth = 0
 
@@ -272,12 +274,12 @@ class WaterSection(object):
 
         # Смоченный периметр
         for i in range(len(water_section_x) - 1):
-            sum_sqr += (water_section_x[i + 1] - water_section_x[i]) ** 2
+            sum_sqr += (water_section_x[i+1] - water_section_x[i])**2
         self.w_perimeter = np.sqrt(sum_sqr)
 
         # Гидравлический радиус
         if self.area > 0 and self.w_perimeter > 0:
-            self.r_hydraulic = self.area / self.w_perimeter
+            self.r_hydraulic = self.area/self.w_perimeter
         else:
             self.r_hydraulic = 0
 
@@ -336,12 +338,10 @@ class Calculation(object):
     def __shezi_pavlovskij_zheleznjakov(self):
         # Показатель сетепени по формуле Г. В. Железнякова
         y = 1/np.log10(self.h) * np.log10(
-            (1/2 - (self.n * np.sqrt(self.__g)/0.26) * (1 - np.log10(self.h))) +
-            self.n*np.sqrt(
-                1/4 * (1/self.n - np.sqrt(self.__g)/0.13 * (
-                    1 - np.log10(self.h)))**2 +
-                np.sqrt(self.__g)/0.13 * (
-                    1/self.n + np.sqrt(self.__g) * np.log10(self.h))))
+                (1/2 - (self.n * np.sqrt(self.__g)/0.26) * (1 - np.log10(self.h))) +
+                self.n*np.sqrt(1/4 * (1/self.n - np.sqrt(self.__g)/0.13 *
+                (1 - np.log10(self.h)))**2 + np.sqrt(self.__g)/0.13 * 
+                (1/self.n + np.sqrt(self.__g) * np.log10(self.h))))
 
         self.shezi = (1/self.n) * self.h**y
         self.type__ = 'Коэффициент Шези определён по формуле Павловского, показатель степени определён по формуле Железнякова'
@@ -412,8 +412,7 @@ class Morfostvor(object):
                 'Неверно выбран тип расчёта в конфигурационном файле. Программа будет завершена.')
             sys.exit(0)
 
-        self.qh_title = 'Кривая расхода {} Q = f(H)'.format(
-            self.strings['type'])
+        self.qh_title = f"Кривая расхода {self.strings['type']} Q = f(H)"
 
     def read_xls(self, file_path, page=0):
         """Функция чтения из xls файла."""
@@ -422,8 +421,7 @@ class Morfostvor(object):
         try:
             data_file = xlrd.open_workbook(file_path)  # Открываем xls файл
         except FileNotFoundError:
-            print(
-                'Ошибка! Файл {} не найден. Программа будет завершена.'.format(file_path))
+            print(f"Ошибка! Файл {file_path} не найден. Программа будет завершена.")
             sys.exit(33)
 
         try:
@@ -435,8 +433,7 @@ class Morfostvor(object):
             sys.exit(1)
 
         sheet_title = sheet.name
-        print('Считываем исходные данные из .xlsx файла: {path}, страница {page} ({title}).'.format(
-            path=file_path, page=page, title=sheet_title))
+        print(f"Считываем исходные данные из .xlsx файла: {file_path}, страница {page} ({sheet_title}).")
 
         __raw_data = []  # Сырые строки xlsx файла
         i = 0
@@ -518,7 +515,7 @@ class Morfostvor(object):
                 print('Завершаем программу.')
                 sys.exit(3)
 
-            print('успешно, найдено {num} участка.\n'.format(num=len(sectors)))
+            print(f"успешно, найдено {len(sectors)} участка.\n")
             return sectors
 
         # Перебираем все строки
@@ -552,8 +549,7 @@ class Morfostvor(object):
                 self.x.append(__raw_data[i][__x_coord_col])
                 self.y.append(__raw_data[i][__y_coord_col])
                 self.situation.append(__raw_data[i][__situation_col])
-        print('успешно, найдено {} точки, длина профиля {} м'.format(
-            len(self.x), self.x[-1]))
+        print(f"успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]:.2f} м")
 
         self.ele_min = min(self.y)  # Минимальная отметка профиля
         self.ele_max = max(self.y)  # Максимальная отметка профиля
@@ -566,7 +562,7 @@ class Morfostvor(object):
         # Удаляем пустые обеспеченности из списка обеспеченностей
         self.probability = [x for x in self.probability if x != ['', '']]
 
-        print('успешно, найдено {} обеспеченностей.'.format(len(self.probability)))
+        print(f"успешно, найдено {len(self.probability)} обеспеченностей.")
 
         # Обработка и получение данных по секторам из "сырых" данных
         self.sectors = get_sectors(self)
@@ -586,8 +582,8 @@ class Morfostvor(object):
             if min(sector.coord[1]) < min(min_sector.coord[1]):
                 min_sector = sector
                 id = i
-            i = i + 1
-        return [id, min_sector]
+            i += 1
+        return (id, min_sector)
 
     def get_q_max(self):
         """
@@ -602,14 +598,25 @@ class Morfostvor(object):
                 q_max = Q[1]
                 obsp = Q[0]
 
-        return [obsp, q_max]
+        return (obsp, q_max)
 
     def doc_export(self, out_filename, r=False):
         print('\n\nФормируем doc файл: ')
         doc_file = out_filename
+        template_file = Path('hydraulic/assets/report_template.docx')
+
+        # Создаем временную папку, и папку для графики если они не существуют
+        temp_dir = Path(config.TEMP_DIR_NAME)
+        temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Создаем папку для сохранения отдельных изображений
+        if config.PROFILE_SAVE_PICTURES:
+            picture_dir = Path(
+                str(Path(out_filename).parents[0]) + '/' + config.GRAPHICS_DIR_NAME)
+            picture_dir.mkdir(parents=True, exist_ok=True)        
 
         if r:
-            doc = DocxTemplate(Path('hydraulic/assets/report_template.docx'))
+            doc = DocxTemplate(template_file)
         else:
             if os.path.isfile(doc_file):
                 doc = Document(doc_file)
@@ -618,17 +625,17 @@ class Morfostvor(object):
                 run.add_break(WD_BREAK.PAGE)
             else:
                 if config.REWRITE_DOC_FILE:
-                    print(
-                        '    — Включена перезапись файла, удаляем старый и создаём новый.')
+                    print('    — Включена перезапись файла, удаляем старый и создаём новый.')
                 else:
                     print('    — Файл не найден! Создаём новый.')
-                doc = DocxTemplate(
-                    Path('hydraulic/assets/report_template.docx'))
+                doc = DocxTemplate(template_file)
 
         if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
         if config.SPEED_CURVE:
             self.fig_QV = GraphQV(self)
+        if config.AREA_CURVE:
+            self.fig_QF = GraphQF(self)
 
         self.fig_profile = GraphProfile(self)
 
@@ -653,18 +660,8 @@ class Morfostvor(object):
             self.fig_profile.draw_waterline(
                 round(self.waterline, 2), color='blue', linestyle='-')
 
-        # Создаем временную папку, и папку для графики если они не существуют
-        Path(config.TEMP_DIR_NAME).mkdir(parents=True, exist_ok=True)
-
-        # Создаем папку для сохранения отдельных изображений
-        if config.PROFILE_SAVE_PICTURES:
-            picture_dir = Path(
-                str(Path(out_filename).parents[0]) + '/' + config.GRAPHICS_DIR_NAME)
-            picture_dir.mkdir(parents=True, exist_ok=True)
-
         print('    — Сохраняем график профиля ... ', end='')
-        self.fig_profile.fig.savefig(Path(
-            '{temp_dir}/Profile.png'.format(temp_dir=config.TEMP_DIR_NAME), dpi=config.FIG_DPI))
+        self.fig_profile.fig.savefig(Path(f"{config.TEMP_DIR_NAME}/Profile.png", dpi=config.FIG_DPI))
         print('успешно!')
 
         # Вставляем заголовок профиля
@@ -672,25 +669,21 @@ class Morfostvor(object):
 
         # Добавляем изображения профиля и гидравлической кривой
         print('    — Вставляем графику (профиль и кривую)... ', end='')
-        doc.add_picture(
-            '{temp_dir}/Profile.png'.format(temp_dir=config.TEMP_DIR_NAME), width=Cm(16.5))
+        doc.add_picture(f"{config.TEMP_DIR_NAME}/Profile.png", width=Cm(16.5))
         setLastParagraphStyle('Р-рисунок', doc)
 
         # Подпись рисунков
         if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                'Рисунок — ' + self.fig_profile.morfostvor.title, style='Р-название')
+            doc.add_paragraph('Рисунок — ' + self.fig_profile.morfostvor.title, style='Р-название')
 
         print('успешно!')
 
         if config.HYDRAULIC_CURVE:
             print('    — Сохраняем график гидравлической кривой ... ', end='')
-            self.fig_QH.fig.savefig(Path(
-                '{temp_dir}/QH.png'.format(temp_dir=config.TEMP_DIR_NAME)), dpi=config.FIG_DPI)
+            self.fig_QH.fig.savefig(Path(f"{config.TEMP_DIR_NAME}/QH.png", dpi=config.FIG_DPI))
             print('успешно!')
 
-            doc.add_picture(
-                '{temp_dir}/QH.png'.format(temp_dir=config.TEMP_DIR_NAME), width=Cm(16.5))
+            doc.add_picture(f"{config.TEMP_DIR_NAME}/QH.png", width=Cm(16.5))
             setLastParagraphStyle('Р-рисунок', doc)
 
             if config.GRAPHICS_TITLES_TEXT:
@@ -702,32 +695,39 @@ class Morfostvor(object):
 
         if config.SPEED_CURVE:
             print('    — Сохраняем график кривой скоростей ... ', end='')
-            self.fig_QV.fig.savefig(Path(
-                '{temp_dir}/QV.png'.format(temp_dir=config.TEMP_DIR_NAME)), dpi=config.FIG_DPI)
+            self.fig_QV.fig.savefig(Path(f"{config.TEMP_DIR_NAME}/QV.png", dpi=config.FIG_DPI))
             print('успешно!')
 
-            doc.add_picture(
-                '{temp_dir}/QV.png'.format(temp_dir=config.TEMP_DIR_NAME), width=Cm(16.5))
+            doc.add_picture(f"{config.TEMP_DIR_NAME}/QV.png", width=Cm(16.5))
             setLastParagraphStyle('Р-рисунок', doc)
             print('успешно!')
 
             if config.GRAPHICS_TITLES_TEXT:
-                doc.add_paragraph(
-                    'Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
+                doc.add_paragraph('Рисунок — ' + self.fig_QV._ax_title_text, style='Р-название')
+
+        if config.AREA_CURVE:
+            print('    — Сохраняем график кривой площадей ... ', end='')
+            self.fig_QF.fig.savefig(Path(f"{config.TEMP_DIR_NAME}/QF.png", dpi=config.FIG_DPI))
+            print('успешно!')
+
+            doc.add_picture(f"{config.TEMP_DIR_NAME}/QF.png", width=Cm(16.5))
+            setLastParagraphStyle('Р-рисунок', doc)
+            print('успешно!')
+
+            if config.GRAPHICS_TITLES_TEXT:
+                doc.add_paragraph('Рисунок — ' + self.fig_QF._ax_title_text, style='Р-название')
 
         # Проверяем имя файла
         profile_name = sanitize_filename(self.title)
 
         # Сохраняем картинки в отдельные файлы в папку graphics
         if config.PROFILE_SAVE_PICTURES:
-            self.fig_profile.fig.savefig(Path('{graphics_dir}/{profile_name}.png'.format(
-                graphics_dir=picture_dir, profile_name=profile_name)), dpi=config.FIG_DPI)
-        if config.HYDRAULIC_CURVE_SAVE_PICTURES:
-            self.fig_QH.fig.savefig(Path('{graphics_dir}/{profile_name}_QH.png'.format(
-                graphics_dir=picture_dir, profile_name=profile_name)), dpi=config.FIG_DPI)
-        if config.SPEED_CURVE_SAVE_PICTURES:
-            self.fig_QV.fig.savefig(Path('{graphics_dir}/{profile_name}_QV.png'.format(
-                graphics_dir=picture_dir, profile_name=profile_name)), dpi=config.FIG_DPI)
+            self.fig_profile.fig.savefig(Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI))
+        if config.CURVE_SAVE_PICTURES:
+            self.fig_QH.fig.savefig(Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI))
+            self.fig_QV.fig.savefig(Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI))
+            self.fig_QF.fig.savefig(Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI))
+
 
         # Вывод таблицы расчётных уровней воды
         print('    — Записываем таблицу уровней воды ... ', end='')
@@ -737,10 +737,8 @@ class Morfostvor(object):
         print('успешно!')
 
         # levels_result = self.levels_result
-        levels_result = self.levels_result[[
-            'P', 'Q', 'H']].round(3).values.tolist()
-        write_table(doc, levels_result, param,
-                    'Таблица - Расчётные уровни {}'.format(self.strings['type']))
+        levels_result = self.levels_result[['P', 'Q', 'H']].round(3).values.tolist()
+        write_table(doc, levels_result, param, f"Таблица - Расчётные уровни {self.strings['type']}")
 
         # Вывод таблицы участков
         print('    — Записываем таблицу участков ... ', end='')
@@ -754,8 +752,7 @@ class Morfostvor(object):
             sectors.append([i, sector.name, sector.slope, sector.roughness])
             i += 1
 
-        write_table(doc, sectors, param,
-                    'Таблица - Расчётные участки и их параметры')
+        write_table(doc, sectors, param, 'Таблица - Расчётные участки и их параметры')
         print('успешно!')
 
         print('    — Записываем таблицу кривой расхода воды ... ', end='')
@@ -796,9 +793,8 @@ class Morfostvor(object):
         table_round = table_round[table_round.index % divider == 0]
         sum_hydraulic = table_round.values.tolist()  # Переводим в список
         write_table(doc, sum_hydraulic, param,
-                    'Таблица - Параметры расчёта кривой расхода {}'.format(self.strings['type']))
-        doc.add_paragraph('Расчётный шаг: {:g} см. В таблице приведён каждый {}-й результат расчёта.'.format(
-            self.dH, divider), style='Т-примечание')
+                    f"Таблица - Параметры расчёта кривой расхода {self.strings['type']}")
+        doc.add_paragraph(f"Расчётный шаг: {self.dH:g} см. В таблице приведён каждый {divider}-й результат расчёта.", style='Т-примечание')
         print('успешно!')
 
         # Удаляем объект профиля
@@ -814,11 +810,10 @@ class Morfostvor(object):
 
         # Удаляем временную папку со всем содержимым
         print('    — Удаляем временную папку ... ', end='')
-        rmdir(Path('{temp_dir}'.format(temp_dir=config.TEMP_DIR_NAME)))
+        rmdir(Path(f"{config.TEMP_DIR_NAME}"))
         print('успешно!')
 
-        print(
-            '\nФайл {filename} сохранён успешно.\n-------------------------------------\n'.format(filename=doc_file))
+        print(f"\nФайл {doc_file} сохранён успешно.\n-------------------------------------\n")
 
     def calculate(self):
         # Значение расхода до которого необходимо считать (максимальной введенная обеспеченности + 20%)
@@ -863,10 +858,12 @@ class Morfostvor(object):
             0
         ])
 
+        col = ['Участок', 'УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
+        df_result = pd.DataFrame(columns=col, dtype=float)
+
         # Цикл расчёта до максимальной обеспеченности + 20% из исходных данных
         while consumption_summ < consumption_check:
-            print('Выполняем расчёты для уровня {water_level:.2f}'.format(
-                water_level=water_level), end='\r')
+            print(f"Выполняем расчёты для уровня {water_level:.2f}", end='\r')
 
             consumption_summ = 0
             wc_list = list()
@@ -906,12 +903,10 @@ class Morfostvor(object):
                     # Расчетный участок находится справа от начального
                     # начинаем заполнять с крайней левой точки
                     elif sector.id > min_sector[1].id:
-                        water = WaterSection(
-                            x, y, water_level, start_point=[0, y[0]])
+                        water = WaterSection(x, y, water_level, start_point=[0, y[0]])
 
                     # Расчёт параметров для воды
-                    cc = Calculation(
-                        h=water.average_depth, n=sector.roughness, i=sector.slope, a=water.area)
+                    cc = Calculation(h=water.average_depth, n=sector.roughness, i=sector.slope, a=water.area)
 
                     # Добавляем в список с результирующими значениями значения по секторам для последующего суммирования/вычисления средних значений
                     # TODO: создать датафрейм с результатами
@@ -928,8 +923,7 @@ class Morfostvor(object):
                     summ_result[4].append(water.max_depth)  # Hмакс
                     summ_result[5].append(cc.v)  # V
                     summ_result[6].append(cc.q)  # Q
-                    summ_result[7].append('{sector}: {shezi}'.format(
-                        sector=sector.name, shezi=cc.shezi))  # Шези
+                    summ_result[7].append(f"{sector.name}: {cc.shezi}")  # Шези
 
                     wc_list.append(cc.q)
 
@@ -973,8 +967,9 @@ class Morfostvor(object):
                         summ_result[4].append(water.max_depth)  # Hмакс
                         summ_result[5].append(cc.v)  # V
                         summ_result[6].append(cc.q)  # Q
-                        summ_result[7].append('{sector}: {shezi}'.format(
-                            sector=sector.name, shezi=cc.shezi))  # Шези
+                        summ_result[7].append(f"{sector.name}: {cc.shezi}")  # Шези
+
+                        # Добавляем в список с результирующими значениями значения по секторам для последующего суммирования/вычисления средних значений
 
                         wc_list.append(cc.q)
 
@@ -984,17 +979,45 @@ class Morfostvor(object):
                             result[sector.name].append(
                                 [min(self.y), 0, 0, 0, 0, 0, 0])
                             first_calc = False
+                            
+                            r = dict(zip(col,
+                                        [sector.name,
+                                        round(water_level, 2),
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0]))
 
-                        # Записываем значения по каждому сектору в отдельный список
-                        try:
-                            result[sector.name].append(
-                                [water_level, water.area, water.width, water.average_depth, water.max_depth, cc.v,
-                                 cc.q, cc.v])
-                        except KeyError:
-                            result[sector.name] = list()
-                            result[sector.name].append(
-                                [water_level, water.area, water.width, water.average_depth, water.max_depth, cc.v,
-                                 cc.q, cc.shezi])
+                        else:
+                            r = dict(zip(col,
+                                        [sector.name,
+                                        round(water_level, 2),
+                                        water.area,
+                                        water.width,
+                                        water.average_depth,
+                                        water.max_depth,
+                                        cc.v,
+                                        cc.q,
+                                        cc.shezi]))
+
+                            # Записываем значения по каждому сектору в отдельный список
+                            try:
+                                result[sector.name].append(
+                                    [water_level, water.area, water.width, water.average_depth, water.max_depth, cc.v,
+                                    cc.q, cc.v])
+
+
+                            except KeyError:
+                                result[sector.name] = list()
+                                result[sector.name].append(
+                                    [water_level, water.area, water.width, water.average_depth, water.max_depth, cc.v,
+                                    cc.q, cc.shezi])
+                        
+                        # Добавляем в список с результирующими значениями значения по секторам для последующего суммирования/вычисления средних значений
+                        df_result = df_result.append(r, ignore_index=True)
 
             consumption_summ += sum(wc_list)
             area_summ += sum(area_list)
@@ -1020,6 +1043,10 @@ class Morfostvor(object):
                 Sh
             ])
 
+            # Пустые значения для суммирующей кривой
+            r_sum = dict(zip(col, ['Сумма', round(water_level, 2),  0,  0,  0,  0,  0,  0,  0]))
+            df_result = df_result.append(r_sum, ignore_index=True)
+
             water_level += dH
             n += 1
 
@@ -1038,26 +1065,46 @@ class Morfostvor(object):
 
         # Находим H от Q
         result = pd.DataFrame(
-            columns=['P', 'Q', 'H']
+            columns=['P', 'Q', 'H', 'f']
         )
 
         for element in self.probability:
             fQ = interpolate.interp1d(df['Q'], df['УВ'])
             fV = interpolate.interp1d(df['Q'], df['V'])
+            fF = interpolate.interp1d(df['Q'], df['F'])
             h = float(fQ(element[1]))
             v = float(fV(element[1]))
+            f = float(fF(element[1]))
 
             result = result.append(
                 {'P': element[0],
                  'H': h,
                  'Q': element[1],
                  'V': v,
+                 'F': f,
                  }, ignore_index=True
             )
+
         self.levels_result = result
         self.levels_result_sectors = df_list
         self.hydraulic_result = df
 
+        # TODO: CLEAR
+        pd.set_option('display.max_rows', 1000)
+        df_result = df_result.set_index(['УВ', 'Участок'])
+
+        a = df_result.index.levels[0]
+
+        # Заполняем суммирующие данные
+        df_result.loc[ (a, 'Сумма'), 'F'] = df_result.groupby(level=0)['F'].transform('sum')
+        df_result.loc[ (a, 'Сумма'), 'B'] = df_result.groupby(level=0)['B'].transform('sum')
+        df_result.loc[ (a, 'Сумма'), 'Hср'] = df_result.groupby(level=0)['F'].transform('sum') / df_result.groupby(level=0)['B'].transform('sum')
+        df_result.loc[ (a, 'Сумма'), 'Hмакс'] = df_result.groupby(level=0)['Hмакс'].transform('max')
+        df_result.loc[ (a, 'Сумма'), 'Q'] = df_result.groupby(level=0)['Q'].transform('sum')
+        df_result.loc[ (a, 'Сумма'), 'V'] = (df_result.groupby(level=0)['Q'].transform('sum') / df_result.groupby(level=0)['F'].transform('sum'))
+        df_result.loc[ (a, 'Сумма'), 'Shezi'] = df_result.groupby(level=0)['Shezi'].transform('sum') / (df_result.groupby(level=0)['Shezi'].transform('count') - 1)
+
+        # print(df_result)
 
 @dataclass
 class Graph(object):
@@ -1160,9 +1207,74 @@ class Graph(object):
         self._y_limits = []
         self._y_limits = []
 
+@dataclass
+class GraphCurve(Graph):
+    def draw_water_levels(self, morfostvor, ax, x='Q', y='H', y_min=0):
+        """Функция выводит на график ax отметку и линии пересечения
+           x и y.
+
+        Args:
+            morfostvor (Morfostvor): Объект из которого необходимо брать данные.
+            ax (ax): График для нанесения отметок.
+            x (str, optional): Ось x. Defaults to 'Q'.
+            y (str, optional): Ось y. Defaults to 'H'.
+        """
+        try:
+            if config.HYDRAULIC_CURVE_LEVELS:
+                for index, row in morfostvor.levels_result.iterrows():
+                    x1, x2 = 0, row[x]
+                    y1, y2 = row[y], row[y]
+
+                    # Вывод значений округленных, проверка на содержание значений
+                    try:
+                        water_level_text = ax.text(
+                            0.002,
+                            row[y],
+                            f"▼$P_{{{row['P']:.2g}\%}} = {row[y]:.2f}$",
+                            color=config.COLOR['water_level_text'],
+                            fontsize=config.FONT_SIZE['water_level'],
+                            weight='bold')
+
+                        water_level_text.set_path_effects([
+                            path_effects.Stroke(
+                                linewidth=3,
+                                foreground='white',
+                                alpha=0.55),
+                            path_effects.Normal()])
+
+                    except ValueError:
+                        water_level_text = ax.text(
+                            0.002,
+                            row[y],
+                            f"▼${row['P']} = {row[y]:.2f}$",
+                            color=config.COLOR['water_level_text'],
+                            fontsize=config.FONT_SIZE['water_level'],
+                            weight='bold')
+
+                        water_level_text.set_path_effects([path_effects.Stroke(
+                            linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
+
+                    ax.plot([x1, x2, x2, x2], [y1, y2, y_min, y_min], linestyle='-',
+                            color='mediumturquoise', marker='o', linewidth=1, markersize=1)
+        except:
+            print('Внимание! Вывод расчётных уровней на график не возможен!')
+
+    def draw_curve(self, morfostvor, ax, x='Q', y='УВ'):
+        result_sectors = morfostvor.levels_result_sectors
+
+        # Отрисовка кривой на графике
+        ax.plot(morfostvor.hydraulic_result[x],
+                morfostvor.hydraulic_result[y], label='Сумма', linewidth=3, color='red')
+
+        # Отрисовка кривых по участкам
+        for sector in result_sectors:
+            ax.plot(result_sectors[sector]['Q'], result_sectors[sector][y], '--',
+                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
+
+        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
 
 @dataclass
-class GraphQH(Graph):
+class GraphQH(GraphCurve):
     # Номер рисунка
     _fig_num = 2
 
@@ -1171,59 +1283,14 @@ class GraphQH(Graph):
     _y_label_text = 'H, м'
     _ax_title_text = 'Гидравлическая кривая'
 
-    def draw_hydraulic_curve(self):
-        morfostvor = self.morfostvor
-        ax = self.ax
-        result_sectors = morfostvor.levels_result_sectors
-
-        # Отрисовка суммирующей кривой на графике
-        ax.plot(morfostvor.hydraulic_result['Q'],
-                morfostvor.hydraulic_result['УВ'], label='Сумма', linewidth=3, color='red')
-
-        # Отрисовка кривых по участкам
-        for sector in result_sectors:
-            ax.plot(result_sectors[sector]['Q'], result_sectors[sector]['УВ'], '--',
-                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
-
-        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
-
-    def draw_water_levels(self):
-        morfostvor = self.morfostvor
-        ax = self.ax
-        # Вывод расчётных уровней
-        try:
-            if config.HYDRAULIC_CURVE_LEVELS:
-                min_h = min(morfostvor.hydraulic_result['УВ'])
-
-                for index, row in morfostvor.levels_result.iterrows():
-                    x1, x2 = 0, row['Q']
-                    y1, y2 = row['H'], row['H']
-
-                    # Вывод значений округленных, проверка на содержание значений
-                    try:
-                        water_level_text = ax.text(0.002, row['H'], '▼$P_{{{:.2g}\%}} = {H:.2f}$'.format(
-                            row['P'], H=row['H']), color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
-                        water_level_text.set_path_effects([path_effects.Stroke(
-                            linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
-                    except ValueError:
-                        water_level_text = ax.text(0.002, row['H'], '▼${} = {H:.2f}$'.format(
-                            row['P'], H=row['H']), color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
-                        water_level_text.set_path_effects([path_effects.Stroke(
-                            linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
-
-                    ax.plot([x1, x2, x2, x2], [y1, y2, min_h, min_h], linestyle='-',
-                            color='mediumturquoise', marker='o', linewidth=1, markersize=1)
-        except:
-            print('Внимание! Вывод расчётных уровней на график не возможен!')
-        pass
-
     def draw(self):
-        self.draw_hydraulic_curve()
-        self.draw_water_levels()
+        y_min = min(self.morfostvor.hydraulic_result['УВ'])
+        self.draw_curve(self.morfostvor, self.ax, 'Q', 'УВ')
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H', y_min)
 
 
 @dataclass
-class GraphQV(Graph):
+class GraphQV(GraphCurve):
     # Номер рисунка
     _fig_num = 3
     _fig_size = (16.5, 11)
@@ -1235,30 +1302,27 @@ class GraphQV(Graph):
     _y_label_text = 'V, м/c'
     _ax_title_text = 'Кривая скоростей'
 
-    def draw_speed_curve(self):
-        morfostvor = self.morfostvor
-        ax = self.ax
-        result_sectors = morfostvor.levels_result_sectors
+    def draw(self):
+        self.draw_curve(self.morfostvor, self.ax, 'Q', 'V')
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'V')
 
-        # Отрисовка суммирующей кривой на графике
-        ax.plot(morfostvor.hydraulic_result['Q'],
-                morfostvor.hydraulic_result['V'],
-                label='Сумма',
-                linewidth=3,
-                color='red')
 
-        # Отрисовка кривых по участкам
-        for sector in result_sectors:
-            ax.plot(result_sectors[sector]['Q'],
-                    result_sectors[sector]['V'],
-                    '--',
-                    label=sector,
-                    color=self.sector_colors[sector])
+@dataclass
+class GraphQF(GraphCurve):
+    # Номер рисунка
+    _fig_num = 4
+    _fig_size = (16.5, 11)
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    ax: plt.subplot = fig.add_subplot(111)
 
-        ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
+    # Подписи осей
+    _x_label_text = 'Q, м³/с'
+    _y_label_text = 'F, м²'
+    _ax_title_text = 'Кривая площадей'
 
     def draw(self):
-        self.draw_speed_curve()
+        self.draw_curve(self.morfostvor, self.ax, 'Q', 'F')
+        self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'F')
 
 
 @dataclass
@@ -1301,7 +1365,9 @@ class GraphProfile(Graph):
         """
 
         self.ax.plot(self.morfostvor.x, self.morfostvor.y,
-                     color=config.COLOR['profile_bottom'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid', )
+                     color=config.COLOR['profile_bottom'],
+                     linewidth=config.LINE_WIDTH['profile_bottom'],
+                     linestyle='solid')
 
     def draw_profile_footer(self):
         """
@@ -1318,24 +1384,40 @@ class GraphProfile(Graph):
                 fontstyle='italic', horizontalalignment='left')
 
             self.ax_bottom.xaxis.set_label_coords(1.02, 0.92)
+
         # Горизонтальные разделители подвала (полная рамка)
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]),
-                                    (0, 0),
-                                    color=config.COLOR['border'],
-                                    linewidth=config.LINE_WIDTH['profile_bottom'],
-                                    linestyle='solid')
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (5, 5), color=config.COLOR['border'],
-                                    linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (10, 10),
-                                    color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
-        self.ax_bottom_overlay.plot((self.morfostvor.x[0], self.morfostvor.x[-1]), (15, 15),
-                                    color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
         self.ax_bottom_overlay.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[-1]), (20, 20), alpha=0)
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (0, 0),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (5, 5),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (10, 10),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (15, 15),
+            color=config.COLOR['border'],
+            linewidth=config.LINE_WIDTH['profile_bottom'],
+            linestyle='solid')
+
+        self.ax_bottom_overlay.plot(
+            (self.morfostvor.x[0], self.morfostvor.x[-1]), (20, 20),
+            alpha=0)
 
         # Технический разделитель (для увеличения размера границ)
         self.ax_bottom.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[0]), (30, 40), alpha=0)
+            (self.morfostvor.x[0], self.morfostvor.x[0]), (30, 40),
+            alpha=0)
 
         # Цикл по всем точкам
         for i in range(len(self.morfostvor.x)):
@@ -1344,11 +1426,19 @@ class GraphProfile(Graph):
 
             # Разделители расстояний между точками
             self.ax_bottom.plot(
-                (x, x), (10, 20), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+                (x, x), (10, 20),
+                color=config.COLOR['border'],
+                linewidth=config.LINE_WIDTH['profile_bottom'],
+                linestyle='solid')
 
             # Подписи отметок
-            self.ax_bottom.text(x, 25, '{:.2f}'.format(
-                y), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_small'], verticalalignment='center', horizontalalignment='center', rotation='90')
+            self.ax_bottom.text(
+                x, 25, f"{y:.2f}",
+                color=config.COLOR['bottom_text'],
+                fontsize=config.FONT_SIZE['bottom_small'],
+                verticalalignment='center',
+                horizontalalignment='center',
+                rotation='90')
 
         # Цикл по точкам до предпоследней
         for i in range(len(self.morfostvor.x) - 1):
@@ -1357,8 +1447,12 @@ class GraphProfile(Graph):
             y = self.morfostvor.y[i]
 
             # Подписи расстояний между точками
-            self.ax_bottom.text((x + x1) / 2, 15, '{:d}'.format(round(
-                x1 - x)), color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center',)
+            self.ax_bottom.text(
+                (x + x1) / 2, 15, f"{round(x1 - x):d}",
+                color=config.COLOR['bottom_text'],
+                fontsize=config.FONT_SIZE['bottom_main'],
+                verticalalignment='center',
+                horizontalalignment='center')
 
         # Цикл по участкам
         for sector in self.morfostvor.sectors:
@@ -1367,17 +1461,29 @@ class GraphProfile(Graph):
 
             # Подписи коэффициентов шероховатости по участкам
             try:
-                self.ax_bottom.text((x + x1) / 2, 5, '{:.3f}'.format(
-                    sector.roughness),  color=config.COLOR['bottom_text'], fontsize=config.FONT_SIZE['bottom_main'], verticalalignment='center', horizontalalignment='center')
+                self.ax_bottom.text(
+                    (x + x1) / 2, 5, f"{sector.roughness:.3f}",
+                    color=config.COLOR['bottom_text'],
+                    fontsize=config.FONT_SIZE['bottom_main'],
+                    verticalalignment='center',
+                    horizontalalignment='center')
+
             except ValueError:
                 print('\nОшибка в указании параметров участков (коэффициент шероховатости или разделение на участки). Проверить данные.')
                 sys.exit(1)
 
             # Разделители коэффициентов шероховатости
             self.ax_bottom.plot(
-                (x, x), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+                (x, x), (0, 10),
+                color=config.COLOR['border'],
+                linewidth=config.LINE_WIDTH['profile_bottom'],
+                linestyle='solid')
+
             self.ax_bottom.plot(
-                (x1, x1), (0, 10), color=config.COLOR['border'], linewidth=config.LINE_WIDTH['profile_bottom'], linestyle='solid')
+                (x1, x1), (0, 10),
+                color=config.COLOR['border'],
+                linewidth=config.LINE_WIDTH['profile_bottom'],
+                linestyle='solid')
 
     def draw_sectors(self):
         """
@@ -1416,7 +1522,7 @@ class GraphProfile(Graph):
 
                 # Вывод ширины участка
                 self.ax_top.text(
-                    cent_x, p1, '{:d} м'.format(round(sector.length)), color=config.COLOR['sector_text'],
+                    cent_x, p1, f"{round(sector.length):d} м", color=config.COLOR['sector_text'],
                     verticalalignment='center', horizontalalignment='center',
                     bbox={'facecolor': 'white', 'edgecolor': 'white', 'alpha': 1, 'pad': 2.5})
 
@@ -1424,15 +1530,29 @@ class GraphProfile(Graph):
                                  verticalalignment='center', horizontalalignment='center',)
 
                 # Вывод разделителя участков профиля
-                self.ax_top.plot([sector.coord[0][0], sector.coord[0][0]], [p0, p3], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная слева
-                self.ax_top.plot([sector.coord[0][-1], sector.coord[0][-1]], [p0, p3], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная справа
+                self.ax_top.plot(
+                    [sector.coord[0][0], sector.coord[0][0]], [p0, p3],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная слева
 
-                self.ax_top.plot([sector.coord[0][0], cent_x], [p1, p1], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная слева
-                self.ax_top.plot([cent_x, sector.coord[0][-1]], [p1, p1], color=config.COLOR['sector_line'],
-                                 linestyle='-', linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная справа
+                self.ax_top.plot(
+                    [sector.coord[0][-1], sector.coord[0][-1]], [p0, p3],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Горизонтальная справа
+
+                self.ax_top.plot(
+                    [sector.coord[0][0], cent_x], [p1, p1],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная слева
+
+                self.ax_top.plot(
+                    [cent_x, sector.coord[0][-1]], [p1, p1],
+                    color=config.COLOR['sector_line'],
+                    linestyle='-',
+                    linewidth=config.LINE_WIDTH['sector_line'])  # Вертикальная справа
 
             # Заливка на профиле участков
             if config.PROFILE_SECTOR_FILL:
@@ -1441,13 +1561,17 @@ class GraphProfile(Graph):
             # Цвет линии дна по участкам
             if config.PROFILE_SECTOR_BOTTOM_LINE:
                 self.ax.plot(
-                    sector.coord[0], sector.coord[1], '-', color=sector.color)
+                    sector.coord[0], sector.coord[1],
+                    '-', color=sector.color)
 
     def set_style(self):
         # Устанавливаем заголовки графиков
         if config.GRAPHICS_TITLES:
             self.ax.set_title(
-                self.morfostvor.title, color=config.COLOR['title_text'], fontsize=config.FONT_SIZE['title'], y=1.1)
+                self.morfostvor.title,
+                color=config.COLOR['title_text'],
+                fontsize=config.FONT_SIZE['title'],
+                y=1.1)
 
         self.ax.set_ylim(self._y_lim)
 
@@ -1511,7 +1635,11 @@ class GraphProfile(Graph):
 
         # Устанавливаем параметры подписей осей
         self.ax.set_ylabel(
-            'H, м', color=config.COLOR['ax_label_text'], fontsize=config.FONT_SIZE['ax_label'], fontstyle='italic')
+            'H, м',
+            color=config.COLOR['ax_label_text'],
+            fontsize=config.FONT_SIZE['ax_label'],
+            fontstyle='italic')
+            
         self.ax.yaxis.set_label_coords(-0.025, 1.08)
 
         # Устанавливает параметры вывода значений осей
@@ -1520,9 +1648,18 @@ class GraphProfile(Graph):
 
         # Настройка параметров отображение сетки
         self.ax.grid(
-            which='major', color=config.COLOR['ax_grid'], linestyle=':', linewidth=1, alpha=0.9)
+            which='major',
+            color=config.COLOR['ax_grid'],
+            linestyle=':',
+            linewidth=1,
+            alpha=0.9)
+
         self.ax.grid(
-            which='minor', color=config.COLOR['ax_grid_sub'], linestyle=':', linewidth=1, alpha=0.9)
+            which='minor',
+            color=config.COLOR['ax_grid_sub'],
+            linestyle=':',
+            linewidth=1,
+            alpha=0.9)
 
     def draw_profile_point_lines(self):
         """
@@ -1601,18 +1738,18 @@ class GraphProfile(Graph):
         top_limit_text = self.ax.text(
             cent_x,
             h + (y_step * 0.2),
-            '{}\nH = {:.2f}'.format(self.morfostvor.top_limit_description, h),
+            f"{self.morfostvor.top_limit_description}\nH = {h:.2f}",
             color=config.COLOR['top_limit_text'],
             fontsize=config.FONT_SIZE['top_limit'],
             weight='bold',
             horizontalalignment='center',
             verticalalignment='center')
-        # top_limit_text.set_path_effects([path_effects.Stroke(
-        #     linewidth=3, foreground='white', alpha=0.95), path_effects.Normal()])
-        # top_limit_text.set_path_effects([path_effects.Stroke(
-        # linewidth=3, foreground='white', alpha=0.95), path_effects.Normal()])
-        self.ax.plot([x1, x2], [h, h], color=config.COLOR['top_limit_line'],
-                     linestyle='-.', linewidth=config.LINE_WIDTH['top_limit_line'])
+
+        self.ax.plot(
+            [x1, x2], [h, h],
+            color=config.COLOR['top_limit_line'],
+            linestyle='-.',
+            linewidth=config.LINE_WIDTH['top_limit_line'])
 
         self._y_limits.append(h)
         self._update_limit()
@@ -1687,22 +1824,30 @@ class GraphProfile(Graph):
 
                 try:
                     # Если обеспеченность записана цифрами
-                    waterline_text = self.ax.text(x, y, '▼$P_{{{:2g}\%}} = {:.2f}$'.format(
-                        row['P'], row['H']), color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
+                    waterline_text = self.ax.text(
+                        x, y, f"▼$P_{{{row['P']:2g}\%}} = {row['H']:.2f}$",
+                        color=config.COLOR['water_level_text'],
+                        fontsize=config.FONT_SIZE['water_level'],
+                        weight='bold')
                     waterline_text.set_path_effects([path_effects.Stroke(
                         linewidth=3, foreground='white', alpha=0.55), path_effects.Normal()])
                 except ValueError:
                     # Если обеспеченность записана строкой
-                    waterline_text = self.ax.text(x, y, '{} = {:.2f}'.format(
-                        row['P'], row['H']), color=config.COLOR['water_level_text'], fontsize=config.FONT_SIZE['water_level'], weight='bold')
+                    waterline_text = self.ax.text(
+                        x, y,
+                        f"{row['P']} = {row['H']:.2f}",
+                        color=config.COLOR['water_level_text'],
+                        fontsize=config.FONT_SIZE['water_level'],
+                        weight='bold')
+
                     waterline_text.set_path_effects([path_effects.Stroke(
-                        linewidth=1.8, foreground='white', alpha=0.55), path_effects.Normal()])
+                        linewidth=1.8, foreground='white', alpha=0.55),
+                        path_effects.Normal()])
 
             try:
-                label.append('$P_{{{:2g}\%}} = {:.2f}$ м\n'.format(
-                    row['P'], water_level))
+                label.append(f"$P_{{{row['P']:2g}\%}} = {water_level:.2f}$ м\n")
             except ValueError:
-                label.append('${} = {:.2f}$ м\n'.format(row['P'], water_level))
+                label.append(f"${row['P']} = {water_level:.2f}$ м\n")
 
             # Вывод линий сносок от уровней воды к таблице
             if config.PROFILE_LEVELS_TABLE_LINES:
@@ -1743,10 +1888,10 @@ class GraphProfile(Graph):
                              linestyle=linestyle, linewidth=linewidth, alpha=alpha)
 
         if self.morfostvor.waterline and type(self.morfostvor.waterline) is not str:
-            label.append('\nУВ = {:.2f} м\n'.format(self.morfostvor.waterline))
+            label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м\n")
 
             if self.morfostvor.date:
-                label.append('({})'.format(self.morfostvor.date))
+                label.append(f"({self.morfostvor.date})")
 
         if config.PROFILE_WATER_LEVEL_NOTE:
             if self.morfostvor.waterline == '-' or self.morfostvor.waterline == '':
