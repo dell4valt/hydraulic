@@ -88,7 +88,10 @@ def table_style(table, style, width=False):
 
 def write_table(doc, table, param, title='Таблица'):
     """
-    Функция записи таблицы в док файл (док файл, таблица которую записываем, параметры((заголовки), (название столбцов), (ширина столбцов)), заголовок)
+    Функция записи таблицы в док файл
+    (док файл, таблица которую записываем, параметры((заголовки),
+    (название столбцов), (ширина столбцов)), заголовок)
+
         :param doc: Document()
         :param table:
         :param param:
@@ -182,7 +185,7 @@ def insert_summary_QV_tables(stvors, out_filename):
         title2_check = True
         i += 1
 
-    rows = len(levels_table)
+    # rows = len(levels_table)
     cols = len(levels_table[0])
 
     #############################################
@@ -260,7 +263,8 @@ def insert_summary_QV_tables(stvors, out_filename):
                 spd_cell[i].text = str('{:.2f}'.format(speed[i - 4][2]))
             except:
                 print(
-                    '\n\nОшибка соответствия обеспеченностей в профилях. Обеспеченности на всех профилях должны быть одинаковые.')
+                    '\n\nОшибка соответствия обеспеченностей в профилях.\
+                     Обеспеченности на всех профилях должны быть одинаковые.')
                 print('Сводные таблицы не будут записаны в файл.')
                 sys.exit(1)
 

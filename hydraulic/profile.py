@@ -547,8 +547,7 @@ class Morfostvor(object):
         self.coords = __raw_data[6][__description_col]  # Координаты
         self.erosion_limit = __raw_data[7][__description_col]  # Предел размыва
         self.top_limit = __raw_data[8][__description_col]  # Верхняя граница
-        # Описание верхней границы
-        self.top_limit_description = __raw_data[9][__description_col]
+        self.top_limit_description = __raw_data[9][__description_col] # Описание верхней границы
         print('успешно!')
 
         # Считываем и записываем все точки x и y профиля
@@ -949,8 +948,8 @@ class Morfostvor(object):
                     # Записываем значения по каждому сектору в отдельный список
                     try:
                         result[sector.name].append(
-                            [water_level, water.area, water.width, water.average_depth, water.max_depth, cc.v,
-                             cc.q, cc.v])
+                            [water_level, water.area, water.width, water.average_depth,
+                             water.max_depth, cc.v, cc.q, cc.v])
                     except KeyError:
                         result[sector.name] = list()
                         result[sector.name].append(
