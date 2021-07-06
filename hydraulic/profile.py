@@ -398,13 +398,12 @@ class Morfostvor(object):
     top_limit_description: str = ''
 
     probability: list = field(default_factory=list)
-    # raw_data: list = field(default_factory=list)
     coords: list = field(default_factory=list)
     strings: dict = field(default_factory=dict)
 
     levels_result: pd.DataFrame = pd.DataFrame
-    levels_result_sectors: pd.DataFrame = pd.DataFrame
     hydraulic_result: pd.DataFrame = pd.DataFrame
+    hydraulic_table: pd.DataFrame = pd.DataFrame
 
     def __post_init__(self):
         # Выбор варианта расчёта
@@ -771,7 +770,10 @@ class Morfostvor(object):
                  (5, 5, 5, 5, 5, 5, 5),
                  (':.2f', ':.3f', ':.3f', ':.3f', ':.3f', ':.3f', ':.3f'))
 
-        table = self.hydraulic_result
+
+        table = self.hydraulic_table.reset_index(0).loc['Сумма'].reset_index(drop=True)
+        # print(self.hydraulic_result)
+        # print(table)
         table_round = table.round(3)  # Округляем
         # Убираем столбец с коэффициентами Шези
         table_round = table_round.drop(columns=['Shezi'])
@@ -869,7 +871,9 @@ class Morfostvor(object):
         ])
 
         col = ['Участок', 'УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
-        df_result = pd.DataFrame(columns=col, dtype=float)
+        df = pd.DataFrame(columns=col, dtype=float)
+        # Первый расчётный элемент суммирующей кривой со всеми нулями§
+        df = df.append(dict(zip(col, ['Сумма', 0,  0,  0,  0,  0,  0,  0,  0])), ignore_index=True)
 
         # Цикл расчёта до максимальной обеспеченности + 20% из исходных данных
         while consumption_summ < consumption_check:
@@ -980,6 +984,17 @@ class Morfostvor(object):
                         summ_result[6].append(cc.q)  # Q
                         summ_result[7].append(f"{sector.name}: {cc.shezi}")  # Шези
 
+                        # ['Участок', 'УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
+
+                        # r = dict(zip(col,
+                        #             [sector.name,
+                        #              round(water_level, 2),
+                        #              water.area,
+                        #              water.width,
+                        #              water.average_depth,
+                        #              water.max_depth,  cc.v,  cc.q,  cc.shezi]))
+                        # df = df.append(r, ignore_index=True)
+
                         # Добавляем в список с результирующими значениями значения по секторам
                         # для последующего суммирования/вычисления средних значений
 
@@ -992,15 +1007,14 @@ class Morfostvor(object):
                                 [min(self.y), 0, 0, 0, 0, 0, 0])
                             first_calc = False
 
-                            r = dict(zip(col, [sector.name,
-                                         round(water_level, 2),
-                                         0,
-                                         0,
-                                         0,
-                                         0,
-                                         0,
-                                         0,
-                                         0]))
+                            r = dict(zip(col,
+                                        [sector.name,
+                                        round(water_level, 2),
+                                        water.area,
+                                        water.width,
+                                        water.average_depth,
+                                        water.max_depth,  cc.v,  cc.q,  cc.shezi]))
+
 
                         else:
                             r = dict(zip(col, [sector.name,
@@ -1029,7 +1043,7 @@ class Morfostvor(object):
 
                         # Добавляем в список с результирующими значениями значения по секторам
                         # для последующего суммирования/вычисления средних значений
-                        df_result = df_result.append(r, ignore_index=True)
+                        df = df.append(r, ignore_index=True)
 
             consumption_summ += sum(wc_list)
             area_summ += sum(area_list)
@@ -1057,66 +1071,63 @@ class Morfostvor(object):
 
             # Пустые значения для суммирующей кривой
             r_sum = dict(zip(col, ['Сумма', round(water_level, 2),  0,  0,  0,  0,  0,  0,  0]))
-            df_result = df_result.append(r_sum, ignore_index=True)
+            df = df.append(r_sum, ignore_index=True)
 
             water_level += dH
             n += 1
 
-        df = pd.DataFrame(
+        __df = pd.DataFrame(
             data=summ,
             columns=['УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
         )
 
-        df_list = {}
+        # TODO: remake to use one dataframe
+        self.hydraulic_result = __df
 
-        for sector in result:
-            df_list[sector] = pd.DataFrame(
-                data=result[sector],
-                columns=['УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
-            )
+        df = df.set_index(['УВ', 'Участок'])
+        water_levels = df.index.levels[0]
+        print(__df)
+        # Заполняем суммирующие данные
+        df.loc[(water_levels, 'Сумма'), 'F'] = df.groupby(level=0)['F'].transform('sum')
+        df.loc[(water_levels, 'Сумма'), 'B'] = df.groupby(level=0)['B'].transform('sum')
+        df.loc[(water_levels, 'Сумма'), 'Hср'] = df.groupby(level=0)['F'].transform('sum') / df.groupby(level=0)['B'].transform('sum')
+        df.loc[(water_levels, 'Сумма'), 'Hмакс'] = df.groupby(level=0)['Hмакс'].transform('max')
+        df.loc[(water_levels, 'Сумма'), 'Q'] = df.groupby(level=0)['Q'].transform('sum')
+        df.loc[(water_levels, 'Сумма'), 'V'] = (df.groupby(level=0)['Q'].transform('sum') / df.groupby(level=0)['F'].transform('sum'))
+        df.loc[(water_levels, 'Сумма'), 'Shezi'] = df.groupby(level=0)['Shezi'].transform('sum') / (df.groupby(level=0)['Shezi'].transform('count') - 1)
+        df = df.fillna(0)
 
-        # Находим H от Q
+        print(df.loc[(slice(None), 'Сумма'), slice(None)].droplevel(1).reset_index())
+
+
+        # Интерполируем значения гидравлической кривой
+        # для необходимых обеспеченностей и обновляем таблицу
+        p_table = df.loc[(water_levels, 'Сумма'), :].droplevel(1)
+        self.levels_result = self.get_p_table(p_table)
+        self.hydraulic_table = df
+
+        return df
+
+    def get_p_table(self, df: pd.DataFrame):
         result = pd.DataFrame(
-            columns=['P', 'Q', 'H', 'f']
-        )
+            columns=['P', 'Q', 'H', 'F'])
 
-        for element in self.probability:
-            fQ = interpolate.interp1d(df['Q'], df['УВ'])
+        for prob in self.probability:
+            fQ = interpolate.interp1d(df['Q'], df.index)
             fV = interpolate.interp1d(df['Q'], df['V'])
             fF = interpolate.interp1d(df['Q'], df['F'])
-            h = float(fQ(element[1]))
-            v = float(fV(element[1]))
-            f = float(fF(element[1]))
+            h = float(fQ(prob[1]))
+            v = float(fV(prob[1]))
+            f = float(fF(prob[1]))
 
             result = result.append(
-                {'P': element[0],
+                {'P': prob[0],
                  'H': h,
-                 'Q': element[1],
+                 'Q': prob[1],
                  'V': v,
-                 'F': f,
-                 }, ignore_index=True
-            )
+                 'F': f}, ignore_index=True)
 
-        self.levels_result = result
-        self.levels_result_sectors = df_list
-        self.hydraulic_result = df
-
-        # TODO: CLEAR
-        pd.set_option('display.max_rows', 1000)
-        df_result = df_result.set_index(['УВ', 'Участок'])
-
-        a = df_result.index.levels[0]
-
-        # Заполняем суммирующие данные
-        df_result.loc[(a, 'Сумма'), 'F'] = df_result.groupby(level=0)['F'].transform('sum')
-        df_result.loc[(a, 'Сумма'), 'B'] = df_result.groupby(level=0)['B'].transform('sum')
-        df_result.loc[(a, 'Сумма'), 'Hср'] = df_result.groupby(level=0)['F'].transform('sum') / df_result.groupby(level=0)['B'].transform('sum')
-        df_result.loc[(a, 'Сумма'), 'Hмакс'] = df_result.groupby(level=0)['Hмакс'].transform('max')
-        df_result.loc[(a, 'Сумма'), 'Q'] = df_result.groupby(level=0)['Q'].transform('sum')
-        df_result.loc[(a, 'Сумма'), 'V'] = (df_result.groupby(level=0)['Q'].transform('sum') / df_result.groupby(level=0)['F'].transform('sum'))
-        df_result.loc[(a, 'Сумма'), 'Shezi'] = df_result.groupby(level=0)['Shezi'].transform('sum') / (df_result.groupby(level=0)['Shezi'].transform('count') - 1)
-
-        print(df_result)
+        return result
 
 
 @dataclass
@@ -1223,13 +1234,13 @@ class Graph(object):
 
 @dataclass
 class GraphCurve(Graph):
-    def draw_water_levels(self, morfostvor, ax, x='Q', y='H', y_min=0):
+    def draw_water_levels(self, morfostvor: Morfostvor, ax: plt.subplot, x='Q', y='H', y_min=0):
         """Функция выводит на график ax отметку и линии пересечения
            x и y.
 
         Args:
             morfostvor (Morfostvor): Объект из которого необходимо брать данные.
-            ax (ax): График для нанесения отметок.
+            ax (plt.subplot): График для нанесения отметок.
             x (str, optional): Ось x. Defaults to 'Q'.
             y (str, optional): Ось y. Defaults to 'H'.
         """
@@ -1273,18 +1284,36 @@ class GraphCurve(Graph):
         except:
             print('Внимание! Вывод расчётных уровней на график не возможен!')
 
-    def draw_curve(self, morfostvor, ax, x='Q', y='УВ'):
-        result_sectors = morfostvor.levels_result_sectors
+    def draw_curve(self, morfostvor: Morfostvor, ax: plt.subplot, x='Q', y='УВ'):
+        """Отрисовка кривой на графике по заданным из морфоствора параметрам.
 
-        # Отрисовка кривой на графике
-        ax.plot(morfostvor.hydraulic_result[x],
-                morfostvor.hydraulic_result[y], label='Сумма', linewidth=3, color='red')
+        Args:
+            morfostvor (Morfostvor): Объект морфоствора из которого получаем данные
+            ax (plt.subplot): Ось на которой отрисовывать график
+            x (str, optional): Значения по оси x. Defaults to 'Q'.
+            y (str, optional): Значения по оси y. Defaults to 'УВ'.
+        """
+
+        df = morfostvor.hydraulic_table
+        df = df.reset_index(level=0)  # Переводим индекс уровня воды в столбец
+
+        sectors = set(df.index)  # Удаляем дублирующиеся записи
+        sectors.remove('Сумма')  # Удаляем запись суммирующего участка
+
+        # Отрисовка суммирующей кривой на графике
+        ax.plot(
+            df.loc[('Сумма'), x].sort_values(),
+            df.loc[('Сумма'), y].sort_values(),
+            label='Сумма', linewidth=3, color='red')
 
         # Отрисовка кривых по участкам
-        for sector in result_sectors:
-            ax.plot(result_sectors[sector]['Q'], result_sectors[sector][y], '--',
-                    label=sector, color=self.sector_colors[sector])  # marker='o', markersize='3',
+        for sector in sectors:
+            ax.plot(
+                df.loc[(sector), x].sort_values(),
+                df.loc[(sector), y].sort_values(),
+                '--', label=sector, color=self.sector_colors[sector])
 
+        # Отрисовка легенды
         ax.legend(loc='lower right', fontsize=config.FONT_SIZE['legend'])
 
 
