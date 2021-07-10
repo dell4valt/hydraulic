@@ -770,10 +770,7 @@ class Morfostvor(object):
                  (5, 5, 5, 5, 5, 5, 5),
                  (':.2f', ':.3f', ':.3f', ':.3f', ':.3f', ':.3f', ':.3f'))
 
-
         table = self.hydraulic_table.reset_index(0).loc['Сумма'].reset_index(drop=True)
-        # print(self.hydraulic_result)
-        # print(table)
         table_round = table.round(3)  # Округляем
         # Убираем столбец с коэффициентами Шези
         table_round = table_round.drop(columns=['Shezi'])
@@ -854,26 +851,11 @@ class Morfostvor(object):
         consumption_summ = 0
         area_summ = 0
         n = 0
-        result = {}
-        summ = []
-        first_calc = True
-
-        # Первый расчётный элемент суммирующей кривой со всеми нулями
-        summ.append([
-            min(self.y),
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ])
 
         col = ['Участок', 'УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
         df = pd.DataFrame(columns=col, dtype=float)
         # Первый расчётный элемент суммирующей кривой со всеми нулями§
-        df = df.append(dict(zip(col, ['Сумма', 0,  0,  0,  0,  0,  0,  0,  0])), ignore_index=True)
+        df = df.append(dict(zip(col, ['Сумма', self.ele_min,  0,  0,  0,  0,  0,  0,  0])), ignore_index=True)
 
         # Цикл расчёта до максимальной обеспеченности + 20% из исходных данных
         while consumption_summ < consumption_check:
@@ -882,7 +864,6 @@ class Morfostvor(object):
             consumption_summ = 0
             wc_list = list()
             area_list = list()
-            summ_result = [[], [], [], [], [], [], [], []]
 
             if config.OVERFLOW:
                 for i in calc_sectors:
@@ -920,45 +901,24 @@ class Morfostvor(object):
                         water = WaterSection(x, y, water_level, start_point=[0, y[0]])
 
                     # Расчёт параметров для воды
-                    cc = Calculation(h=water.average_depth, n=sector.roughness, i=sector.slope, a=water.area)
+                    calc = Calculation(h=water.average_depth, n=sector.roughness, i=sector.slope, a=water.area)
+
+                    wc_list.append(calc.q)
+
+                    r = dict(zip(col,
+                                 [sector.name,
+                                  round(water_level, 2),
+                                  water.area,
+                                  water.width,
+                                  water.average_depth,
+                                  water.max_depth,
+                                  calc.v,
+                                  calc.q,
+                                  calc.shezi]))
 
                     # Добавляем в список с результирующими значениями значения по секторам
                     # для последующего суммирования/вычисления средних значений
-                    # TODO: создать датафрейм с результатами
-                    # summ_curve = pd.DataFrame(
-                    #     data=summ,
-                    #     columns=['УВ', 'F', 'B', 'Hср',
-                    #              'Hмакс', 'V', 'Q', 'Shezi']
-                    # )
-
-                    summ_result[0] = water_level  # H
-                    summ_result[1].append(water.area)  # F
-                    summ_result[2].append(water.width)  # B
-                    summ_result[3].append(water.average_depth)  # Hср
-                    summ_result[4].append(water.max_depth)  # Hмакс
-                    summ_result[5].append(cc.v)  # V
-                    summ_result[6].append(cc.q)  # Q
-                    summ_result[7].append(f"{sector.name}: {cc.shezi}")  # Шези
-
-                    wc_list.append(cc.q)
-
-                    # Если это первый расчёт, записываем нулевые значения
-                    if first_calc:
-                        result[sector.name] = list()
-                        result[sector.name].append(
-                            [min(self.y), 0, 0, 0, 0, 0, 0])
-                        first_calc = False
-
-                    # Записываем значения по каждому сектору в отдельный список
-                    try:
-                        result[sector.name].append(
-                            [water_level, water.area, water.width, water.average_depth,
-                             water.max_depth, cc.v, cc.q, cc.v])
-                    except KeyError:
-                        result[sector.name] = list()
-                        result[sector.name].append(
-                            [water_level, water.area, water.width, water.average_depth, water.max_depth, cc.v,
-                             cc.q, cc.shezi])
+                    df = df.append(r, ignore_index=True)
 
             else:
                 # Расчёт с заполнением по участкам
@@ -971,75 +931,21 @@ class Morfostvor(object):
                         water = WaterSection(x, y, water_level)
 
                         # Расчёт параметров для воды
-                        cc = Calculation(
+                        calc = Calculation(
                             h=water.average_depth, n=sector.roughness, i=sector.slope, a=water.area)
 
-                        # Добавляем в список с результирующими значениями значения по секторам для последующего суммирования/вычисления средних значений
-                        summ_result[0] = water_level  # H
-                        summ_result[1].append(water.area)  # F
-                        summ_result[2].append(water.width)  # B
-                        summ_result[3].append(water.average_depth)  # Hср
-                        summ_result[4].append(water.max_depth)  # Hмакс
-                        summ_result[5].append(cc.v)  # V
-                        summ_result[6].append(cc.q)  # Q
-                        summ_result[7].append(f"{sector.name}: {cc.shezi}")  # Шези
+                        wc_list.append(calc.q)
 
-                        # ['Участок', 'УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
-
-                        # r = dict(zip(col,
-                        #             [sector.name,
-                        #              round(water_level, 2),
-                        #              water.area,
-                        #              water.width,
-                        #              water.average_depth,
-                        #              water.max_depth,  cc.v,  cc.q,  cc.shezi]))
-                        # df = df.append(r, ignore_index=True)
-
-                        # Добавляем в список с результирующими значениями значения по секторам
-                        # для последующего суммирования/вычисления средних значений
-
-                        wc_list.append(cc.q)
-
-                        # Если это первый расчёт, записываем нулевые значения
-                        if first_calc:
-                            result[sector.name] = list()
-                            result[sector.name].append(
-                                [min(self.y), 0, 0, 0, 0, 0, 0])
-                            first_calc = False
-
-                            r = dict(zip(col,
-                                        [sector.name,
-                                        round(water_level, 2),
-                                        water.area,
-                                        water.width,
-                                        water.average_depth,
-                                        water.max_depth,  cc.v,  cc.q,  cc.shezi]))
-
-
-                        else:
-                            r = dict(zip(col, [sector.name,
-                                         round(water_level, 2),
-                                         water.area,
-                                         water.width,
-                                         water.average_depth,
-                                         water.max_depth,
-                                         cc.v,
-                                         cc.q,
-                                         cc.shezi]))
-
-                            # Записываем значения по каждому сектору в отдельный список
-                            try:
-                                result[sector.name].append(
-                                    [water_level,
-                                     water.area, water.width, water.average_depth, water.max_depth, cc.v,
-                                     cc.q, cc.v])
-
-                            except KeyError:
-                                result[sector.name] = list()
-                                result[sector.name].append(
-                                    [water_level, water.area, water.width,
-                                     water.average_depth, water.max_depth, cc.v,
-                                     cc.q, cc.shezi])
+                        # Добавляем в список с значения по секторам
+                        r = dict(zip(col, [sector.name,
+                                     round(water_level, 2),
+                                     water.area,
+                                     water.width,
+                                     water.average_depth,
+                                     water.max_depth,
+                                     calc.v,
+                                     calc.q,
+                                     calc.shezi]))
 
                         # Добавляем в список с результирующими значениями значения по секторам
                         # для последующего суммирования/вычисления средних значений
@@ -1048,27 +954,6 @@ class Morfostvor(object):
             consumption_summ += sum(wc_list)
             area_summ += sum(area_list)
 
-            # Вычисляем параметры суммирующей кривой
-            wl = summ_result[0]  # Уровень воды
-            F = sum(summ_result[1])  # Площадь водного сечения
-            B = sum(summ_result[2])  # Ширина русла
-            Hsr = F / B  # Средняя глубина
-            Hmax = max(summ_result[4])  # Макс глубина
-            Q = sum(summ_result[6])  # Расход
-            Vsr = Q / F  # Средняя Скорость
-            Sh = summ_result[7]  # Коэффициент шези
-
-            summ.append([
-                wl,
-                F,
-                B,
-                Hsr,
-                Hmax,
-                Vsr,
-                Q,
-                Sh
-            ])
-
             # Пустые значения для суммирующей кривой
             r_sum = dict(zip(col, ['Сумма', round(water_level, 2),  0,  0,  0,  0,  0,  0,  0]))
             df = df.append(r_sum, ignore_index=True)
@@ -1076,17 +961,11 @@ class Morfostvor(object):
             water_level += dH
             n += 1
 
-        __df = pd.DataFrame(
-            data=summ,
-            columns=['УВ', 'F', 'B', 'Hср', 'Hмакс', 'V', 'Q', 'Shezi']
-        )
 
         # TODO: remake to use one dataframe
-        self.hydraulic_result = __df
-
         df = df.set_index(['УВ', 'Участок'])
         water_levels = df.index.levels[0]
-        print(__df)
+
         # Заполняем суммирующие данные
         df.loc[(water_levels, 'Сумма'), 'F'] = df.groupby(level=0)['F'].transform('sum')
         df.loc[(water_levels, 'Сумма'), 'B'] = df.groupby(level=0)['B'].transform('sum')
@@ -1096,9 +975,6 @@ class Morfostvor(object):
         df.loc[(water_levels, 'Сумма'), 'V'] = (df.groupby(level=0)['Q'].transform('sum') / df.groupby(level=0)['F'].transform('sum'))
         df.loc[(water_levels, 'Сумма'), 'Shezi'] = df.groupby(level=0)['Shezi'].transform('sum') / (df.groupby(level=0)['Shezi'].transform('count') - 1)
         df = df.fillna(0)
-
-        print(df.loc[(slice(None), 'Сумма'), slice(None)].droplevel(1).reset_index())
-
 
         # Интерполируем значения гидравлической кривой
         # для необходимых обеспеченностей и обновляем таблицу
@@ -1135,7 +1011,6 @@ class Graph(object):
     _fig_size = (16.5, 11)
     _y_limits = []
     _fig_num = 0
-    _y_lim = (0, 100)
 
     _x_label_text = ''
     _y_label_text = ''
@@ -1328,7 +1203,7 @@ class GraphQH(GraphCurve):
     _ax_title_text = 'Гидравлическая кривая'
 
     def draw(self):
-        y_min = min(self.morfostvor.hydraulic_result['УВ'])
+        y_min = min(self.morfostvor.hydraulic_table.reset_index(0).loc['Сумма'].reset_index(drop=True)['УВ'])
         self.draw_curve(self.morfostvor, self.ax, 'Q', 'УВ')
         self.draw_water_levels(self.morfostvor, self.ax, 'Q', 'H', y_min)
 
