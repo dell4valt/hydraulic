@@ -1177,15 +1177,15 @@ class GraphCurve(Graph):
 
         # Отрисовка суммирующей кривой на графике
         ax.plot(
-            df.loc[('Сумма'), x].sort_values(),
-            df.loc[('Сумма'), y].sort_values(),
+            df.loc[('Сумма'), x],
+            df.loc[('Сумма'), y],
             label='Сумма', linewidth=3, color='red')
 
         # Отрисовка кривых по участкам
         for sector in sectors:
             ax.plot(
-                df.loc[(sector), x].sort_values(),
-                df.loc[(sector), y].sort_values(),
+                df.loc[(sector), x],
+                df.loc[(sector), y],
                 '--', label=sector, color=self.sector_colors[sector])
 
         # Отрисовка легенды
@@ -1867,7 +1867,7 @@ class GraphProfile(Graph):
                     # Проверка на перелив через границы участка
                     if (water_level >= previous_min_ele) and (i - 1 not in calc_sectors) and (i - 1 >= 0):
                         calc_sectors.append(i - 1)
-                    if (water_level >= next_min_ele) and (i + 1 not in calc_sectors) and (i + 1 <= len(morfostvor.sectors) - 1):
+                    if (water_level >= next_min_ele) and (i + 1 not in calc_sectors) and (i + 1 <= len(self.morfostvor.sectors) - 1):
                         calc_sectors.append(i + 1)
 
                     # Сектор воды и основные его параметры
