@@ -2,7 +2,7 @@
 
 PROFILE_LEVELS_TABLE = True  # Отображение уровней воды различных обеспеченностей на графике профиля
 PROFILE_LEVELS_TABLE_LINES = False  # Линии сносок от урезов воды к значению в таблицу уровней
-PROFILE_WATER_LEVEL_NOTE = True  # Отображение примечания о урезе воды
+PROFILE_WATER_LEVEL_NOTE = False  # Отображение примечания о урезе воды
 PROFILE_LEVELS_TITLE = True  # Отображение подписи уровней воды на профилях
 PROFILE_SECTOR_LABEL = True  # Отображение названия, длины и разделителя по участкам
 PROFILE_SECTOR_FILL = False  # Заливка участков профиля на графике
@@ -15,10 +15,10 @@ PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающ
 PROFILE_SAVE_PICTURES = True  # Сохранение рисунков поперечников в отдельные файлы
 HYDRAULIC_CURVE = True  # Отрисовка графика гидравлической кривой
 HYDRAULIC_CURVE_LEVELS = True  # Отрисовка расчётных уровней на графике гидравлической кривой
-SPEED_CURVE = True  # Отрисовка графика кривой скоростей
+SPEED_CURVE = False  # Отрисовка графика кривой скоростей
 SPEED_CURVE_LEVELS = True  # Отрисовка расчётных скоростей на графике кривой скоростей
-AREA_CURVE = True  # Отрисовка графика кривой площадей
-CURVE_SAVE_PICTURES = True  # Сохранение рисунков кривой в отдельные файлы
+AREA_CURVE = False  # Отрисовка графика кривой площадей
+CURVE_SAVE_PICTURES = False  # Сохранение рисунков кривой в отдельные файлы
 GRAPHICS_TITLES = True  # Отрисовка названия на графиках
 GRAPHICS_TITLES_TEXT = False  # Подпись графиков текстом
 REWRITE_DOC_FILE = True  # Перезапись экспортируемого файла

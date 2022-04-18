@@ -1900,7 +1900,6 @@ class GraphProfile(Graph):
             self._update_limit()
 
     def draw_top_limit(self, h, x1=None, x2=None, text="{}\nH = {:.2f}"):
-        # y_step = self.ax.get_yticks()[1] - self.ax.get_yticks()[0]
         # Если координаты начала и конца линии не заданы, устанавливаем по границе профиля
         # если есть участки 'Левая пойма', 'Правая пойма' задаем границы линии по участкам
         if x1 is None:
@@ -1913,18 +1912,18 @@ class GraphProfile(Graph):
             for sector in self.morfostvor.sectors:
                 if sector.name == "Правая пойма":
                     x2 = sector.coord[0][0]
+        y_step = self.ax.get_yticks()[1] - self.ax.get_yticks()[0]
+        cent_x = x2 - ((x2 - x1) / 2)
 
-        # cent_x = x2 - ((x2 - x1) / 2)
-
-        # top_limit_text = self.ax.text(
-        #     cent_x,
-        #     h + (y_step * 0.2),
-        #     f"{self.morfostvor.top_limit_description}\nH = {h:.2f}",
-        #     color=config.COLOR['top_limit_text'],
-        #     fontsize=config.FONT_SIZE['top_limit'],
-        #     weight='bold',
-        #     horizontalalignment='center',
-        #     verticalalignment='center')
+        top_limit_text = self.ax.text(
+            cent_x,
+            h + (y_step * 0.2),
+            f"{self.morfostvor.top_limit_description}\nH = {h:.2f}",
+            color=config.COLOR['top_limit_text'],
+            fontsize=config.FONT_SIZE['top_limit'],
+            weight='bold',
+            horizontalalignment='center',
+            verticalalignment='center')
 
         self.ax.plot(
             [x1, x2],
