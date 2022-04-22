@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
+from setuptools import setup
 import xlrd
 from docx import Document
 from docx.shared import Cm
@@ -1444,7 +1445,7 @@ class GraphProfile(Graph):
     ax: plt.subplot = fig.add_subplot(__gs[1:62, :])
     ax_bottom: plt.subplot = fig.add_subplot(__gs[62:, :])
     ax_bottom_overlay: plt.subplot = fig.add_subplot(__gs[62:, :], frame_on=False)
-
+    
     def __post_init__(self):
         self.clean()
 
@@ -1483,143 +1484,245 @@ class GraphProfile(Graph):
 
             :param self:
         """
-        # Подписи Данных в подвале
-        if config.PROFILE_LEVELS_TABLE:
-            self.ax_bottom.set_xlabel(
-                "ПК, м\n\nОтм. м\n\nРасст. м\n\nКоэфф. n",
+        n = 5  # Количество ячеек подвала
+        hs = 10  # Стандартная высота ячейки подвала
+        x1 = self.morfostvor.x[0]
+        x2 = self.morfostvor.x[-1]
+
+        def setup_box():
+            y_top = n * hs
+
+            # Технический разделитель (для увеличения размера границ)
+            self.ax_bottom_overlay.plot(
+                (x1, x2), (y_top, y_top), alpha=0, color="red"
+            )
+
+            self.ax_bottom.plot(
+                (x1, x1), (0, y_top), alpha=0, color="red"
+            )
+
+        def draw_pk():
+            """  Отрисовывает нижнюю границу для ПК в подвале, сами значения ПК отрисовываются отдельно
+            """
+            y_top = n*hs
+            y_bot = n*hs-hs
+            y_mid = y_top - ((y_top - y_bot) / 2)
+            x2 = self.morfostvor.x[-1]
+
+            # Подпись ячейки
+            label = 'ПК'
+            self.ax_bottom_overlay.text(
+                x2, y_mid, "   " + label,
                 color=config.COLOR["bottom_text"],
                 fontsize=config.FONT_SIZE["bottom_description"],
-                fontstyle="italic",
-                horizontalalignment="left",
+                horizontalalignment='left', verticalalignment='center',
             )
 
-            self.ax_bottom.xaxis.set_label_coords(1.02, 0.92)
-
-        # Горизонтальные разделители подвала (полная рамка)
-        self.ax_bottom_overlay.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[-1]),
-            (0, 0),
-            color=config.COLOR["border"],
-            linewidth=config.LINE_WIDTH["profile_bottom"],
-            linestyle="solid",
-        )
-
-        self.ax_bottom_overlay.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[-1]),
-            (5, 5),
-            color=config.COLOR["border"],
-            linewidth=config.LINE_WIDTH["profile_bottom"],
-            linestyle="solid",
-        )
-
-        self.ax_bottom_overlay.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[-1]),
-            (10, 10),
-            color=config.COLOR["border"],
-            linewidth=config.LINE_WIDTH["profile_bottom"],
-            linestyle="solid",
-        )
-
-        self.ax_bottom_overlay.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[-1]),
-            (15, 15),
-            color=config.COLOR["border"],
-            linewidth=config.LINE_WIDTH["profile_bottom"],
-            linestyle="solid",
-        )
-
-        self.ax_bottom_overlay.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[-1]), (20, 20), alpha=0
-        )
-
-        # Технический разделитель (для увеличения размера границ)
-        self.ax_bottom.plot(
-            (self.morfostvor.x[0], self.morfostvor.x[0]), (30, 40), alpha=0
-        )
-
-        # Цикл по всем точкам
-        for i in range(len(self.morfostvor.x)):
-            x = self.morfostvor.x[i]
-            y = self.morfostvor.y[i]
-
-            # Разделители расстояний между точками
-            self.ax_bottom.plot(
-                (x, x),
-                (10, 20),
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_bot, y_bot),
                 color=config.COLOR["border"],
                 linewidth=config.LINE_WIDTH["profile_bottom"],
                 linestyle="solid",
             )
 
-            # Подписи отметок
-            self.ax_bottom.text(
-                x,
-                25,
-                f"{y:.2f}",
+        def draw_h(num=3):
+            y_top = num*hs
+            y_bot = num*hs-hs
+            y_mid = y_top - ((y_top - y_bot) / 2)
+            x2 = self.morfostvor.x[-1]
+
+            # Подпись ячейки
+            label = 'Отметка'
+            self.ax_bottom_overlay.text(
+                x2, y_mid, "   " + label,
                 color=config.COLOR["bottom_text"],
-                fontsize=config.FONT_SIZE["bottom_small"],
-                verticalalignment="center",
-                horizontalalignment="center",
-                rotation="90",
+                fontsize=config.FONT_SIZE["bottom_description"],
+                horizontalalignment='left', verticalalignment='center',
             )
 
-        # Цикл по точкам до предпоследней
-        for i in range(len(self.morfostvor.x) - 1):
-            x = self.morfostvor.x[i]
-            x1 = self.morfostvor.x[i + 1]
-            y = self.morfostvor.y[i]
-
-            # Подписи расстояний между точками
-            self.ax_bottom.text(
-                (x + x1) / 2,
-                15,
-                f"{round(x1 - x):d}",
-                color=config.COLOR["bottom_text"],
-                fontsize=config.FONT_SIZE["bottom_main"],
-                verticalalignment="center",
-                horizontalalignment="center",
+            # Верхняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_top, y_top),
+                color=config.COLOR["border"],
+                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linestyle="solid",
             )
 
-        # Цикл по участкам
-        for sector in self.morfostvor.sectors:
-            x = self.morfostvor.x[sector.start_point]
-            x1 = self.morfostvor.x[sector.end_point]
+            # Нижняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_bot, y_bot),
+                color=config.COLOR["border"],
+                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linestyle="solid",
+            )
 
-            # Подписи коэффициентов шероховатости по участкам
-            try:
+
+            # Цикл по всем точкам
+            for i in range(len(self.morfostvor.x)):
+                x = self.morfostvor.x[i]
+                y = self.morfostvor.y[i]
+
+                # Подписи отметок
                 self.ax_bottom.text(
-                    (x + x1) / 2,
-                    5,
-                    f"{sector.roughness:.3f}",
+                    x,
+                    y_mid,
+                    f"{y:.2f}",
                     color=config.COLOR["bottom_text"],
-                    fontsize=config.FONT_SIZE["bottom_main"],
+                    fontsize=config.FONT_SIZE["bottom_small"],
                     verticalalignment="center",
                     horizontalalignment="center",
+                    rotation="90",
                 )
 
-            except ValueError:
-                print(
-                    "\nОшибка в указании параметров участков (коэффициент шероховатости \
-                       или разделение на участки). Проверить данные."
-                )
-                sys.exit(1)
+        def draw_dist(num=2):
+            y_top = num*hs
+            y_bot = num*hs-hs
+            y_mid = y_top - ((y_top - y_bot) / 2)     
 
-            # Разделители коэффициентов шероховатости
-            self.ax_bottom.plot(
-                (x, x),
-                (0, 10),
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            # Подпись ячейки
+            label = 'Расстояние'
+            self.ax_bottom_overlay.text(
+                x2, y_mid, "   " + label,
+                color=config.COLOR["bottom_text"],
+                fontsize=config.FONT_SIZE["bottom_description"],
+                horizontalalignment='left', verticalalignment='center',
+            )
+            
+            # Верхняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_top, y_top),
                 color=config.COLOR["border"],
                 linewidth=config.LINE_WIDTH["profile_bottom"],
                 linestyle="solid",
             )
 
-            self.ax_bottom.plot(
-                (x1, x1),
-                (0, 10),
+            # Нижняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_bot, y_bot),
                 color=config.COLOR["border"],
                 linewidth=config.LINE_WIDTH["profile_bottom"],
                 linestyle="solid",
             )
+
+            # Цикл по всем точкам
+            for i in range(len(self.morfostvor.x)):
+                x = self.morfostvor.x[i]
+
+                # Разделители расстояний между точками
+                self.ax_bottom.plot(
+                    (x, x),
+                    (y_bot, y_top),
+                    color=config.COLOR["border"],
+                    linewidth=config.LINE_WIDTH["profile_bottom"],
+                    linestyle="solid",
+                )
+
+                # Подписи расстояний между точками
+                if i < len(self.morfostvor.x) - 1:
+                    x1_ = self.morfostvor.x[i + 1]
+                    # Подписи расстояний между точками
+                    self.ax_bottom.text(
+                        (x + x1_) / 2,
+                        y_mid,
+                        f"{round(x1_ - x):d}",
+                        color=config.COLOR["bottom_text"],
+                        fontsize=config.FONT_SIZE["bottom_main"],
+                        verticalalignment="center",
+                        horizontalalignment="center",
+                    )
+
+        def draw_rough(num=1):
+            y_top = num*hs
+            y_bot = num*hs-hs
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            label = 'Коэфф. n'
+            self.ax_bottom_overlay.text(
+                x2, y_mid, "   " + label,
+                color=config.COLOR["bottom_text"],
+                fontsize=config.FONT_SIZE["bottom_description"],
+                horizontalalignment='left', verticalalignment='center',
+            )
+
+            # Верхняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_top, y_top),
+                color=config.COLOR["border"],
+                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linestyle="solid",
+            )
+
+            # Нижняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_bot, y_bot),
+                color=config.COLOR["border"],
+                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linestyle="solid",
+            )
+
+            # Цикл по участкам
+            for sector in self.morfostvor.sectors:
+                x = self.morfostvor.x[sector.start_point]
+                x1 = self.morfostvor.x[sector.end_point]
+
+                # Подписи коэффициентов шероховатости по участкам
+                try:
+                    self.ax_bottom.text(
+                        (x + x1) / 2,
+                        y_mid,
+                        f"{sector.roughness:.3f}",
+                        color=config.COLOR["bottom_text"],
+                        fontsize=config.FONT_SIZE["bottom_main"],
+                        verticalalignment="center",
+                        horizontalalignment="center",
+                    )
+
+                except ValueError:
+                    print(
+                        "\nОшибка в указании параметров участков (коэффициент шероховатости \
+                        или разделение на участки). Проверить данные."
+                    )
+                    sys.exit(1)
+
+                # Разделители коэффициентов шероховатости
+                # Левая граница
+                self.ax_bottom.plot(
+                    (x, x),
+                    (y_bot, y_top),
+                    color=config.COLOR["border"],
+                    linewidth=config.LINE_WIDTH["profile_bottom"],
+                    linestyle="solid",
+                )
+
+                # Правая граница
+                self.ax_bottom.plot(
+                    (x1, x1),
+                    (y_bot, y_top),
+                    color=config.COLOR["border"],
+                    linewidth=config.LINE_WIDTH["profile_bottom"],
+                    linestyle="solid",
+                )
+
+        setup_box()
+        draw_pk()
+        draw_h(4)
+        draw_dist(3)
+        draw_rough(2)
+        draw_h(1)
+        # draw_dist(1)
 
     def draw_sectors(self):
         """
