@@ -6,6 +6,7 @@ from pathlib import Path
 
 import matplotlib
 import matplotlib.patheffects as path_effects
+from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -78,6 +79,20 @@ class ProfileSector(object):
 
     def get_length(self):
         return round(self.coord[0][-1] - self.coord[0][0], 3)
+
+
+@dataclass
+class SituationSector(object):
+    id: int
+    type: str
+    start_point: int
+    end_point: int
+
+@dataclass
+class SituationBorder(object):
+    id: int
+    type: str
+
 
 
 @dataclass
@@ -416,6 +431,7 @@ class Morfostvor(object):
     x: list = field(default_factory=list)
     y: list = field(default_factory=list)
     situation: list = field(default_factory=list)
+    situation_borders: list = field(default_factory=list)
     sectors: list = field(default_factory=list)
     ele_max: float = 0
     ele_min: float = 0
@@ -486,10 +502,65 @@ class Morfostvor(object):
         __situation_col = 5
         __description_col = 8
 
+        def get_situation(self):
+            """Функция считывания участков ситуации из исходных файлов."""
+
+            print("    — Определяем участки ситуации ... ", end="")
+
+            lines_num = 0
+
+            # Считываем количество строк с не пустыми координатами
+            for line in __raw_data:
+                if type(line[__x_coord_col]) != str:
+                    lines_num += 1
+
+            situation = self.situation
+            situation_borders = self.situation_borders
+            x = self.x  # Координаты профиля X
+            num = 1
+
+            for line in range(lines_num):
+                try:
+                    s1 = __raw_data[line][__situation_col].split(",")[0]
+                    s2 = __raw_data[line][__situation_col].split(",")[1]
+
+                    situation_borders.append(
+                        SituationBorder(line, s2)
+                    )
+                except IndexError:
+                    s1 = __raw_data[line][__situation_col]
+
+                if line == 0:
+                    situation.append(
+                        SituationSector(num, s1, line, line)
+                    )
+
+                elif s1 != situation[num - 1].type:
+                    if situation[num - 1].id == 1:
+                        situation[num - 1].end_point = line
+                    else:
+                        situation[num - 1].end_point = line
+
+                    num += 1
+
+                    situation.append(
+                        SituationSector(
+                            num,
+                            s1,
+                            situation[num - 2].end_point,
+                            line
+                        )
+                    )
+            situation[-1].end_point = len(x) - 1
+
+            print(f"успешно.\n")
+
+            return(situation)
+
         def get_sectors(self):
             """Функция считывания участоков и их параметров из исходных файлов."""
 
-            print("    — Определяем участки ... ", end="")
+            print("    — Определяем морфометрические участки ... ", end="")
             # №, Описание участка, номер первой точки, номер последней точки,
             # коэффициент шероховатости, уклон ‰, координата x, координаты y
             lines_num = 0
@@ -522,6 +593,8 @@ class Morfostvor(object):
 
                 # Сравниваем имя предыдущего участка с текущим, и если не совпадают то создаем новый сектор:
                 elif name != sectors[num - 1].name:
+
+                    # TODO: Проверить это условие
                     if sectors[num - 1].id == 1:  # Если первый участок
                         # Записываем номер последний точки - 1
                         sectors[num - 1].end_point = line
@@ -567,7 +640,7 @@ class Morfostvor(object):
                 print("Завершаем программу.")
                 sys.exit(3)
 
-            print(f"успешно, найдено {len(sectors)} участка.\n")
+            print(f"успешно, найдено {len(sectors)} участка.")
             return sectors
 
         # Перебираем все строки
@@ -601,7 +674,7 @@ class Morfostvor(object):
             if type(__raw_data[i][__x_coord_col]) != str:
                 self.x.append(__raw_data[i][__x_coord_col])
                 self.y.append(__raw_data[i][__y_coord_col])
-                self.situation.append(__raw_data[i][__situation_col])
+                #self.situation.append(__raw_data[i][__situation_col])
         print(f"успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]:.2f} м")
 
         self.ele_min = min(self.y)  # Минимальная отметка профиля
@@ -619,6 +692,7 @@ class Morfostvor(object):
 
         # Обработка и получение данных по секторам из "сырых" данных
         self.sectors = get_sectors(self)
+        self.situation = get_situation(self)
 
     def get_min_sector(self):
         """
@@ -1526,7 +1600,7 @@ class GraphProfile(Graph):
                 linestyle="solid",
             )
 
-        def draw_h(num=3):
+        def draw_h(num=4):
             y_top = num*hs
             y_bot = num*hs-hs
             y_mid = y_top - ((y_top - y_bot) / 2)
@@ -1577,7 +1651,7 @@ class GraphProfile(Graph):
                     rotation="90",
                 )
 
-        def draw_dist(num=2):
+        def draw_dist(num=3):
             y_top = num*hs
             y_bot = num*hs-hs
             y_mid = y_top - ((y_top - y_bot) / 2)     
@@ -1639,7 +1713,7 @@ class GraphProfile(Graph):
                         horizontalalignment="center",
                     )
 
-        def draw_rough(num=1):
+        def draw_rough(num=2):
             y_top = num*hs
             y_bot = num*hs-hs
             y_mid = y_top - ((y_top - y_bot) / 2)
@@ -1678,10 +1752,12 @@ class GraphProfile(Graph):
                 x = self.morfostvor.x[sector.start_point]
                 x1 = self.morfostvor.x[sector.end_point]
 
+                x_mid = x1 - ((x1 - x) / 2)
+
                 # Подписи коэффициентов шероховатости по участкам
                 try:
                     self.ax_bottom.text(
-                        (x + x1) / 2,
+                        x_mid,
                         y_mid,
                         f"{sector.roughness:.3f}",
                         color=config.COLOR["bottom_text"],
@@ -1716,12 +1792,94 @@ class GraphProfile(Graph):
                     linestyle="solid",
                 )
 
+        def draw_situation(num=1):
+            y_top = num*hs
+            y_bot = num*hs-hs
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            label = 'Ситуация'
+            self.ax_bottom_overlay.text(
+                x2, y_mid, "   " + label,
+                color=config.COLOR["bottom_text"],
+                fontsize=config.FONT_SIZE["bottom_description"],
+                horizontalalignment='left', verticalalignment='center',
+            )
+
+            # Верхняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_top, y_top),
+                color=config.COLOR["border"],
+                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linestyle="solid",
+            )
+
+            # Нижняя граница
+            self.ax_bottom_overlay.plot(
+                (x1, x2),
+                (y_bot, y_bot),
+                color=config.COLOR["border"],
+                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linestyle="solid",
+            )
+
+            for sector in self.morfostvor.situation:
+                x1 = self.morfostvor.x[sector.start_point]
+                x2 = self.morfostvor.x[sector.end_point]
+                x_mid = x2 - ((x2 - x1) / 2)
+
+                if sector.type == "УВ":
+                    linestyle = 'solid'
+                    linewidth = 2
+
+                    self.ax_bottom.add_patch(
+                        Rectangle((x1, y_bot), (x2-x1), hs,
+                        facecolor = 'skyblue',
+                        fill=True)
+                    )
+                else:
+                    linestyle = '--'
+                    linewidth = 1
+                
+
+                self.ax_bottom.text(
+                    x_mid,
+                    y_mid,
+                    f"{sector.type}",
+                    color=config.COLOR["bottom_text"],
+                    fontsize=config.FONT_SIZE["bottom_medium"],
+                    verticalalignment="center",
+                    horizontalalignment="center"          
+                )
+
+                # Левая граница
+                self.ax_bottom.plot(
+                    (x1, x1),
+                    (y_bot, y_top),
+                    color=config.COLOR["border"],
+                    linewidth=linewidth,
+                    linestyle=linestyle,
+                )
+
+                # Правая граница
+                self.ax_bottom.plot(
+                    (x2, x2),
+                    (y_bot, y_top),
+                    color=config.COLOR["border"],
+                    linewidth=linewidth,
+                    linestyle=linestyle,
+                )
+
+        print(self.morfostvor.situation)
         setup_box()
         draw_pk()
         draw_h(4)
         draw_dist(3)
         draw_rough(2)
-        draw_h(1)
+        draw_situation(1)
         # draw_dist(1)
 
     def draw_sectors(self):
