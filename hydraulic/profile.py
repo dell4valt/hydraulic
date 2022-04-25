@@ -1800,6 +1800,7 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
+            # Подпись ряда
             label = 'Ситуация'
             self.ax_bottom_overlay.text(
                 x2, y_mid, "   " + label,
@@ -1837,22 +1838,23 @@ class GraphProfile(Graph):
 
                     self.ax_bottom.add_patch(
                         Rectangle((x1, y_bot), (x2-x1), hs,
-                        facecolor = 'skyblue',
+                        facecolor = 'deepskyblue',
                         fill=True)
                     )
                 else:
                     linestyle = '--'
                     linewidth = 1
-                
 
+                # Подпись в ситуации
                 self.ax_bottom.text(
                     x_mid,
                     y_mid,
                     f"{sector.type}",
+                    style='italic',
                     color=config.COLOR["bottom_text"],
                     fontsize=config.FONT_SIZE["bottom_medium"],
                     verticalalignment="center",
-                    horizontalalignment="center"          
+                    horizontalalignment="center"
                 )
 
                 # Левая граница
