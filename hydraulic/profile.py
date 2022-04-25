@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
-from setuptools import setup
 import xlrd
 from docx import Document
 from docx.shared import Cm
@@ -88,11 +87,11 @@ class SituationSector(object):
     start_point: int
     end_point: int
 
+
 @dataclass
 class SituationBorder(object):
     id: int
     type: str
-
 
 
 @dataclass
@@ -674,7 +673,6 @@ class Morfostvor(object):
             if type(__raw_data[i][__x_coord_col]) != str:
                 self.x.append(__raw_data[i][__x_coord_col])
                 self.y.append(__raw_data[i][__y_coord_col])
-                #self.situation.append(__raw_data[i][__situation_col])
         print(f"успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]:.2f} м")
 
         self.ele_min = min(self.y)  # Минимальная отметка профиля
@@ -1327,6 +1325,9 @@ class Graph(object):
             alpha=0.9,
         )
 
+        # Установка параметров полей графика
+        self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.93, top=0.85)
+
     def clean(self):
         """Очистка осей графика и обнуление связанных переменных"""
         # Очищаем все оси
@@ -1519,7 +1520,7 @@ class GraphProfile(Graph):
     ax: plt.subplot = fig.add_subplot(__gs[1:62, :])
     ax_bottom: plt.subplot = fig.add_subplot(__gs[62:, :])
     ax_bottom_overlay: plt.subplot = fig.add_subplot(__gs[62:, :], frame_on=False)
-    
+
     def __post_init__(self):
         self.clean()
 
@@ -1550,6 +1551,7 @@ class GraphProfile(Graph):
             color=config.COLOR["profile_bottom"],
             linewidth=config.LINE_WIDTH["profile_bottom"],
             linestyle="solid",
+            zorder=10
         )
 
     def draw_profile_footer(self):
@@ -1633,7 +1635,6 @@ class GraphProfile(Graph):
                 linestyle="solid",
             )
 
-
             # Цикл по всем точкам
             for i in range(len(self.morfostvor.x)):
                 x = self.morfostvor.x[i]
@@ -1654,7 +1655,7 @@ class GraphProfile(Graph):
         def draw_dist(num=3):
             y_top = num*hs
             y_bot = num*hs-hs
-            y_mid = y_top - ((y_top - y_bot) / 2)     
+            y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
@@ -1667,7 +1668,7 @@ class GraphProfile(Graph):
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center',
             )
-            
+
             # Верхняя граница
             self.ax_bottom_overlay.plot(
                 (x1, x2),
@@ -1837,10 +1838,11 @@ class GraphProfile(Graph):
                     linewidth = 2
 
                     self.ax_bottom.add_patch(
-                        Rectangle((x1, y_bot), (x2-x1), hs,
-                        facecolor = 'deepskyblue',
-                        fill=True)
-                    )
+                        Rectangle(
+                            (x1, y_bot), (x2-x1), hs,
+                            facecolor='deepskyblue',
+                            fill=True)
+                        )
                 else:
                     linestyle = '--'
                     linewidth = 1
@@ -1875,14 +1877,12 @@ class GraphProfile(Graph):
                     linestyle=linestyle,
                 )
 
-        print(self.morfostvor.situation)
         setup_box()
         draw_pk()
         draw_h(4)
         draw_dist(3)
         draw_rough(2)
         draw_situation(1)
-        # draw_dist(1)
 
     def draw_sectors(self):
         """
@@ -2085,6 +2085,9 @@ class GraphProfile(Graph):
             linewidth=1,
             alpha=0.9,
         )
+
+        # Установка параметров полей графика
+        self.fig.subplots_adjust(left=0.05, bottom=0.02, right=0.9, top=0.9)
 
     def draw_profile_point_lines(self):
         """
