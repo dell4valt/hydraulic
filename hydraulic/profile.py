@@ -760,6 +760,8 @@ class Morfostvor(object):
 
         if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
+        if config.HYDRAULIC_AND_SPEED_CURVE:
+            self.fig_QHV = GraphQHV(self)
         if config.SPEED_CURVE:
             self.fig_QV = GraphQV(self)
         if config.AREA_CURVE:
@@ -827,6 +829,20 @@ class Morfostvor(object):
                     "Рисунок — " + self.fig_QH._ax_title_text, style="Р-название"
                 )
 
+        if config.HYDRAULIC_AND_SPEED_CURVE:
+            print("    — Сохраняем график гидравлической кривой с совмещенным графиком скорости ... ", end="")
+            self.fig_QHV.fig.savefig(
+                Path(f"{config.TEMP_DIR_NAME}/QHV.png", dpi=config.FIG_DPI)
+            )
+            print("успешно!")
+
+            doc.add_picture(f"{config.TEMP_DIR_NAME}/QHV.png", width=Cm(16.5))
+            setLastParagraphStyle("Р-рисунок", doc)
+
+            if config.GRAPHICS_TITLES_TEXT:
+                doc.add_paragraph(
+                    "Рисунок — " + self.fig_QHV._ax_title_text, style="Р-название"
+                )
         # Вставляем разрыв страницы
         insertPageBreak(doc)
 
@@ -871,15 +887,22 @@ class Morfostvor(object):
                 Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI)
             )
         if config.CURVE_SAVE_PICTURES:
-            self.fig_QH.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI)
-            )
-            self.fig_QV.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI)
-            )
-            self.fig_QF.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI)
-            )
+            if config.HYDRAULIC_CURVE:
+                self.fig_QH.fig.savefig(
+                    Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI)
+                )
+            if config.HYDRAULIC_AND_SPEED_CURVE: 
+                self.fig_QHV.fig.savefig(
+                    Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI)
+                )
+            if config.SPEED_CURVE:
+                self.fig_QV.fig.savefig(
+                    Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI)
+                )
+            if config.AREA_CURVE:
+                self.fig_QF.fig.savefig(
+                    Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI)
+                )
 
         # Вывод таблицы расчётных уровней воды
         print("    — Записываем таблицу уровней воды ... ", end="")
@@ -1229,6 +1252,7 @@ class Graph(object):
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
 
+
     def __post_init__(self):
         self.clean()
         morfostvor = self.morfostvor
@@ -1335,6 +1359,12 @@ class Graph(object):
             if ax.startswith("ax"):
                 command = "self." + ax + ".cla()"
                 exec(command)
+        
+        # Очистка осей скоростей на совмещенном графике
+        try:
+            self.ax_secondary.cla()
+        except:
+            pass
 
         # Обнуляем границы y
         self._y_limits = []
@@ -1452,9 +1482,134 @@ class GraphCurve(Graph):
 
 
 @dataclass
-class GraphQH(GraphCurve):
+class GraphQHV(GraphCurve):
     # Номер рисунка
     _fig_num = 2
+    _fig_size = (16.5, 11)
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    ax: plt.subplot = fig.add_subplot(111)
+    ax_secondary = ax.twinx()
+
+    # Подписи осей
+    _x_label_text = "Q, м³/с"
+    _y_label_text = "H, м"
+    _y2_label_text = "V, м/с"
+    _ax_title_text = "Гидравлическая кривая Q=f(H) с наложение Q=f(V)"
+
+    def draw_curve(self, morfostvor: Morfostvor, ax: plt.subplot, ax_secondary, x="Q", y="УВ", yy="V"):
+        """Отрисовка кривой на графике по заданным из морфоствора параметрам.
+
+        Args:
+            morfostvor (Morfostvor): Объект морфоствора из которого получаем данные
+            ax (plt.subplot): Ось на которой отрисовывать график
+            x (str, optional): Значения по оси x. Defaults to 'Q'.
+            y (str, optional): Значения по оси y. Defaults to 'УВ'.
+            yy (str, optional): Вторые значения по оси y. Defaults to 'V'.
+        """
+
+        df = morfostvor.hydraulic_table
+        df = df.reset_index(level=0)  # Переводим индекс уровня воды в столбец
+
+        sectors = set(df.index)  # Удаляем дублирующиеся записи
+        sectors.remove("Сумма")  # Удаляем запись суммирующего участка
+
+        ax_secondary.set_label(self._y2_label_text)
+
+
+        # Отрисовка суммирующей кривой на графике
+        ax.plot(
+            df.loc[("Сумма"), x],
+            df.loc[("Сумма"), y],
+            label="Сумма",
+            linewidth=3,
+            color="red",
+        )
+
+        ax_secondary.plot(
+            df.loc[("Сумма"), x],
+            df.loc[("Сумма"), yy],
+            label="Сумма",
+            linewidth=2,
+            color="green",
+            linestyle=':'
+        )
+
+        ax_secondary.set_ylim(df.loc[("Сумма"), yy].min(), df.loc[("Сумма"), yy].max()+0.5)
+
+        # Отрисовка кривых по участкам
+        for sector in sectors:
+            ax.plot(
+                df.loc[(sector), x],
+                df.loc[(sector), y],
+                "--",
+                label=sector,
+                color=self.sector_colors[sector],
+            )
+
+        # Отрисовка легенды
+        ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"],
+                  title="Q = f(H)", title_fontsize=14)
+        ax_secondary.legend(fontsize=config.FONT_SIZE["legend"], title="Q = f(V)", title_fontsize=14)
+
+        # Настраиваем границы и толщину линий границ
+        ax_secondary.spines["top"].set_linewidth(config.LINE_WIDTH["ax_border"])
+        ax_secondary.spines["right"].set_linewidth(config.LINE_WIDTH["ax_border"])  
+        ax_secondary.spines["left"].set_visible(False)
+        ax_secondary.spines["bottom"].set_visible(False)
+
+        # Устанавливаем отступы в графиках
+        ax_secondary.margins(0.025)
+
+        # Устанавливаем параметры засечек на основных осях
+        ax_secondary.tick_params(
+            which="major",
+            direction="out",
+            width=2,
+            length=5,
+            pad=10,
+            labelcolor=config.COLOR["ax_value_text"],
+            labelsize=config.FONT_SIZE["ax_major"],
+        )
+
+        ax_secondary.tick_params(
+            which="minor",
+            direction="out",
+            width=1.5,
+            length=3.5,
+            pad=10,
+            labelcolor=config.COLOR["ax_value_text"],
+            labelsize=config.FONT_SIZE["ax_minor"],
+        )
+
+        # Устанавливаем параметры подписей осей
+        ax_secondary.set_ylabel(
+            self._y2_label_text,
+            color=config.COLOR["ax_label_text"],
+            fontsize=config.FONT_SIZE["ax_label"],
+            fontstyle="italic",
+        )
+        ax_secondary.yaxis.set_label_coords(1.02, 1.08)
+
+        # Устанавливает параметры вывода значений осей
+        ax_secondary.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.10g"))
+
+
+    def draw(self):
+        y_min = min(
+            self.morfostvor.hydraulic_table.reset_index(0)
+            .loc["Сумма"]
+            .reset_index(drop=True)["УВ"]
+        )
+        self.draw_curve(self.morfostvor, self.ax, self.ax_secondary, "Q", "УВ", "V")
+        self.draw_water_levels(self.morfostvor, self.ax, "Q", "H", y_min)
+
+@dataclass
+class GraphQH(GraphCurve):
+    # Номер рисунка
+    _fig_num = 3
+    _fig_size = (16.5, 11)
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    ax: plt.subplot = fig.add_subplot(111)
 
     # Подписи осей
     _x_label_text = "Q, м³/с"
@@ -1474,7 +1629,7 @@ class GraphQH(GraphCurve):
 @dataclass
 class GraphQV(GraphCurve):
     # Номер рисунка
-    _fig_num = 3
+    _fig_num = 4
     _fig_size = (16.5, 11)
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
@@ -1492,7 +1647,7 @@ class GraphQV(GraphCurve):
 @dataclass
 class GraphQF(GraphCurve):
     # Номер рисунка
-    _fig_num = 4
+    _fig_num = 5
     _fig_size = (16.5, 11)
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
