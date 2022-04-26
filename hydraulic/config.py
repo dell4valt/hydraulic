@@ -41,6 +41,7 @@ FIG_DPI = 200
 COLOR = {
     'text': 'black',  # Основной для текста
     'bottom_text': 'black',  # Основной текст в подвале
+    'bottom_text_secondary': 'gray',  # Второстепенный текст в подвале
     'title_text': 'black',  # Заголовок профиля и графика Q(h)
     'border': 'black',   # Основные линии
     'profile_bottom': 'saddlebrown',  # Линия дна

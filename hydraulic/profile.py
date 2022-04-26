@@ -1743,10 +1743,10 @@ class GraphProfile(Graph):
             x2 = self.morfostvor.x[-1]
 
             # Подпись ячейки
-            label = 'ПК'
+            label = 'Пикеты'
             self.ax_bottom_overlay.text(
                 x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text"],
+                color=config.COLOR["bottom_text_secondary"],
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center',
             )
@@ -1766,10 +1766,10 @@ class GraphProfile(Graph):
             x2 = self.morfostvor.x[-1]
 
             # Подпись ячейки
-            label = 'Отметка'
+            label = 'Отм. земли'
             self.ax_bottom_overlay.text(
                 x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text"],
+                color=config.COLOR["bottom_text_secondary"],
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center',
             )
@@ -1821,7 +1821,7 @@ class GraphProfile(Graph):
             label = 'Расстояние'
             self.ax_bottom_overlay.text(
                 x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text"],
+                color=config.COLOR["bottom_text_secondary"],
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center',
             )
@@ -1882,7 +1882,7 @@ class GraphProfile(Graph):
             label = 'Коэфф. n'
             self.ax_bottom_overlay.text(
                 x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text"],
+                color=config.COLOR["bottom_text_secondary"],
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center',
             )
@@ -1962,7 +1962,7 @@ class GraphProfile(Graph):
             label = 'Ситуация'
             self.ax_bottom_overlay.text(
                 x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text"],
+                color=config.COLOR["bottom_text_secondary"],
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center',
             )
