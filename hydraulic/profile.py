@@ -87,6 +87,27 @@ class SituationSector(object):
     start_point: int
     end_point: int
 
+    def get_color(self):
+        s = self.type.strip().lower()
+
+        grass = ['трава', 'луг', 'газон']
+        concrete = ['бетон', 'асфальт']
+        field = ['пашня', 'поле']
+        wood = ['лес', 'редки лес', 'поросль', 'кустарник']
+        water = ['вода', 'ув', 'протока', 'ручей']
+
+        if s in grass:
+            return 'honeydew'
+        elif s in concrete:
+            return 'gainsboro'
+        elif s in  field:
+            return 'burlywood'
+        elif s in wood:
+            return 'limegreen'
+        elif s in water:
+            return 'deepskyblue'
+        else:
+            return 'white'
 
 @dataclass
 class SituationBorder(object):
@@ -1990,16 +2011,18 @@ class GraphProfile(Graph):
                 x2 = self.morfostvor.x[sector.end_point]
                 x_mid = x2 - ((x2 - x1) / 2)
 
-                if sector.type == "УВ":
-                    linestyle = 'solid'
-                    linewidth = 2
-
+                # Отрисовка прямоугольника с заливкой
+                if config.SITUATION_COLORS:
                     self.ax_bottom.add_patch(
                         Rectangle(
                             (x1, y_bot), (x2-x1), hs,
-                            facecolor='deepskyblue',
-                            fill=True)
-                        )
+                            facecolor=sector.get_color(),
+                            fill=True))
+
+                # Определение толщины и типа вертикальных линий
+                if sector.type == "УВ":
+                    linestyle = 'solid'
+                    linewidth = 2
                 else:
                     linestyle = '--'
                     linewidth = 1
