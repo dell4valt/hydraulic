@@ -92,6 +92,7 @@ class SituationSector(object):
 class SituationBorder(object):
     id: int
     type: str
+    point: int
 
 
 @dataclass
@@ -516,7 +517,8 @@ class Morfostvor(object):
             situation = self.situation
             situation_borders = self.situation_borders
             x = self.x  # Координаты профиля X
-            num = 1
+            num = 1  # Порядковый участка ситуации
+            bnum = 1  # Порядковый номер границы
 
             for line in range(lines_num):
                 try:
@@ -524,8 +526,9 @@ class Morfostvor(object):
                     s2 = __raw_data[line][__situation_col].split(",")[1]
 
                     situation_borders.append(
-                        SituationBorder(line, s2)
+                        SituationBorder(bnum, s2.strip().lower(), line)
                     )
+                    bnum += 1
                 except IndexError:
                     s1 = __raw_data[line][__situation_col]
 
@@ -553,7 +556,6 @@ class Morfostvor(object):
             situation[-1].end_point = len(x) - 1
 
             print(f"успешно.\n")
-
             return(situation)
 
         def get_sectors(self):
@@ -2031,6 +2033,36 @@ class GraphProfile(Graph):
                     linewidth=linewidth,
                     linestyle=linestyle,
                 )
+
+            # Отрисовка границ специальными линиями
+            for border in self.morfostvor.situation_borders:
+                xb1 = self.morfostvor.x[border.point]
+                n = 4  # Количество маркеров
+                xb = self.morfostvor.x[border.point] * np.ones(n)
+                yb = np.linspace(y_bot, y_top - (y_top*0.15), n)
+
+                # Определяем сторону бровки и выбираем тип маркера
+                if border.type == "бровка левая":
+                    linesymbol = 9  # Маркер |>
+                elif border.type == "бровка правая":
+                    linesymbol = 8  # Маркер <|
+                else:
+                    if xb1 % 2 == 0:
+                        linesymbol = 8
+                    else:
+                        linesymbol = 9
+
+                # Маркеры
+                self.ax_bottom.plot(
+                    xb, yb, linestyle=linestyle, linewidth=linewidth,
+                    marker=linesymbol, color=(.0, .0, 0, 0), ms=8,
+                    mfc=(.0, .0, 0, 1), mec=(0, 0, 0, 1), clip_on=True)
+
+                # Линия
+                self.ax_bottom.plot(
+                    (xb1, xb1), (y_bot, y_top),
+                    ls='solid', lw=2,
+                    color=(.0, .0, 0, 1))
 
         setup_box()
         draw_pk()
