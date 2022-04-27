@@ -1540,7 +1540,7 @@ class GraphQHV(GraphCurve):
     _x_label_text = "Q, м³/с"
     _y_label_text = "H, м"
     _y2_label_text = "V, м/с"
-    _ax_title_text = "Гидравлическая кривая Q=f(H) с наложение Q=f(V)"
+    _ax_title_text = "Гидравлическая кривая Q=f(H) с наложением Q=f(V)"
 
     def draw_curve(self, morfostvor: Morfostvor, ax: plt.subplot, ax_secondary, x="Q", y="УВ", yy="V"):
         """Отрисовка кривой на графике по заданным из морфоствора параметрам.
