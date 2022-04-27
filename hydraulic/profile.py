@@ -460,6 +460,7 @@ class Morfostvor(object):
     dH: int = 5
     waterline: float = 0
     erosion_limit: float = 0
+    erosion_limit_coord: list = field(default_factory=list)
     top_limit: float = 0
     top_limit_description: str = ""
 
@@ -683,7 +684,15 @@ class Morfostvor(object):
 
         self.dH = __raw_data[5][__description_col]  # Расчётный шаг по глубине
         self.coords = __raw_data[6][__description_col]  # Координаты
-        self.erosion_limit = __raw_data[7][__description_col]  # Предел размыва
+
+        # Считываем отметку предела размыва (в скобках можно указать границы)
+        try:
+            erosion_limit_list = [float(x.strip()) for x in __raw_data[7][__description_col].split(',')]
+            self.erosion_limit = erosion_limit_list[0]  # Предел размыва
+            self.erosion_limit_coord = erosion_limit_list[1:]   # координаты предела размыва
+        except:
+            self.erosion_limit = __raw_data[7][__description_col]
+
         self.top_limit = __raw_data[8][__description_col]  # Верхняя граница
         self.top_limit_description = __raw_data[9][
             __description_col
@@ -803,7 +812,9 @@ class Morfostvor(object):
             )
 
         # Отрисовка границы предельного размыва профиля
-        if self.erosion_limit:
+        if self.erosion_limit and self.erosion_limit_coord:
+            self.fig_profile.draw_erosion_limit(self.erosion_limit, self.erosion_limit_coord[0], self.erosion_limit_coord[1])
+        elif self.erosion_limit:
             self.fig_profile.draw_erosion_limit(self.erosion_limit)
 
         # Отрисовка уровней воды на графике профиля
