@@ -813,7 +813,10 @@ class Morfostvor(object):
 
         # Отрисовка границы предельного размыва профиля
         if self.erosion_limit and self.erosion_limit_coord:
-            self.fig_profile.draw_erosion_limit(self.erosion_limit, self.erosion_limit_coord[0], self.erosion_limit_coord[1])
+            self.fig_profile.draw_erosion_limit(
+                self.erosion_limit,
+                self.erosion_limit_coord[0],
+                self.erosion_limit_coord[1])
         elif self.erosion_limit:
             self.fig_profile.draw_erosion_limit(self.erosion_limit)
 
@@ -2643,7 +2646,7 @@ class GraphProfile(Graph):
         water_level = min(self.morfostvor.y) + dH
 
         # Цикл расчёта до максимального уровня воды
-        while water_level < self.morfostvor.hydraulic_result["УВ"].max():
+        while water_level < self.morfostvor.levels_result['H'].max():  # self.morfostvor.hydraulic_result["УВ"].max():
             if config.OVERFLOW:
                 for i in calc_sectors:
                     sector = self.morfostvor.sectors[i]
