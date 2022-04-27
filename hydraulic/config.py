@@ -20,6 +20,7 @@ SPEED_CURVE = False  # Отрисовка графика кривой скоро
 SPEED_CURVE_LEVELS = True  # Отрисовка расчётных скоростей на графике кривой скоростей
 AREA_CURVE = False  # Отрисовка графика кривой площадей
 CURVE_SAVE_PICTURES = True  # Сохранение рисунков кривой в отдельные файлы
+CURVE_HIDE_GRID = False  # Скрыть сетку на графиках кривых
 GRAPHICS_TITLES = True  # Отрисовка названия на графиках
 GRAPHICS_TITLES_TEXT = False  # Подпись графиков текстом
 REWRITE_DOC_FILE = True  # Перезапись экспортируемого файла
@@ -66,7 +67,7 @@ COLOR = {
 
 FONT_SIZE = {
     'title': 20,  # Заголовок профиля и графика Q(h)
-    'ax_label': 14,  # Подписи заголовка осей
+    'ax_label': 16,  # Подписи заголовка осей
     'water_level': 12,  # Урез воды
     'erosion_limit': 12,
     'top_limit': 12,
@@ -88,4 +89,9 @@ LINE_WIDTH = {
     'sector_line': 1,  # Линии разделителя участков
     'profile_bottom': 2.5,  # Основные линии в подвале
     'profile_point_line': 1,  # Вертикальные линии от точек до подвала
+}
+
+PADDING = {
+    'ax_tick_labels': 8,  # Отступ от оси подписей значений осей на графиках кривых
+    'ax_profile_tick_labels': 8  # Отступ от оси подписей значений осей на графике профиля
 }

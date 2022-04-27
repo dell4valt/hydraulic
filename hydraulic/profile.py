@@ -1310,7 +1310,7 @@ class Graph(object):
         fig = self.fig
         ax = self.ax
 
-        fig.subplots_adjust(bottom=0.08, left=0.08, right=0.9)
+        fig.subplots_adjust(bottom=0.08, left=0.08, right=0.92)
 
         # Устанавливаем заголовки графиков
         if config.GRAPHICS_TITLES:
@@ -1318,7 +1318,7 @@ class Graph(object):
                 self._ax_title_text,
                 color=config.COLOR["title_text"],
                 fontsize=config.FONT_SIZE["title"],
-                y=1.1,
+                y=1.05,
             )
 
         # Настраиваем границы и толщину линий границ
@@ -1327,8 +1327,8 @@ class Graph(object):
         ax.spines["left"].set_linewidth(config.LINE_WIDTH["ax_border"])
         ax.spines["bottom"].set_linewidth(config.LINE_WIDTH["ax_border"])
 
-        # Устанавливаем отступы в графиках
-        ax.margins(0.025)
+        # Включаем отображение второстепенных засечек на осях
+        self.ax.minorticks_on()
 
         # Устанавливаем параметры засечек на основных осях
         ax.tick_params(
@@ -1336,7 +1336,7 @@ class Graph(object):
             direction="out",
             width=2,
             length=5,
-            pad=10,
+            pad=config.PADDING['ax_tick_labels'],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_major"],
         )
@@ -1346,7 +1346,7 @@ class Graph(object):
             direction="out",
             width=1.5,
             length=3.5,
-            pad=10,
+            pad=config.PADDING['ax_tick_labels'],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_minor"],
         )
@@ -1357,15 +1357,17 @@ class Graph(object):
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
+            weight="normal"
         )
-        ax.xaxis.set_label_coords(1.05, -0.025)
+        ax.xaxis.set_label_coords(0.5, -0.06)
         ax.set_ylabel(
             self._y_label_text,
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
+            weight="normal"
         )
-        ax.yaxis.set_label_coords(-0.025, 1.08)
+        ax.yaxis.set_label_coords(-0.06, 0.5)
 
         # Устанавливает параметры вывода значений осей
         ax.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.10g"))
@@ -1386,8 +1388,15 @@ class Graph(object):
             alpha=0.9,
         )
 
+        # Устанавливаем отступы в графиках
+        ax.margins(0.025)
+
+        # Скрыть сетку
+        if config.CURVE_HIDE_GRID:
+            ax.grid(visible=False, which='Both')
+
         # Установка параметров полей графика
-        self.fig.subplots_adjust(left=0.05, bottom=0.05, right=0.93, top=0.85)
+        self.fig.subplots_adjust(left=0.08, bottom=0.08, right=0.93, top=0.9)
 
     def clean(self):
         """Очистка осей графика и обнуление связанных переменных"""
@@ -1594,8 +1603,8 @@ class GraphQHV(GraphCurve):
         ax_secondary.spines["left"].set_visible(False)
         ax_secondary.spines["bottom"].set_visible(False)
 
-        # Устанавливаем отступы в графиках
-        ax_secondary.margins(0.025)
+        # Включаем отображение второстепенных засечек на осях
+        ax_secondary.minorticks_on()
 
         # Устанавливаем параметры засечек на основных осях
         ax_secondary.tick_params(
@@ -1603,7 +1612,7 @@ class GraphQHV(GraphCurve):
             direction="out",
             width=2,
             length=5,
-            pad=10,
+            pad=config.PADDING['ax_tick_labels'],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_major"],
         )
@@ -1613,7 +1622,7 @@ class GraphQHV(GraphCurve):
             direction="out",
             width=1.5,
             length=3.5,
-            pad=10,
+            pad=config.PADDING['ax_tick_labels'],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_minor"],
         )
@@ -1625,10 +1634,13 @@ class GraphQHV(GraphCurve):
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
         )
-        ax_secondary.yaxis.set_label_coords(1.02, 1.08)
+        ax_secondary.yaxis.set_label_coords(1.05, 0.5)
 
         # Устанавливает параметры вывода значений осей
         ax_secondary.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.10g"))
+
+        # Устанавливаем отступы в графиках
+        ax_secondary.margins(0.025)
 
 
     def draw(self):
@@ -2257,7 +2269,7 @@ class GraphProfile(Graph):
             direction="out",
             width=2,
             length=5,
-            pad=13,
+            pad=config.PADDING['ax_profile_tick_labels'],
             labelcolor=config.COLOR["ax_label_text"],
             labelsize=config.FONT_SIZE["ax_major"],
         )
@@ -2267,7 +2279,7 @@ class GraphProfile(Graph):
             direction="out",
             width=1.5,
             length=3,
-            pad=10,
+            pad=config.PADDING['ax_profile_tick_labels'],
             labelcolor=config.COLOR["ax_label_text"],
             labelsize=config.FONT_SIZE["ax_minor"],
         )
@@ -2311,7 +2323,7 @@ class GraphProfile(Graph):
         )
 
         # Установка параметров полей графика
-        self.fig.subplots_adjust(left=0.05, bottom=0.02, right=0.9, top=0.9)
+        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.9, top=0.9)
 
     def draw_profile_point_lines(self):
         """
@@ -2646,7 +2658,7 @@ class GraphProfile(Graph):
         water_level = min(self.morfostvor.y) + dH
 
         # Цикл расчёта до максимального уровня воды
-        while water_level < self.morfostvor.levels_result['H'].max():  # self.morfostvor.hydraulic_result["УВ"].max():
+        while water_level < self.morfostvor.levels_result['H'].max():
             if config.OVERFLOW:
                 for i in calc_sectors:
                     sector = self.morfostvor.sectors[i]
