@@ -465,11 +465,13 @@ class Morfostvor(object):
     top_limit_description: str = ""
 
     probability: list = field(default_factory=list)
+    design_water_level_index: int = 0
     coords: list = field(default_factory=list)
     strings: dict = field(default_factory=dict)
 
     levels_result: pd.DataFrame = pd.DataFrame
     hydraulic_result: pd.DataFrame = pd.DataFrame
+    sectors_result: pd.DataFrame = pd.DataFrame
     hydraulic_table: pd.DataFrame = pd.DataFrame
 
     def __post_init__(self):
@@ -713,7 +715,19 @@ class Morfostvor(object):
         # Заполнения таблицы обеспеченностей
         print("    — Считываем обеспеченности ... ", end="")
         for i in range(6, len(__raw_data[0])):
-            self.probability.append([__raw_data[0][i], __raw_data[1][i]])
+            prob_ind = __raw_data[0][i]
+            prob_val = __raw_data[1][i]
+
+            # Определяем РУВВ
+            if str(prob_ind).endswith('*'):
+                try:
+                    self.probability.append([float(prob_ind[:-1]), prob_val])
+                except ValueError:
+                    self.probability.append([prob_ind[:-1], prob_val])
+                self.design_water_level_index = i - 6  # Устанавливаем индекс РУВВ из таблицы обеспеченностей
+            else:
+                self.probability.append([prob_ind, prob_val])
+
 
         # Удаляем пустые обеспеченности из списка обеспеченностей
         self.probability = [x for x in self.probability if x != ["", ""]]
@@ -723,6 +737,74 @@ class Morfostvor(object):
         # Обработка и получение данных по секторам из "сырых" данных
         self.sectors = get_sectors(self)
         self.situation = get_situation(self)
+
+    def get_sectors_result(self):
+        df = self.hydraulic_table.swaplevel(0, 1, axis=0)
+        wl = self.levels_result.iloc[self.design_water_level_index]['H']
+        q, h, v, b, f = np.NaN, np.NaN, np.NaN, np.NaN, np.NaN
+
+        result = pd.DataFrame(columns=[
+            'name', 'slope', 'roughness', 'consumption',
+            'depth', 'speed', 'width', 'area'])
+
+        for sector in self.sectors:
+            try:
+                if wl >= df.loc[sector.name].index.min() and wl <= df.loc[sector.name].index.max():
+                    fQ = interpolate.interp1d(df.loc[(sector.name), 'Q'].index, df.loc[(sector.name), 'Q'].values)
+                    fV = interpolate.interp1d(df.loc[(sector.name), 'V'].index, df.loc[(sector.name), 'V'].values)
+                    fH = interpolate.interp1d(df.loc[(sector.name), 'Hср'].index, df.loc[(sector.name), 'Hср'].values)
+                    fB = interpolate.interp1d(df.loc[(sector.name), 'B'].index, df.loc[(sector.name), 'B'].values)
+                    fF = interpolate.interp1d(df.loc[(sector.name), 'F'].index, df.loc[(sector.name), 'F'].values)
+
+                    q = float(fQ(wl))
+                    h = float(fH(wl))
+                    v = float(fV(wl))
+                    b = float(fB(wl))
+                    f = float(fF(wl))
+            except KeyError:
+                q, h, v, b, f = np.NaN, np.NaN, np.NaN, np.NaN, np.NaN
+
+            row = {
+                'name': sector.name,
+                'slope': sector.slope,
+                'roughness': sector.roughness,
+                'consumption': q,
+                'depth': h,
+                'speed': v,
+                'width': b,
+                'area': f
+            }
+            result = result.append(row, ignore_index=True)
+            q, h, v, b, f = np.NaN, np.NaN, np.NaN, np.NaN, np.NaN
+
+        # Подбираем параметры суммирующей кривой
+        sum_text = 'Сумма'
+
+        fQ = interpolate.interp1d(df.loc[(sum_text), 'Q'].index, df.loc[(sum_text), 'Q'].values)
+        fV = interpolate.interp1d(df.loc[(sum_text), 'V'].index, df.loc[(sum_text), 'V'].values)
+        fH = interpolate.interp1d(df.loc[(sum_text), 'Hср'].index, df.loc[(sum_text), 'Hср'].values)
+        fB = interpolate.interp1d(df.loc[(sum_text), 'B'].index, df.loc[(sum_text), 'B'].values)
+        fF = interpolate.interp1d(df.loc[(sum_text), 'F'].index, df.loc[(sum_text), 'F'].values)
+
+        q = round(float(fQ(wl)), 3)
+        h = round(float(fH(wl)), 3)
+        v = round(float(fV(wl)), 3)
+        b = round(float(fB(wl)), 3)
+        f = round(float(fF(wl)), 3)
+
+        sum_row = {
+            'name': "Сумма",
+            'slope': "-",
+            'roughness': "-",
+            'consumption': q,
+            'depth': h,
+            'speed': v,
+            'width': b,
+            'area': f
+        }
+
+        result = result.append(sum_row, ignore_index=True)
+        return result
 
     def get_min_sector(self):
         """
@@ -950,7 +1032,6 @@ class Morfostvor(object):
         )
         print("успешно!")
 
-        # levels_result = self.levels_result
         levels_result = self.levels_result[["P", "Q", "H"]].round(3).values.tolist()
         write_table(
             doc,
@@ -962,25 +1043,19 @@ class Morfostvor(object):
         # Вывод таблицы участков
         print("    — Записываем таблицу участков ... ", end="")
         param = (
-            ("№", "Описание", "Уклон i, ‰", "Коэффициент шероховатости n"),
-            (1.5, 5.1, 5.1, 5.1),
-            (":d", "", ":g", ":.3f"),
-        )
-        sectors = []
+            ("№", "Описание", "Уклон i, ‰", "Коэффициент шероховатости n", "Q при РУВВ, м³/сек", "Hср при РУВВ, м", "Vср при РУВВ, м/сек", "B при РУВВ, м", "F при РУВВ, м²"),
+            (1.3, 4, 4, 4, 4, 4, 4, 4, 4),
+            (":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),)
 
-        i = 1
-        for sector in self.sectors:
-            sectors.append([i, sector.name, sector.slope, sector.roughness])
-            i += 1
-
+        self.sectors_result = self.get_sectors_result()
+        sectors = self.sectors_result.replace(np.NaN, '-').values.tolist()
+        [sector.insert(0, idx + 1) for idx, sector in enumerate(sectors)]  # Вставляем порядковые номера участков
         write_table(doc, sectors, param, "Таблица - Расчётные участки и их параметры")
         print("успешно!")
 
         print("    — Записываем таблицу кривой расхода воды ... ", end="")
-
         # Вывод таблицы гидравлической кривой
-        param = (
-            (
+        param = ((
                 "Отм. уровня H, м",
                 "Площадь F, м²",
                 "Ширина B, м",
