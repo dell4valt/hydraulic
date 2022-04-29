@@ -101,6 +101,8 @@ class SituationSector(object):
         field = ['пашня', 'поле']
         wood = ['лес', 'редки лес', 'поросль', 'кустарник']
         water = ['вода', 'ув', 'протока', 'ручей']
+        sand = ['песок']
+        gravel = ['гравий', 'галька', 'аллювий']
 
         if s in grass:
             return 'honeydew'
@@ -112,6 +114,10 @@ class SituationSector(object):
             return 'limegreen'
         elif s in water:
             return 'deepskyblue'
+        elif s in sand:
+            return 'lemmonchiffon'
+        elif s in gravel:
+            return 'tan'        
         else:
             return 'white'
 
