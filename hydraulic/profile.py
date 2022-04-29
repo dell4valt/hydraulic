@@ -1661,9 +1661,9 @@ class GraphQHV(GraphCurve):
             df.loc[("Сумма"), x],
             df.loc[("Сумма"), yy],
             label="Сумма",
-            linewidth=2,
-            color="green",
-            linestyle=':'
+            linewidth=3,
+            color="navy",
+            linestyle='-.'
         )
 
         ax_secondary.set_ylim(df.loc[("Сумма"), yy].min(), df.loc[("Сумма"), yy].max()+0.5)
