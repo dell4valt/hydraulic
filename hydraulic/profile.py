@@ -2195,7 +2195,7 @@ class GraphProfile(Graph):
                 elif border.type == "бровка правая":
                     linesymbol = 8  # Маркер <|
                 else:
-                    if xb1 % 2 == 0:
+                    if border.id % 2 == 0:
                         linesymbol = 8
                     else:
                         linesymbol = 9
