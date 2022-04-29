@@ -53,6 +53,12 @@ class ProfileSector(object):
     slope: float
     coord: tuple
 
+    consumption: float = np.NaN
+    depth: float = np.NaN
+    speed: float = np.NaN
+    area: float = np.NaN
+    width: float = np.NaN
+
     def __post_init__(self):
         self.color = self.get_color()
 
@@ -774,6 +780,12 @@ class Morfostvor(object):
                 'width': b,
                 'area': f
             }
+
+            sector.consumption = q
+            sector.speed = v
+            sector.width = b
+            sector.area = f
+            sector.depth = h
             result = result.append(row, ignore_index=True)
             q, h, v, b, f = np.NaN, np.NaN, np.NaN, np.NaN, np.NaN
 
@@ -1047,7 +1059,6 @@ class Morfostvor(object):
             (1.3, 4, 4, 4, 4, 4, 4, 4, 4),
             (":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),)
 
-        self.sectors_result = self.get_sectors_result()
         sectors = self.sectors_result.replace(np.NaN, '-').values.tolist()
         [sector.insert(0, idx + 1) for idx, sector in enumerate(sectors)]  # Вставляем порядковые номера участков
         write_table(doc, sectors, param, "Таблица - Расчётные участки и их параметры")
@@ -1329,7 +1340,7 @@ class Morfostvor(object):
         p_table = df.loc[(water_levels, "Сумма"), :].droplevel(1)
         self.levels_result = self.get_p_table(p_table)
         self.hydraulic_table = df
-
+        self.sectors_result = self.get_sectors_result()
         return df
 
     def get_p_table(self, df: pd.DataFrame):
@@ -1352,7 +1363,7 @@ class Morfostvor(object):
 
 @dataclass
 class Graph(object):
-    _fig_size = (16.5, 11)
+    _fig_size = (16.5, 9)
     _y_limits = []
     _fig_num = 0
 
@@ -1606,7 +1617,7 @@ class GraphCurve(Graph):
 class GraphQHV(GraphCurve):
     # Номер рисунка
     _fig_num = 2
-    _fig_size = (16.5, 11)
+    _fig_size = (16.5, 9)
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
     ax_secondary = ax.twinx()
@@ -1731,7 +1742,7 @@ class GraphQHV(GraphCurve):
 class GraphQH(GraphCurve):
     # Номер рисунка
     _fig_num = 3
-    _fig_size = (16.5, 11)
+    _fig_size = (16.5, 9)
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
 
@@ -1754,7 +1765,7 @@ class GraphQH(GraphCurve):
 class GraphQV(GraphCurve):
     # Номер рисунка
     _fig_num = 4
-    _fig_size = (16.5, 11)
+    _fig_size = (16.5, 9)
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
 
@@ -1772,7 +1783,7 @@ class GraphQV(GraphCurve):
 class GraphQF(GraphCurve):
     # Номер рисунка
     _fig_num = 5
-    _fig_size = (16.5, 11)
+    _fig_size = (16.5, 9)
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
 
@@ -1788,7 +1799,7 @@ class GraphQF(GraphCurve):
 
 @dataclass
 class GraphProfile(Graph):
-    _fig_size = (16.5, 12)
+    _fig_size = (16.5, 14)
     _fig_num = 1
 
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
@@ -1796,10 +1807,12 @@ class GraphProfile(Graph):
     __gs = gridspec.GridSpec(80, 3)
 
     ax_top: plt.subplot = fig.add_subplot(__gs[0, :], frame_on=False)
-    ax: plt.subplot = fig.add_subplot(__gs[1:62, :])
-    ax_bottom: plt.subplot = fig.add_subplot(__gs[62:, :])
-    ax_bottom_overlay: plt.subplot = fig.add_subplot(__gs[62:, :], frame_on=False)
+    ax: plt.subplot = fig.add_subplot(__gs[1:57, :])
+    ax_bottom: plt.subplot = fig.add_subplot(__gs[57:, :])
+    ax_bottom_overlay: plt.subplot = fig.add_subplot(__gs[57:, :], frame_on=False)
 
+    footers_num: int = 0
+    __footer_y: int = 0
     def __post_init__(self):
         self.clean()
 
@@ -1839,63 +1852,13 @@ class GraphProfile(Graph):
 
             :param self:
         """
-        n = 5  # Количество ячеек подвала
         hs = 10  # Стандартная высота ячейки подвала
+        hs_small = 7.5  # Уменьшенная высота ячейки подвала
+        hs_big = 13  # Увеличинная высота ячейки подвала
         x1 = self.morfostvor.x[0]
         x2 = self.morfostvor.x[-1]
 
-        def setup_box():
-            y_top = n * hs
-
-            # Технический разделитель (для увеличения размера границ)
-            self.ax_bottom_overlay.plot(
-                (x1, x2), (y_top, y_top), alpha=0, color="red"
-            )
-
-            self.ax_bottom.plot(
-                (x1, x1), (0, y_top), alpha=0, color="red"
-            )
-
-        def draw_pk():
-            """  Отрисовывает нижнюю границу для ПК в подвале, сами значения ПК отрисовываются отдельно
-            """
-            y_top = n*hs
-            y_bot = n*hs-hs
-            y_mid = y_top - ((y_top - y_bot) / 2)
-            x2 = self.morfostvor.x[-1]
-
-            # Подпись ячейки
-            label = 'Пикеты'
-            self.ax_bottom_overlay.text(
-                x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text_secondary"],
-                fontsize=config.FONT_SIZE["bottom_description"],
-                horizontalalignment='left', verticalalignment='center',
-            )
-
-            self.ax_bottom_overlay.plot(
-                (x1, x2),
-                (y_bot, y_bot),
-                color=config.COLOR["border"],
-                linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid",
-            )
-
-        def draw_h(num=4):
-            y_top = num*hs
-            y_bot = num*hs-hs
-            y_mid = y_top - ((y_top - y_bot) / 2)
-            x2 = self.morfostvor.x[-1]
-
-            # Подпись ячейки
-            label = 'Отм. земли'
-            self.ax_bottom_overlay.text(
-                x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text_secondary"],
-                fontsize=config.FONT_SIZE["bottom_description"],
-                horizontalalignment='left', verticalalignment='center',
-            )
-
+        def __draw_borders(x1, x2, y_top, y_bot):
             # Верхняя граница
             self.ax_bottom_overlay.plot(
                 (x1, x2),
@@ -1911,135 +1874,31 @@ class GraphProfile(Graph):
                 (y_bot, y_bot),
                 color=config.COLOR["border"],
                 linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid",
-            )
+                linestyle="solid")  
 
-            # Цикл по всем точкам
-            for i in range(len(self.morfostvor.x)):
-                x = self.morfostvor.x[i]
-                y = self.morfostvor.y[i]
-
-                # Подписи отметок
-                self.ax_bottom.text(
-                    x,
-                    y_mid,
-                    f"{y:.2f}",
-                    color=config.COLOR["bottom_text"],
-                    fontsize=config.FONT_SIZE["bottom_small"],
-                    verticalalignment="center",
-                    horizontalalignment="center",
-                    rotation="90",
-                )
-
-        def draw_dist(num=3):
-            y_top = num*hs
-            y_bot = num*hs-hs
-            y_mid = y_top - ((y_top - y_bot) / 2)
-
-            x1 = self.morfostvor.x[0]
-            x2 = self.morfostvor.x[-1]
-
-            # Подпись ячейки
-            label = 'Расстояние'
+        def __draw_label(x2, y_mid, label):
             self.ax_bottom_overlay.text(
                 x2, y_mid, "   " + label,
                 color=config.COLOR["bottom_text_secondary"],
                 fontsize=config.FONT_SIZE["bottom_description"],
-                horizontalalignment='left', verticalalignment='center',
-            )
+                horizontalalignment='left', verticalalignment='center')
 
-            # Верхняя граница
-            self.ax_bottom_overlay.plot(
-                (x1, x2),
-                (y_top, y_top),
-                color=config.COLOR["border"],
-                linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid",
-            )
-
-            # Нижняя граница
-            self.ax_bottom_overlay.plot(
-                (x1, x2),
-                (y_bot, y_bot),
-                color=config.COLOR["border"],
-                linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid",
-            )
-
-            # Цикл по всем точкам
-            for i in range(len(self.morfostvor.x)):
-                x = self.morfostvor.x[i]
-
-                # Разделители расстояний между точками
-                self.ax_bottom.plot(
-                    (x, x),
-                    (y_bot, y_top),
-                    color=config.COLOR["border"],
-                    linewidth=config.LINE_WIDTH["profile_bottom"],
-                    linestyle="solid",
-                )
-
-                # Подписи расстояний между точками
-                if i < len(self.morfostvor.x) - 1:
-                    x1_ = self.morfostvor.x[i + 1]
-                    # Подписи расстояний между точками
-                    self.ax_bottom.text(
-                        (x + x1_) / 2,
-                        y_mid,
-                        f"{round(x1_ - x):d}",
-                        color=config.COLOR["bottom_text"],
-                        fontsize=config.FONT_SIZE["bottom_main"],
-                        verticalalignment="center",
-                        horizontalalignment="center",
-                    )
-
-        def draw_rough(num=2):
-            y_top = num*hs
-            y_bot = num*hs-hs
-            y_mid = y_top - ((y_top - y_bot) / 2)
-
-            x1 = self.morfostvor.x[0]
-            x2 = self.morfostvor.x[-1]
-
-            label = 'Коэфф. n'
-            self.ax_bottom_overlay.text(
-                x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text_secondary"],
-                fontsize=config.FONT_SIZE["bottom_description"],
-                horizontalalignment='left', verticalalignment='center',
-            )
-
-            # Верхняя граница
-            self.ax_bottom_overlay.plot(
-                (x1, x2),
-                (y_top, y_top),
-                color=config.COLOR["border"],
-                linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid",
-            )
-
-            # Нижняя граница
-            self.ax_bottom_overlay.plot(
-                (x1, x2),
-                (y_bot, y_bot),
-                color=config.COLOR["border"],
-                linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid",
-            )
-
+        def __draw_sectors(morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top):
             # Цикл по участкам
-            for sector in self.morfostvor.sectors:
-                x = self.morfostvor.x[sector.start_point]
-                x1 = self.morfostvor.x[sector.end_point]
+            for sector in morfostvor.sectors:
+                x = morfostvor.x[sector.start_point]
+                x1 = morfostvor.x[sector.end_point]
 
                 x_mid = x1 - ((x1 - x) / 2)
-
                 # Подписи коэффициентов шероховатости по участкам
+                value = getattr(sector, parameter)
+                if value is np.NaN:
+                    value = 0
                 try:
                     self.ax_bottom.text(
                         x_mid,
                         y_mid,
-                        f"{sector.roughness:.3f}",
+                        f"{value:.3f}",
                         color=config.COLOR["bottom_text"],
                         fontsize=config.FONT_SIZE["bottom_main"],
                         verticalalignment="center",
@@ -2069,36 +1928,33 @@ class GraphProfile(Graph):
                     (y_bot, y_top),
                     color=config.COLOR["border"],
                     linewidth=config.LINE_WIDTH["profile_bottom"],
-                    linestyle="solid",
-                )
+                    linestyle="solid")            
 
-        def draw_situation(num=1):
-            y_top = num*hs
-            y_bot = num*hs-hs
+        def setup_box():
+            y_top = self.__footer_y
+
+            # Технический разделитель (для увеличения размера границ)
+            self.ax_bottom_overlay.plot(
+                (x1, x2), (y_top, y_top), alpha=0, color="red"
+            )
+
+            self.ax_bottom.plot(
+                (x1, x1), (0, y_top), alpha=0, color="red"
+            )
+
+        def draw_pk():
+            """  Отрисовывает нижнюю границу для ПК в подвале, сами значения ПК отрисовываются отдельно
+            """
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
-
-            x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            # Подпись ряда
-            label = 'Ситуация'
-            self.ax_bottom_overlay.text(
-                x2, y_mid, "   " + label,
-                color=config.COLOR["bottom_text_secondary"],
-                fontsize=config.FONT_SIZE["bottom_description"],
-                horizontalalignment='left', verticalalignment='center',
-            )
+            # Подпись ячейки
+            label = 'Пикеты'
+            __draw_label(x2, y_mid, label)
 
-            # Верхняя граница
-            self.ax_bottom_overlay.plot(
-                (x1, x2),
-                (y_top, y_top),
-                color=config.COLOR["border"],
-                linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid",
-            )
-
-            # Нижняя граница
             self.ax_bottom_overlay.plot(
                 (x1, x2),
                 (y_bot, y_bot),
@@ -2106,6 +1962,174 @@ class GraphProfile(Graph):
                 linewidth=config.LINE_WIDTH["profile_bottom"],
                 linestyle="solid",
             )
+
+        def draw_h():
+            hs = hs_big
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+            x2 = self.morfostvor.x[-1]
+
+            # Подпись ячейки
+            label = 'Отм. земли'
+            __draw_label(x2, y_mid, label)
+            __draw_borders(x1, x2, y_top, y_bot)
+
+            # Цикл по всем точкам
+            for i in range(len(self.morfostvor.x)):
+                x = self.morfostvor.x[i]
+                y = self.morfostvor.y[i]
+
+                # Подписи отметок
+                self.ax_bottom.text(
+                    x,
+                    y_mid,
+                    f"{y:.2f}",
+                    color=config.COLOR["bottom_text"],
+                    fontsize=config.FONT_SIZE["bottom_small"],
+                    verticalalignment="center",
+                    horizontalalignment="center",
+                    rotation="90",
+                )
+            self.footers_num += 1
+
+        def draw_dist():
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            # Подпись ячейки
+            label = 'Расстояние'
+            __draw_borders(x1, x2, y_top, y_bot)
+            __draw_label(x2, y_mid, label)
+
+            # Цикл по всем точкам
+            for i in range(len(self.morfostvor.x)):
+                x = self.morfostvor.x[i]
+
+                # Разделители расстояний между точками
+                self.ax_bottom.plot(
+                    (x, x),
+                    (y_bot, y_top),
+                    color=config.COLOR["border"],
+                    linewidth=config.LINE_WIDTH["profile_bottom"],
+                    linestyle="solid",
+                )
+
+                # Подписи расстояний между точками
+                if i < len(self.morfostvor.x) - 1:
+                    x1_ = self.morfostvor.x[i + 1]
+                    # Подписи расстояний между точками
+                    self.ax_bottom.text(
+                        (x + x1_) / 2,
+                        y_mid,
+                        f"{round(x1_ - x):d}",
+                        color=config.COLOR["bottom_text"],
+                        fontsize=config.FONT_SIZE["bottom_main"],
+                        verticalalignment="center",
+                        horizontalalignment="center",
+                    )
+
+            self.footers_num += 1
+
+        def draw_rough():
+            hs = hs_small
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            label = 'Коэфф. n'
+            __draw_borders(x1, x2, y_top, y_bot)
+            __draw_label(x2, y_mid, label)
+            __draw_sectors(self.morfostvor, 'roughness', y_mid, y_bot, y_top)
+            self.footers_num += 1
+
+        def draw_depth():
+            hs = hs_small
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            label = 'РУВВ $H_{ср}$'
+            __draw_borders(x1, x2, y_top, y_bot)
+            __draw_label(x2, y_mid, label)
+            __draw_sectors(self.morfostvor, 'depth', y_mid, y_bot, y_top)
+            self.footers_num += 1
+
+        def draw_speed():
+            hs = hs_small
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            label = 'РУВВ $V_{ср}$'
+            __draw_borders(x1, x2, y_top, y_bot)
+            __draw_label(x2, y_mid, label)
+            __draw_sectors(self.morfostvor, 'speed', y_mid, y_bot, y_top)
+            self.footers_num += 1
+
+        def draw_area():
+            hs = hs_small
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            label = 'РУВВ $F$'
+            __draw_borders(x1, x2, y_top, y_bot)
+            __draw_label(x2, y_mid, label)
+            __draw_sectors(self.morfostvor, 'area', y_mid, y_bot, y_top)
+            self.footers_num += 1
+
+        def draw_consumption():
+            hs = hs_small
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            label = 'РУВВ $Q$'
+            __draw_borders(x1, x2, y_top, y_bot)
+            __draw_label(x2, y_mid, label)
+            __draw_sectors(self.morfostvor, 'consumption', y_mid, y_bot, y_top)
+            self.footers_num += 1
+
+        def draw_situation():
+            y_bot = self.__footer_y
+            y_top = self.__footer_y + hs
+            self.__footer_y = y_top
+            y_mid = y_top - ((y_top - y_bot) / 2)
+
+            x1 = self.morfostvor.x[0]
+            x2 = self.morfostvor.x[-1]
+
+            # Подпись ряда
+            label = 'Ситуация'
+            __draw_label(x2, y_mid, label)
+            __draw_borders(x1, x2, y_top, y_bot)
 
             for sector in self.morfostvor.situation:
                 x1 = self.morfostvor.x[sector.start_point]
@@ -2161,9 +2185,9 @@ class GraphProfile(Graph):
             # Отрисовка границ специальными линиями
             for border in self.morfostvor.situation_borders:
                 xb1 = self.morfostvor.x[border.point]
-                n = 4  # Количество маркеров
+                n = 5  # Количество маркеров
                 xb = self.morfostvor.x[border.point] * np.ones(n)
-                yb = np.linspace(y_bot, y_top - (y_top*0.15), n)
+                yb = np.linspace(y_bot, y_top - 1.5, n)
 
                 # Определяем сторону бровки и выбираем тип маркера
                 if border.type == "бровка левая":
@@ -2187,13 +2211,18 @@ class GraphProfile(Graph):
                     (xb1, xb1), (y_bot, y_top),
                     ls='solid', lw=2,
                     color=(.0, .0, 0, 1))
+            self.footers_num += 1
 
-        setup_box()
+        draw_situation()
+        draw_consumption()
+        draw_depth()
+        draw_speed()
+        # draw_area()
+        draw_rough()
+        draw_dist()
+        draw_h()
         draw_pk()
-        draw_h(4)
-        draw_dist(3)
-        draw_rough(2)
-        draw_situation(1)
+        setup_box()
 
     def draw_sectors(self):
         """
@@ -2455,6 +2484,7 @@ class GraphProfile(Graph):
                 color=config.COLOR["erosion_limit_text"],
                 fontsize=config.FONT_SIZE["erosion_limit"],
                 weight="bold",
+                zorder=20
             )
             # Обводка текста
             erosion_limit_text.set_path_effects(
@@ -2500,7 +2530,8 @@ class GraphProfile(Graph):
             fontsize=config.FONT_SIZE['top_limit'],
             weight='bold',
             horizontalalignment='center',
-            verticalalignment='center')
+            verticalalignment='center',
+            zorder=20)
 
         self.ax.plot(
             [x1, x2],
@@ -2605,6 +2636,7 @@ class GraphProfile(Graph):
                         color=config.COLOR["water_level_text"],
                         fontsize=config.FONT_SIZE["water_level"],
                         weight="bold",
+                        zorder=20
                     )
                     waterline_text.set_path_effects(
                         [
@@ -2623,6 +2655,7 @@ class GraphProfile(Graph):
                         color=config.COLOR["water_level_text"],
                         fontsize=config.FONT_SIZE["water_level"],
                         weight="bold",
+                        zorder=20
                     )
 
                     waterline_text.set_path_effects(
