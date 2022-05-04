@@ -117,7 +117,7 @@ class SituationSector(object):
         elif s in sand:
             return 'lemmonchiffon'
         elif s in gravel:
-            return 'tan'        
+            return 'tan'
         else:
             return 'white'
 
@@ -1805,7 +1805,7 @@ class GraphQF(GraphCurve):
 
 @dataclass
 class GraphProfile(Graph):
-    _fig_size = (16.5, 14)
+    _fig_size = config.PROFILE_SIZE
     _fig_num = 1
 
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
