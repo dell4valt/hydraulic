@@ -1889,7 +1889,7 @@ class GraphProfile(Graph):
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center')
 
-        def __draw_sectors(morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top):
+        def __draw_sectors(morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top, float_precision=2):
             # Цикл по участкам
             for sector in morfostvor.sectors:
                 x = morfostvor.x[sector.start_point]
@@ -1904,7 +1904,7 @@ class GraphProfile(Graph):
                     self.ax_bottom.text(
                         x_mid,
                         y_mid,
-                        f"{value:.3f}",
+                        f"{value:.{float_precision}f}",
                         color=config.COLOR["bottom_text"],
                         fontsize=config.FONT_SIZE["bottom_main"],
                         verticalalignment="center",
@@ -2056,7 +2056,7 @@ class GraphProfile(Graph):
             label = 'Коэфф. n'
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
-            __draw_sectors(self.morfostvor, 'roughness', y_mid, y_bot, y_top)
+            __draw_sectors(self.morfostvor, 'roughness', y_mid, y_bot, y_top, float_precision=3)
             self.footers_num += 1
 
         def draw_depth():
