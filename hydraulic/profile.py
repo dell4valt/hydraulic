@@ -1058,6 +1058,11 @@ class Morfostvor(object):
             f"Таблица - Расчётные уровни {self.strings['type']}",
         )
 
+        doc.add_paragraph(
+            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу воды {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
+            style="Т-примечание",
+        )
+
         # Вывод таблицы участков
         print("    — Записываем таблицу участков ... ", end="")
         param = (
