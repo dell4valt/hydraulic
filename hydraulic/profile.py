@@ -2438,7 +2438,7 @@ class GraphProfile(Graph):
         )
 
         # Установка параметров полей графика
-        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.9, top=0.9)
+        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.89, top=0.9)
 
     def draw_profile_point_lines(self):
         """
