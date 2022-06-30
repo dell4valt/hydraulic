@@ -2885,6 +2885,9 @@ class GraphProfile(Graph):
                 self.bottom_limit -= y_step
 
         # Верхняя граница
+        if self.morfostvor.levels_result['H'].max() > max_y:
+            max_y = self.morfostvor.levels_result['H'].max()
+
         if y_step > 0.5:
             self.top_limit = round(np.floor(max_y) + y_step, 3)
         else:
