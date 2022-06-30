@@ -1044,7 +1044,7 @@ class Morfostvor(object):
         # Вывод таблицы расчётных уровней воды
         print("    — Записываем таблицу уровней воды ... ", end="")
         param = (
-            ("Обеспеченность P, %", "Расход Q, м³/сек", "Уровень H, м"),
+            ("Обеспеченность P, %", "Расход Q, м³/сек", f"Уровень H, м{config.ALTITUDE_SYSTEM}"),
             (5.6, 5.6, 5.6),
             (":g", ":g", ":.2f"),
         )
@@ -1058,10 +1058,15 @@ class Morfostvor(object):
             f"Таблица - Расчётные уровни {self.strings['type']}",
         )
 
+        doc.add_paragraph(
+            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу воды {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
+            style="Т-примечание",
+        )
+
         # Вывод таблицы участков
         print("    — Записываем таблицу участков ... ", end="")
         param = (
-            ("№", "Описание", "Уклон i, ‰", "Коэффициент шероховатости n", "Q при РУВВ, м³/сек", "Hср при РУВВ, м", "Vср при РУВВ, м/сек", "B при РУВВ, м", "F при РУВВ, м²"),
+            ("№", "Описание", "Уклон i, ‰", "Коэффициент шероховатости n", "Q при РУВВ, м³/сек", f"Hср при РУВВ, м{config.ALTITUDE_SYSTEM}", "Vср при РУВВ, м/сек", "B при РУВВ, м", "F при РУВВ, м²"),
             (1.3, 4, 4, 4, 4, 4, 4, 4, 4),
             (":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),)
 
@@ -1073,7 +1078,7 @@ class Morfostvor(object):
         print("    — Записываем таблицу кривой расхода воды ... ", end="")
         # Вывод таблицы гидравлической кривой
         param = ((
-                "Отм. уровня H, м",
+                f"Отм. уровня H, м{config.ALTITUDE_SYSTEM}",
                 "Площадь F, м²",
                 "Ширина B, м",
                 "Средняя глубина Hср, м",
@@ -1630,7 +1635,7 @@ class GraphQHV(GraphCurve):
 
     # Подписи осей
     _x_label_text = "Q, м³/с"
-    _y_label_text = "H, м"
+    _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
     _y2_label_text = "V, м/с"
     _ax_title_text = "Гидравлическая кривая Q=f(H) с наложением Q=f(V)"
 
@@ -1754,7 +1759,7 @@ class GraphQH(GraphCurve):
 
     # Подписи осей
     _x_label_text = "Q, м³/с"
-    _y_label_text = "H, м"
+    _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
     _ax_title_text = "Гидравлическая кривая"
 
     def draw(self):
@@ -1889,7 +1894,7 @@ class GraphProfile(Graph):
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center')
 
-        def __draw_sectors(morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top):
+        def __draw_sectors(morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top, float_precision=2):
             # Цикл по участкам
             for sector in morfostvor.sectors:
                 x = morfostvor.x[sector.start_point]
@@ -1904,7 +1909,7 @@ class GraphProfile(Graph):
                     self.ax_bottom.text(
                         x_mid,
                         y_mid,
-                        f"{value:.3f}",
+                        f"{value:.{float_precision}f}",
                         color=config.COLOR["bottom_text"],
                         fontsize=config.FONT_SIZE["bottom_main"],
                         verticalalignment="center",
@@ -2056,7 +2061,7 @@ class GraphProfile(Graph):
             label = 'Коэфф. n'
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
-            __draw_sectors(self.morfostvor, 'roughness', y_mid, y_bot, y_top)
+            __draw_sectors(self.morfostvor, 'roughness', y_mid, y_bot, y_top, float_precision=3)
             self.footers_num += 1
 
         def draw_depth():
@@ -2404,7 +2409,7 @@ class GraphProfile(Graph):
 
         # Устанавливаем параметры подписей осей
         self.ax.set_ylabel(
-            "H, м",
+            f"H, м{config.ALTITUDE_SYSTEM}",
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
@@ -2433,7 +2438,7 @@ class GraphProfile(Graph):
         )
 
         # Установка параметров полей графика
-        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.9, top=0.9)
+        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.89, top=0.9)
 
     def draw_profile_point_lines(self):
         """
@@ -2674,9 +2679,9 @@ class GraphProfile(Graph):
                     )
 
             try:
-                label.append(f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м\n")
+                label.append(f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n")
             except ValueError:
-                label.append(f"${row['P']} = {water_level:.2f}$ м\n")
+                label.append(f"${row['P']} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n")
 
             # Вывод линий сносок от уровней воды к таблице
             if config.PROFILE_LEVELS_TABLE_LINES:
@@ -2729,7 +2734,7 @@ class GraphProfile(Graph):
                 )
 
         if self.morfostvor.waterline and type(self.morfostvor.waterline) is not str:
-            label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м\n")
+            label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м{config.ALTITUDE_SYSTEM}\n")
 
             if self.morfostvor.date:
                 label.append(f"({self.morfostvor.date})")
