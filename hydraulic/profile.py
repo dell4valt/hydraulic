@@ -14,7 +14,6 @@ import scipy.interpolate as interpolate
 import xlrd
 from docx import Document
 from docx.shared import Cm
-from docxtpl import DocxTemplate
 from matplotlib import gridspec
 from pathvalidate import sanitize_filename
 
@@ -874,7 +873,7 @@ class Morfostvor(object):
             picture_dir.mkdir(parents=True, exist_ok=True)
 
         if r:
-            doc = DocxTemplate(template_file)
+            doc = Document(template_file)
         else:
             if os.path.isfile(doc_file):
                 doc = Document(doc_file)
@@ -888,7 +887,7 @@ class Morfostvor(object):
                     )
                 else:
                     print("    — Файл не найден! Создаём новый.")
-                doc = DocxTemplate(template_file)
+                doc = Document(template_file)
 
         if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
