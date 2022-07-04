@@ -791,7 +791,7 @@ class Morfostvor(object):
             sector.width = b
             sector.area = f
             sector.depth = h
-            result = result.append(row, ignore_index=True)
+            result = pd.concat([result, pd.DataFrame.from_records([row])])
             q, h, v, b, f = np.NaN, np.NaN, np.NaN, np.NaN, np.NaN
 
         # Подбираем параметры суммирующей кривой
@@ -820,7 +820,7 @@ class Morfostvor(object):
             'area': f
         }
 
-        result = result.append(sum_row, ignore_index=True)
+        result = pd.concat([result, pd.DataFrame.from_records([sum_row])])
         return result
 
     def get_min_sector(self):
@@ -1181,10 +1181,9 @@ class Morfostvor(object):
         col = ["Участок", "УВ", "F", "B", "Hср", "Hмакс", "V", "Q", "Shezi"]
         df = pd.DataFrame(columns=col, dtype=float)
         # Первый расчётный элемент суммирующей кривой со всеми нулями§
-        df = df.append(
-            dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0])),
-            ignore_index=True,
-        )
+        df = pd.concat([df, pd.DataFrame.from_records(
+            [dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0]))]
+        )])
 
         # Цикл расчёта до максимальной обеспеченности + 20% из исходных данных
         while consumption_summ < consumption_check:
@@ -1309,7 +1308,7 @@ class Morfostvor(object):
 
                         # Добавляем в список с результирующими значениями значения по секторам
                         # для последующего суммирования/вычисления средних значений
-                        df = df.append(r, ignore_index=True)
+                        df = pd.concat([df, pd.DataFrame.from_records([r])])
 
             consumption_summ += sum(wc_list)
             area_summ += sum(area_list)
@@ -1318,7 +1317,7 @@ class Morfostvor(object):
             r_sum = dict(
                 zip(col, ["Сумма", round(water_level, 2), 0, 0, 0, 0, 0, 0, 0])
             )
-            df = df.append(r_sum, ignore_index=True)
+            df = pd.concat([df, pd.DataFrame.from_records([r_sum])])
 
             water_level += dH
             n += 1
@@ -1364,9 +1363,9 @@ class Morfostvor(object):
             v = float(fV(prob[1]))
             f = float(fF(prob[1]))
 
-            result = result.append(
-                {"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}, ignore_index=True
-            )
+            result = pd.concat([result, pd.DataFrame.from_records([
+                {"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}
+            ])])
 
         return result
 
