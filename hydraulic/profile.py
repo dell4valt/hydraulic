@@ -96,25 +96,28 @@ class SituationSector(object):
         s = self.type.strip().lower()
 
         grass = ['трава', 'луг', 'газон']
+        dark_grass = ['камыш', 'кустарник']
         concrete = ['бетон', 'асфальт']
         field = ['пашня', 'поле']
-        wood = ['лес', 'редки лес', 'поросль', 'кустарник']
+        wood = ['лес', 'редки лес', 'поросль']
         water = ['вода', 'ув', 'протока', 'ручей']
         sand = ['песок']
         gravel = ['гравий', 'галька', 'аллювий']
 
         if s in grass:
             return 'honeydew'
+        elif s in dark_grass:
+            return 'lightgreen'
         elif s in concrete:
             return 'gainsboro'
         elif s in  field:
             return 'burlywood'
         elif s in wood:
-            return 'limegreen'
+            return 'mediumseagreen'
         elif s in water:
             return 'deepskyblue'
         elif s in sand:
-            return 'lemmonchiffon'
+            return 'lemonchiffon'
         elif s in gravel:
             return 'tan'
         else:
@@ -2199,9 +2202,9 @@ class GraphProfile(Graph):
                 yb = np.linspace(y_bot, y_top - 1.5, n)
 
                 # Определяем сторону бровки и выбираем тип маркера
-                if border.type == "бровка левая":
+                if border.type in ("бровка левая", "левая бровка"):
                     linesymbol = 9  # Маркер |>
-                elif border.type == "бровка правая":
+                elif border.type in ("бровка правая", "правая бровка"):
                     linesymbol = 8  # Маркер <|
                 else:
                     if border.id % 2 == 0:
