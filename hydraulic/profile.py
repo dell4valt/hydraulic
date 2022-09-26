@@ -2002,7 +2002,7 @@ class GraphProfile(Graph):
                     fontsize=config.FONT_SIZE["bottom_small"],
                     verticalalignment="center",
                     horizontalalignment="center",
-                    rotation="90",
+                    rotation=90,
                 )
             self.footers_num += 1
 
