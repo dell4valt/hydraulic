@@ -14,6 +14,7 @@ import scipy.interpolate as interpolate
 import xlrd
 from docx import Document
 from docx.shared import Cm
+from docxtpl import DocxTemplate
 from matplotlib import gridspec
 from pathvalidate import sanitize_filename
 
@@ -96,24 +97,21 @@ class SituationSector(object):
         s = self.type.strip().lower()
 
         grass = ['трава', 'луг', 'газон']
-        dark_grass = ['камыш', 'кустарник']
         concrete = ['бетон', 'асфальт']
         field = ['пашня', 'поле']
-        wood = ['лес', 'редки лес', 'поросль']
+        wood = ['лес', 'редки лес', 'поросль', 'кустарник']
         water = ['вода', 'ув', 'протока', 'ручей']
         sand = ['песок']
         gravel = ['гравий', 'галька', 'аллювий']
 
         if s in grass:
             return 'honeydew'
-        elif s in dark_grass:
-            return 'lightgreen'
         elif s in concrete:
             return 'gainsboro'
         elif s in  field:
             return 'burlywood'
         elif s in wood:
-            return 'mediumseagreen'
+            return 'limegreen'
         elif s in water:
             return 'deepskyblue'
         elif s in sand:
@@ -794,7 +792,7 @@ class Morfostvor(object):
             sector.width = b
             sector.area = f
             sector.depth = h
-            result = pd.concat([result, pd.DataFrame.from_records([row])])
+            result = result.append(row, ignore_index=True)
             q, h, v, b, f = np.NaN, np.NaN, np.NaN, np.NaN, np.NaN
 
         # Подбираем параметры суммирующей кривой
@@ -823,7 +821,7 @@ class Morfostvor(object):
             'area': f
         }
 
-        result = pd.concat([result, pd.DataFrame.from_records([sum_row])])
+        result = result.append(sum_row, ignore_index=True)
         return result
 
     def get_min_sector(self):
@@ -876,7 +874,7 @@ class Morfostvor(object):
             picture_dir.mkdir(parents=True, exist_ok=True)
 
         if r:
-            doc = Document(template_file)
+            doc = DocxTemplate(template_file)
         else:
             if os.path.isfile(doc_file):
                 doc = Document(doc_file)
@@ -890,7 +888,7 @@ class Morfostvor(object):
                     )
                 else:
                     print("    — Файл не найден! Создаём новый.")
-                doc = Document(template_file)
+                doc = DocxTemplate(template_file)
 
         if config.HYDRAULIC_CURVE:
             self.fig_QH = GraphQH(self)
@@ -1184,9 +1182,10 @@ class Morfostvor(object):
         col = ["Участок", "УВ", "F", "B", "Hср", "Hмакс", "V", "Q", "Shezi"]
         df = pd.DataFrame(columns=col, dtype=float)
         # Первый расчётный элемент суммирующей кривой со всеми нулями§
-        df = pd.concat([df, pd.DataFrame.from_records(
-            [dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0]))]
-        )])
+        df = df.append(
+            dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0])),
+            ignore_index=True,
+        )
 
         # Цикл расчёта до максимальной обеспеченности + 20% из исходных данных
         while consumption_summ < consumption_check:
@@ -1311,7 +1310,7 @@ class Morfostvor(object):
 
                         # Добавляем в список с результирующими значениями значения по секторам
                         # для последующего суммирования/вычисления средних значений
-                        df = pd.concat([df, pd.DataFrame.from_records([r])])
+                        df = df.append(r, ignore_index=True)
 
             consumption_summ += sum(wc_list)
             area_summ += sum(area_list)
@@ -1320,7 +1319,7 @@ class Morfostvor(object):
             r_sum = dict(
                 zip(col, ["Сумма", round(water_level, 2), 0, 0, 0, 0, 0, 0, 0])
             )
-            df = pd.concat([df, pd.DataFrame.from_records([r_sum])])
+            df = df.append(r_sum, ignore_index=True)
 
             water_level += dH
             n += 1
@@ -1366,9 +1365,9 @@ class Morfostvor(object):
             v = float(fV(prob[1]))
             f = float(fF(prob[1]))
 
-            result = pd.concat([result, pd.DataFrame.from_records([
-                {"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}
-            ])])
+            result = result.append(
+                {"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}, ignore_index=True
+            )
 
         return result
 
@@ -2002,7 +2001,7 @@ class GraphProfile(Graph):
                     fontsize=config.FONT_SIZE["bottom_small"],
                     verticalalignment="center",
                     horizontalalignment="center",
-                    rotation=90,
+                    rotation="90",
                 )
             self.footers_num += 1
 
@@ -2202,9 +2201,9 @@ class GraphProfile(Graph):
                 yb = np.linspace(y_bot, y_top - 1.5, n)
 
                 # Определяем сторону бровки и выбираем тип маркера
-                if border.type in ("бровка левая", "левая бровка"):
+                if border.type == "бровка левая":
                     linesymbol = 9  # Маркер |>
-                elif border.type in ("бровка правая", "правая бровка"):
+                elif border.type == "бровка правая":
                     linesymbol = 8  # Маркер <|
                 else:
                     if border.id % 2 == 0:
