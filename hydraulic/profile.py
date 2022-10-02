@@ -108,7 +108,7 @@ class SituationSector(object):
             return 'honeydew'
         elif s in concrete:
             return 'gainsboro'
-        elif s in  field:
+        elif s in field:
             return 'burlywood'
         elif s in wood:
             return 'limegreen'
@@ -120,6 +120,7 @@ class SituationSector(object):
             return 'tan'
         else:
             return 'white'
+
 
 @dataclass
 class SituationBorder(object):
@@ -142,7 +143,7 @@ class WaterSection(object):
     :param average_depth: Средняя глубина
     :param max_depth: Максимальная глубина
     :param wet_perimeter: Смоченный периметр
-    :pararm r_hydraulic: Гидравлический радиус
+    :param r_hydraulic: Гидравлический радиус
     :param start_point: Точка начала расчёта [point_index, y]
 
     """
@@ -258,7 +259,7 @@ class WaterSection(object):
                     water_boundary_points.append(i + 1)
                     break  # Прерываем поиск если нашли пересечение
 
-            # Если индекс минимальной отметки совпадает с правой границой участка
+            # Если индекс минимальной отметки совпадает с правой границей участка
             if start_point[0] == len(y) - 1 and y[start_point[0]] <= water_level:
                 water_boundary_x.append(x[len(y) - 1])
                 water_boundary_y.append(water_level)
@@ -401,7 +402,7 @@ class Calculation(object):
 
     # Коэффициент Шези по формуле Н. Н. Павловского, степенной коэффициент по формуле Железнякова
     def __shezi_pavlovskij_zheleznjakov(self):
-        # Показатель сетепени по формуле Г. В. Железнякова
+        # Показатель степени по формуле Г. В. Железнякова
         y = (
             1
             / np.log10(self.h)
@@ -457,7 +458,7 @@ class Calculation(object):
 @dataclass
 class Morfostvor(object):
 
-    """Класс описывающий морфствор."""
+    """Класс описывающий морфоствор."""
 
     # Основные параметры морфоствора
     title: str = ""
@@ -513,7 +514,7 @@ class Morfostvor(object):
             sys.exit(33)
 
         try:
-            # Открываем лист по заданому номеру
+            # Открываем лист по заданному номеру
             sheet = data_file.sheet_by_index(page)
         except IndexError:
             print(
@@ -595,7 +596,7 @@ class Morfostvor(object):
             return(situation)
 
         def get_sectors(self):
-            """Функция считывания участоков и их параметров из исходных файлов."""
+            """Функция считывания участков и их параметров из исходных файлов."""
 
             print("    — Определяем морфометрические участки ... ", end="")
             # №, Описание участка, номер первой точки, номер последней точки,
@@ -739,7 +740,6 @@ class Morfostvor(object):
                 self.design_water_level_index = i - 6  # Устанавливаем индекс РУВВ из таблицы обеспеченностей
             else:
                 self.probability.append([prob_ind, prob_val])
-
 
         # Удаляем пустые обеспеченности из списка обеспеченностей
         self.probability = [x for x in self.probability if x != ["", ""]]
@@ -902,7 +902,7 @@ class Morfostvor(object):
         self.fig_profile = GraphProfile(self)
 
         # Отрисовка смоченного периметра
-        if config.PROFILE_WET_PERIMITER:
+        if config.PROFILE_WET_PERIMETER:
             self.fig_profile.draw_wet_perimeter()
 
         # Отрисовка верхней границы сооружения
@@ -1028,7 +1028,7 @@ class Morfostvor(object):
                 self.fig_QH.fig.savefig(
                     Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI)
                 )
-            if config.HYDRAULIC_AND_SPEED_CURVE: 
+            if config.HYDRAULIC_AND_SPEED_CURVE:
                 self.fig_QHV.fig.savefig(
                     Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI)
                 )
@@ -1386,7 +1386,6 @@ class Graph(object):
     fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
 
-
     def __post_init__(self):
         self.clean()
         morfostvor = self.morfostvor
@@ -1502,7 +1501,7 @@ class Graph(object):
             if ax.startswith("ax"):
                 command = "self." + ax + ".cla()"
                 exec(command)
-        
+
         # Очистка осей скоростей на совмещенном графике
         try:
             self.ax_secondary.cla()
@@ -1658,7 +1657,6 @@ class GraphQHV(GraphCurve):
 
         ax_secondary.set_label(self._y2_label_text)
 
-
         # Отрисовка суммирующей кривой на графике
         ax.plot(
             df.loc[("Сумма"), x],
@@ -1696,7 +1694,7 @@ class GraphQHV(GraphCurve):
 
         # Настраиваем границы и толщину линий границ
         ax_secondary.spines["top"].set_linewidth(config.LINE_WIDTH["ax_border"])
-        ax_secondary.spines["right"].set_linewidth(config.LINE_WIDTH["ax_border"])  
+        ax_secondary.spines["right"].set_linewidth(config.LINE_WIDTH["ax_border"])
         ax_secondary.spines["left"].set_visible(False)
         ax_secondary.spines["bottom"].set_visible(False)
 
@@ -1739,7 +1737,6 @@ class GraphQHV(GraphCurve):
         # Устанавливаем отступы в графиках
         ax_secondary.margins(0.025)
 
-
     def draw(self):
         y_min = min(
             self.morfostvor.hydraulic_table.reset_index(0)
@@ -1748,6 +1745,7 @@ class GraphQHV(GraphCurve):
         )
         self.draw_curve(self.morfostvor, self.ax, self.ax_secondary, "Q", "УВ", "V")
         self.draw_water_levels(self.morfostvor, self.ax, "Q", "H", y_min)
+
 
 @dataclass
 class GraphQH(GraphCurve):
@@ -1824,6 +1822,7 @@ class GraphProfile(Graph):
 
     footers_num: int = 0
     __footer_y: int = 0
+
     def __post_init__(self):
         self.clean()
 
@@ -1845,7 +1844,7 @@ class GraphProfile(Graph):
         """
         Отрисовка дна профиля.
 
-        :return: Отрисовыает дно профиля на графике ax_profile.
+        :return: Отрисовывает дно профиля на графике ax_profile.
         """
 
         self.ax.plot(
@@ -1865,7 +1864,7 @@ class GraphProfile(Graph):
         """
         hs = 10  # Стандартная высота ячейки подвала
         hs_small = 7.5  # Уменьшенная высота ячейки подвала
-        hs_big = 13  # Увеличинная высота ячейки подвала
+        hs_big = 13  # Увеличенная высота ячейки подвала
         x1 = self.morfostvor.x[0]
         x2 = self.morfostvor.x[-1]
 
@@ -1885,7 +1884,7 @@ class GraphProfile(Graph):
                 (y_bot, y_bot),
                 color=config.COLOR["border"],
                 linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid")  
+                linestyle="solid")
 
         def __draw_label(x2, y_mid, label):
             self.ax_bottom_overlay.text(
@@ -1939,7 +1938,7 @@ class GraphProfile(Graph):
                     (y_bot, y_top),
                     color=config.COLOR["border"],
                     linewidth=config.LINE_WIDTH["profile_bottom"],
-                    linestyle="solid")            
+                    linestyle="solid")
 
         def setup_box():
             y_top = self.__footer_y
