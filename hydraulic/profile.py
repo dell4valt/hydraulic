@@ -284,8 +284,8 @@ class WaterSection(object):
         y1, y2 = water_boundary[1][0], water_boundary[1][1]
 
         # Точки смоченного периметра (номера точек под урезом)
-        water_section_x = x[water_boundary[2][0] + 1 : water_boundary[2][1] + 1]
-        water_section_y = y[water_boundary[2][0] + 1 : water_boundary[2][1] + 1]
+        water_section_x = x[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
+        water_section_y = y[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
 
         water_section_x.insert(0, x1)
         water_section_x.insert(len(water_section_x), x2)
@@ -592,7 +592,7 @@ class Morfostvor(object):
                     )
             situation[-1].end_point = len(x) - 1
 
-            print(f"успешно.\n")
+            print("успешно.\n")
             return(situation)
 
         def get_sectors(self):
@@ -686,8 +686,8 @@ class Morfostvor(object):
             # Записываем координаты и длины участков
             for sector in sectors:
                 sector.coord = (
-                    x[sector.start_point : sector.end_point + 1],
-                    y[sector.start_point : sector.end_point + 1],
+                    x[sector.start_point: sector.end_point + 1],
+                    y[sector.start_point: sector.end_point + 1],
                 )  # Координаты из начальной и конечной точек
                 # Длины полученные из разницы координат по x
                 sector.length = sector.get_length()

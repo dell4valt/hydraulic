@@ -20,6 +20,7 @@ def question_continue_app():
         else:
             continue
 
+
 def insertPageBreak(Document):
     paragraphs = Document.paragraphs
     run = paragraphs[-1].add_run()
@@ -53,7 +54,7 @@ def chunk_list(seq, num):
     last = 0.0
 
     while last < len(seq):
-        out.append(seq[int(last) : int(last + avg)])
+        out.append(seq[int(last): int(last + avg)])
         last += avg
 
     return out
