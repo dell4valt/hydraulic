@@ -28,6 +28,7 @@ from hydraulic.lib import (
     rmdir,
     setLastParagraphStyle,
     write_table,
+    question_continue_app
 )
 
 
@@ -616,7 +617,7 @@ class Morfostvor(object):
             ###
             # Перебираем все строки xls файла и ищем участки
             for line in range(lines_num):
-                name = __raw_data[line][__sector_name_col]  # Описание профиля
+                name = __raw_data[line][__sector_name_col].strip()  # Название участка
                 # Коэффициент шероховатости
                 roughness = __raw_data[line][__roughness_col]
                 slope = __raw_data[line][__slope_col]  # Уклон
@@ -629,7 +630,7 @@ class Morfostvor(object):
                     )
 
                 # Сравниваем имя предыдущего участка с текущим, и если не совпадают то создаем новый сектор:
-                elif name != sectors[num - 1].name:
+                elif name.lower() != sectors[num - 1].name.lower():
 
                     # TODO: Проверить это условие
                     if sectors[num - 1].id == 1:  # Если первый участок
@@ -651,6 +652,33 @@ class Morfostvor(object):
                             coord,
                         )
                     )
+
+            # Проверка участков
+            for sector in sectors:
+                if sector.roughness == '':
+                    print()
+                    print('-----------------------------------------------------------')
+                    print(f'Ошибка! В участке №{sector.id} «{sector.name}» не задан коэффициент шероховатости n.')
+                    print('Программа будет завершена.\n')
+                    sys.exit()
+                elif sector.slope == '':
+                    print()
+                    print('-----------------------------------------------------------')
+                    print(f'Ошибка! В участке №{sector.id} «{sector.name}» не задан уклон i.')
+                    print('Программа будет завершена.\n')
+                    sys.exit()
+
+                if sector.roughness < 0.02 or sector.roughness > 0.2:
+                    print()
+                    print('-----------------------------------------------------------')
+                    print(f'Обнаружен подозрительный коэффициент шероховатости на участке №{sector.id} «{sector.name}» — = {sector.roughness}.')
+                    question_continue_app()
+
+                if sector.slope <= 0 or sector.slope > 900:
+                    print()
+                    print('-----------------------------------------------------------')
+                    print(f'Обнаружен подозрительный уклон на участке №{sector.id} «{sector.name}» — {sector.slope}‰.')
+                    question_continue_app()
 
             # Номер последней точки в последнем секторе
             sectors[-1].end_point = len(x) - 1

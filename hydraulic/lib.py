@@ -8,6 +8,18 @@ from docx.enum.text import WD_BREAK
 from docx.shared import Cm
 
 
+def question_continue_app():
+    while True:
+        answer = input('Продолжить расчет? (да/нет)')
+        if answer.lower() in ['да', 'д', 'yes', 'y', 'ага']:
+            print('Хорошо. Продолжаем расчет.\n')
+            break
+        elif answer.lower() in ['no', 'нет', 'n', 'н']:
+            print('Программа будет завершена.\n')
+            sys.exit()
+        else:
+            continue
+
 def insertPageBreak(Document):
     paragraphs = Document.paragraphs
     run = paragraphs[-1].add_run()
