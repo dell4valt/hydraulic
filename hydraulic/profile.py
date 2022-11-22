@@ -524,7 +524,7 @@ class Morfostvor(object):
 
         sheet_title = sheet.name
         print(
-            f"Считываем исходные данные из .xlsx файла: {file_path}, страница {page} ({sheet_title})."
+            f"\n----- Считываем исходные данные из .xlsx файла: {file_path}, страница {page} ({sheet_title}) -----\n"
         )
 
         __raw_data = []  # Сырые строки xlsx файла
@@ -838,7 +838,7 @@ class Morfostvor(object):
         f = round(float(fF(wl)), 3)
 
         sum_row = {
-            'name': "Сумма",
+            'name': "Все участки",
             'slope': "-",
             'roughness': "-",
             'consumption': q,
@@ -1085,11 +1085,6 @@ class Morfostvor(object):
             f"Таблица - Расчётные уровни {self.strings['type']}",
         )
 
-        doc.add_paragraph(
-            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу воды {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
-            style="Т-примечание",
-        )
-
         # Вывод таблицы участков
         print("    — Записываем таблицу участков ... ", end="")
         param = (
@@ -1115,6 +1110,10 @@ class Morfostvor(object):
             ),
             (5, 5, 5, 5, 5, 5, 5),
             (":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
+        )
+        doc.add_paragraph(
+            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу воды {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
+            style="Т-примечание",
         )
 
         table = self.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
@@ -1176,7 +1175,7 @@ class Morfostvor(object):
         print("успешно!")
 
         print(
-            f"\nФайл {doc_file} сохранён успешно.\n-------------------------------------\n"
+            f"\n ------------------------ Файл {doc_file} сохранён успешно ------------------------\n"
         )
 
     def calculate(self):
