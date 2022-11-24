@@ -1019,7 +1019,7 @@ class Morfostvor(object):
         print("успешно!")
 
         if config.HYDRAULIC_CURVE:
-            print("    — Сохраняем график гидравлической кривой ... ", end="")
+            print("    — Сохраняем график гидравлической кривой QH ... ", end="")
             self.fig_QH.fig.savefig(
                 Path(f"{config.TEMP_DIR_NAME}/QH.png", dpi=config.FIG_DPI)
             )
@@ -1076,7 +1076,6 @@ class Morfostvor(object):
             self.fig_VH.fig.savefig(
                 Path(f"{config.TEMP_DIR_NAME}/VH.png", dpi=config.FIG_DPI)
             )
-            print("успешно!")
             doc.add_picture(f"{config.TEMP_DIR_NAME}/VH.png", width=Cm(16.5))
             setLastParagraphStyle("Р-рисунок", doc)
             print("успешно!")

@@ -144,7 +144,7 @@ def write_table(doc, table, param, title="Таблица"):
 
 
 def insert_summary_QV_tables(stvors, out_filename):
-    print("Формируем и вставляем сводные таблицы уровней и скоростей ... ", end="")
+    print("Формируем и вставляем сводные таблицы уровней, скоростей и таблиц параметров при РУВВ... ", end="")
     # Подготовка данных для записи результирующей таблицы
     levels_table = []
     speed_table = []
