@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import typing
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -61,6 +62,9 @@ class ProfileSector(object):
 
     def __post_init__(self):
         self.color = self.get_color()
+        if not self.__type_check():
+            print('Программа будет завершена.\n')
+            sys.exit(35)
 
     def get_color(self):
         name = self.name
@@ -84,6 +88,43 @@ class ProfileSector(object):
 
     def get_length(self):
         return round(self.coord[0][-1] - self.coord[0][0], 3)
+
+    def __type_check(self):
+        ret = True
+        for field_name, field_def in self.__dataclass_fields__.items():
+            if isinstance(field_def.type, typing._SpecialForm):
+                # No check for typing.Any, typing.Union, typing.ClassVar (without parameters)
+                continue
+            try:
+                actual_type = field_def.type.__origin__
+            except AttributeError:
+                # In case of non-typing types (such as <class 'int'>, for instance)
+                actual_type = field_def.type
+            # In Python 3.8 one would replace the try/except with
+            # actual_type = typing.get_origin(field_def.type) or field_def.type
+            if isinstance(actual_type, typing._SpecialForm):
+                # case of typing.Union[…] or typing.ClassVar[…]
+                actual_type = field_def.type.__args__
+
+            actual_value = getattr(self, field_name)
+            if not isinstance(actual_value, actual_type):
+                print()
+                print()
+                
+                keys = {
+                    'slope': 'уклоны',
+                    'roughness': 'коэффициенты шероховатости',
+                }
+
+                types = {
+                    'str': 'строка',
+                    'int': 'целое число',
+                    'float': 'десятичное число',
+                    'list': 'список'                }
+
+                print(f"Внимание! Ошибка типа данных в исходных параметрах — {keys[field_name]}: {types[type(actual_value).__name__]}, вместо {types[field_def.type.__name__]}.")
+                ret = False
+        return ret
 
 
 @dataclass
@@ -505,8 +546,6 @@ class Morfostvor(object):
 
     def read_xls(self, file_path, page=0):
         """Функция чтения из xls файла."""
-        # TODO: сделать проверку типа данных для коэффициента шероховатости
-
         try:
             data_file = xlrd.open_workbook(file_path)  # Открываем xls файл
         except FileNotFoundError:
@@ -520,11 +559,10 @@ class Morfostvor(object):
             print(
                 "Неверно указан индекс листа .xls файла. Проверьте параметры запуска расчёта."
             )
-            sys.exit(1)
+            sys.exit(34)
 
-        sheet_title = sheet.name
         print(
-            f"\n----- Считываем исходные данные из .xlsx файла: {file_path}, страница {page} ({sheet_title}) -----\n"
+            f"\n----- Считываем исходные данные из .xlsx файла: {file_path}, страница {page} ({sheet.name}) -----\n"
         )
 
         __raw_data = []  # Сырые строки xlsx файла
@@ -624,7 +662,7 @@ class Morfostvor(object):
 
                 # По первой строке создаём первый сектор
                 if line == 0:
-                    coord = []
+                    coord = ()
                     sectors.append(
                         ProfileSector(num, name, line, line, roughness, slope, coord)
                     )
@@ -649,7 +687,7 @@ class Morfostvor(object):
                             line,
                             roughness,
                             slope,
-                            coord,
+                            coord
                         )
                     )
 
@@ -671,7 +709,7 @@ class Morfostvor(object):
                 if sector.roughness < 0.02 or sector.roughness > 0.2:
                     print()
                     print('-----------------------------------------------------------')
-                    print(f'Обнаружен подозрительный коэффициент шероховатости на участке №{sector.id} «{sector.name}» — = {sector.roughness}.')
+                    print(f'Обнаружен подозрительный коэффициент шероховатости на участке №{sector.id} «{sector.name}» — {sector.roughness}.')
                     question_continue_app()
 
                 if sector.slope <= 0 or sector.slope > 900:
@@ -1173,10 +1211,6 @@ class Morfostvor(object):
         print("    — Удаляем временную папку ... ", end="")
         rmdir(Path(f"{config.TEMP_DIR_NAME}"))
         print("успешно!")
-
-        print(
-            f"\n ------------------------ Файл {doc_file} сохранён успешно ------------------------\n"
-        )
 
     def calculate(self):
         # Значение расхода до которого необходимо считать (максимальной введенная обеспеченности + 20%)
@@ -2943,29 +2977,44 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     if config.REWRITE_DOC_FILE:
         try:
             os.remove(out_filename)
-        except:
+        except FileNotFoundError:
             pass
 
     page_quantity = get_xls_sheet_quantity(in_filename)
     stvors = []
 
+    def single_page(in_filename, out_filename, page):
+        """Выполнение расчета одной страницы исходных данных из xlsx файла.
+
+        Args:
+            in_filename (str): _description_
+            out_filename (str): _description_
+            page (ind): _description_
+
+        Returns:
+            Morfostvor(): Возвращает объект морфоствора с выполненными расчетами, и сохраняет отчет
+        """
+        stvor = Morfostvor()
+        stvor.read_xls(in_filename, page)
+        stvor.calculate()
+        stvor.doc_export(out_filename)
+        print(
+            f"\n------------------------ Файл {out_filename} сохранён успешно ------------------------\n"
+        )
+        return stvor
+
     # Расчет для всех листов xls файла
     if page is None:
         for i in range(page_quantity):
-            stvors.append(Morfostvor())
-            stvors[i].read_xls(in_filename, i)
-            stvors[i].calculate()
-            stvors[i].doc_export(out_filename)
+            stvors.append(single_page(in_filename, out_filename, i))
 
         # Вставка сводных таблиц
         insert_summary_QV_tables(stvors, out_filename)
 
     # Расчет только одного листа xls файла
     elif type(page) == int:
-        stvor = Morfostvor()
-        stvor.read_xls(in_filename, page)
-        stvor.calculate()
-        stvor.doc_export(out_filename)
+        single_page(in_filename, out_filename, page)
+
     else:
-        print("Номер листа должен быть int.")
+        print("Номер листа должен быть целым числом.")
         sys.exit(0)
