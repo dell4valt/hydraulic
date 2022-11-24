@@ -1881,7 +1881,8 @@ class GraphVH(GraphCurve):
 
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "V", "УВ")
-        self.draw_water_levels(self.morfostvor, self.ax, "V", "H")
+        y_min = self.ax.get_ylim()[0]
+        self.draw_water_levels(self.morfostvor, self.ax, "V", "H", y_min=y_min)
 
 
 @dataclass
@@ -1942,15 +1943,15 @@ class GraphProfile(Graph):
 
         :return: Отрисовывает дно профиля на графике ax_profile.
         """
-
-        self.ax.plot(
-            self.morfostvor.x,
-            self.morfostvor.y,
-            color=config.COLOR["profile_bottom"],
-            linewidth=config.LINE_WIDTH["profile_bottom"],
-            linestyle="solid",
-            zorder=10
-        )
+        if config.PROFILE_SECTOR_BOTTOM_LINE is False:
+            self.ax.plot(
+                self.morfostvor.x,
+                self.morfostvor.y,
+                color=config.COLOR["profile_bottom"],
+                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linestyle="solid",
+                zorder=10
+            )
 
     def draw_profile_footer(self):
         """
@@ -2430,8 +2431,14 @@ class GraphProfile(Graph):
                 self.ax.add_patch(polygon)
 
             # Цвет линии дна по участкам
-            if config.PROFILE_SECTOR_BOTTOM_LINE:
-                self.ax.plot(sector.coord[0], sector.coord[1], "-", color=sector.color)
+            if config.PROFILE_SECTOR_BOTTOM_LINE:             
+                self.ax.plot(
+                    sector.coord[0],
+                    sector.coord[1],
+                    linewidth=config.LINE_WIDTH["profile_bottom"],
+                    linestyle="solid",
+                    color=sector.color,
+                    zorder=15)
 
     def set_style(self):
         # Устанавливаем заголовки графиков
