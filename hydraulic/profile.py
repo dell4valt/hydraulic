@@ -4,7 +4,8 @@ import sys
 import typing
 from dataclasses import dataclass, field
 from pathlib import Path
-
+import warnings
+from labellines import labelLines
 import matplotlib
 import matplotlib.patheffects as path_effects
 from matplotlib.patches import Rectangle
@@ -17,7 +18,6 @@ from docx import Document
 from docx.shared import Cm
 from matplotlib import gridspec
 from pathvalidate import sanitize_filename
-
 import hydraulic.config as config
 from hydraulic.lib import (
     WD_BREAK,
@@ -31,7 +31,7 @@ from hydraulic.lib import (
     write_table,
     question_continue_app
 )
-
+warnings.simplefilter(action='ignore', category=UserWarning)
 
 @dataclass
 class ProfileSector(object):
@@ -961,6 +961,8 @@ class Morfostvor(object):
             self.fig_QHV = GraphQHV(self)
         if config.SPEED_CURVE:
             self.fig_QV = GraphQV(self)
+        if config.SPEED_VH_CURVE:    
+            self.fig_VH = GraphVH(self)
         if config.AREA_CURVE:
             self.fig_QF = GraphQF(self)
 
@@ -1053,8 +1055,13 @@ class Morfostvor(object):
             self.fig_QV.fig.savefig(
                 Path(f"{config.TEMP_DIR_NAME}/QV.png", dpi=config.FIG_DPI)
             )
+            self.fig_VH.fig.savefig(
+                Path(f"{config.TEMP_DIR_NAME}/HV.png", dpi=config.FIG_DPI)
+            )
             print("успешно!")
 
+            doc.add_picture(f"{config.TEMP_DIR_NAME}/HV.png", width=Cm(16.5))
+            setLastParagraphStyle("Р-рисунок", doc)
             doc.add_picture(f"{config.TEMP_DIR_NAME}/QV.png", width=Cm(16.5))
             setLastParagraphStyle("Р-рисунок", doc)
             print("успешно!")
@@ -1062,6 +1069,21 @@ class Morfostvor(object):
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
                     "Рисунок — " + self.fig_QV._ax_title_text, style="Р-название"
+                )
+
+        if config.SPEED_VH_CURVE:
+            print("    — Сохраняем график кривой скоростей VH ... ", end="")
+            self.fig_VH.fig.savefig(
+                Path(f"{config.TEMP_DIR_NAME}/VH.png", dpi=config.FIG_DPI)
+            )
+            print("успешно!")
+            doc.add_picture(f"{config.TEMP_DIR_NAME}/VH.png", width=Cm(16.5))
+            setLastParagraphStyle("Р-рисунок", doc)
+            print("успешно!")
+
+            if config.GRAPHICS_TITLES_TEXT:
+                doc.add_paragraph(
+                    "Рисунок — " + self.fig_VH._ax_title_text, style="Р-название"
                 )
 
         if config.AREA_CURVE:
@@ -1638,6 +1660,7 @@ class GraphCurve(Graph):
                     )
         except:
             print("Внимание! Вывод расчётных уровней на график не возможен!")
+        
 
     def draw_curve(self, morfostvor: Morfostvor, ax: plt.subplot, x="Q", y="УВ"):
         """Отрисовка кривой на графике по заданным из морфоствора параметрам.
@@ -1676,6 +1699,8 @@ class GraphCurve(Graph):
 
         # Отрисовка легенды
         ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"])
+        labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.2 )
+
 
 
 @dataclass
@@ -1841,6 +1866,22 @@ class GraphQV(GraphCurve):
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "Q", "V")
         self.draw_water_levels(self.morfostvor, self.ax, "Q", "V")
+@dataclass
+class GraphVH(GraphCurve):
+    # Номер рисунка
+    _fig_num = 6
+    _fig_size = (16.5, 9)
+    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    ax: plt.subplot = fig.add_subplot(111)
+
+    # Подписи осей
+    _x_label_text = "V, м/c"
+    _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
+    _ax_title_text = "Кривая скоростей"
+
+    def draw(self):
+        self.draw_curve(self.morfostvor, self.ax, "V", "УВ")
+        self.draw_water_levels(self.morfostvor, self.ax, "V", "H")
 
 
 @dataclass
