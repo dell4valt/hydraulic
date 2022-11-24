@@ -877,8 +877,8 @@ class Morfostvor(object):
 
         sum_row = {
             'name': "Все участки",
-            'slope': "-",
-            'roughness': "-",
+            'slope': np.NaN,
+            'roughness': np.NaN,
             'consumption': q,
             'depth': h,
             'speed': v,
@@ -1150,7 +1150,7 @@ class Morfostvor(object):
             (":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         )
         doc.add_paragraph(
-            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу воды {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
+            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
             style="Т-примечание",
         )
 
@@ -2979,6 +2979,10 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
             os.remove(out_filename)
         except FileNotFoundError:
             pass
+        except PermissionError:
+            print(f'\nОшибка! Программа не может получить доступ к файлу {out_filename}, возможно он открыт?')
+            print('Программа будет завершена.')
+            sys.exit(35)
 
     page_quantity = get_xls_sheet_quantity(in_filename)
     stvors = []

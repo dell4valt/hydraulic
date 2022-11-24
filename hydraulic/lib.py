@@ -157,7 +157,7 @@ def insert_summary_QV_tables(stvors, out_filename):
 
     param_levels = (
         ["№", "Описание", "Мин. отм", "УВ"],
-        [0.85, 6, 1.25, 1.25],
+        [0.85, 7, 1.25, 1.25],
         ["", "", ":.2f", ":.2f"],
     )
 
@@ -232,6 +232,25 @@ def insert_summary_QV_tables(stvors, out_filename):
     )
     spd_table = doc.add_table(2, cols, style="Table Grid")
 
+    doc.add_paragraph(
+        "Таблица — Сводная таблица параметров РУВВ по поперечным профилям",
+        style="Т-название",
+    )
+    ruvv_table = doc.add_table(1, 12, style="Table Grid")
+    ruvv_table.cell(0, 0).text = '№'
+    ruvv_table.cell(0, 1).text = '№ про-филя'
+    ruvv_table.cell(0, 2).text = 'Описание'
+    ruvv_table.cell(0, 3).text = 'Обеспе-ченность РУВВ'
+    ruvv_table.cell(0, 4).text = 'Участок'
+    ruvv_table.cell(0, 5).text = 'Уклон i, ‰'
+    ruvv_table.cell(0, 6).text = 'Коэффициент шероховатости n'
+    ruvv_table.cell(0, 7).text = 'Q при РУВВ, м³/сек'
+    ruvv_table.cell(0, 8).text = 'Hср при РУВВ, м БС'
+    ruvv_table.cell(0, 9).text = 'Vср при РУВВ, м/сек'
+    ruvv_table.cell(0, 10).text = 'B при РУВВ, м'
+    ruvv_table.cell(0, 11).text = 'F при РУВВ, м²'
+    
+
     lev_table.cell(0, 0).merge(lev_table.cell(1, 0)).text = str(param_levels[0][0])
     lev_table.cell(0, 1).merge(lev_table.cell(1, 1)).text = str(param_levels[0][1])
     lev_table.cell(0, 2).merge(lev_table.cell(1, 2)).text = str(param_levels[0][2])
@@ -259,6 +278,7 @@ def insert_summary_QV_tables(stvors, out_filename):
             spd_table.cell(1, i + 4).text = "{}".format(stvors[0].probability[i][0])
 
     # Заполняем сводные таблицы данными
+    ruvv_n = 1
     for stvor in stvors:
         levels = stvor.levels_result[["P", "H", "Q"]].values.tolist()
         speed = stvor.levels_result[["P", "H", "V"]].values.tolist()
@@ -291,8 +311,32 @@ def insert_summary_QV_tables(stvors, out_filename):
                      Обеспеченности на всех профилях должны быть одинаковые."
                 )
                 print("Сводные таблицы не будут записаны в файл.")
-                sys.exit(1)
+        
+        sector_num = 1
+        ruvv_cell = ruvv_table.add_row().cells
 
+        for i in range(stvor.sectors_result.index.max() + 1):
+            ruvv_cell[0].text = f"{ruvv_n}"
+            ruvv_cell[4].text = f"{stvor.sectors_result.loc[i]['name']}"
+            ruvv_cell[5].text = "{:.2f}".format(stvor.sectors_result.loc[i]['slope']).replace('nan', '-')
+            ruvv_cell[6].text = "{:.3f}".format(stvor.sectors_result.loc[i]['roughness']).replace('nan', '-')
+            ruvv_cell[7].text = "{:.2f}".format(stvor.sectors_result.loc[i]['consumption']).replace('nan', '-')
+            ruvv_cell[8].text = "{:.2f}".format(stvor.sectors_result.loc[i]['depth']).replace('nan', '-')
+            ruvv_cell[9].text = "{:.2f}".format(stvor.sectors_result.loc[i]['speed']).replace('nan', '-')
+            ruvv_cell[10].text = "{:.2f}".format(stvor.sectors_result.loc[i]['width']).replace('nan', '-')
+            ruvv_cell[11].text = "{:.2f}".format(stvor.sectors_result.loc[i]['area']).replace('nan', '-')
+            sector_num += 1
+            ruvv_cell = ruvv_table.add_row().cells
+            ruvv_n += 1
+
+        # Удаляем пустую ячейку
+        row = ruvv_table.rows[-1]
+        row._element.getparent().remove(row._element)
+
+        # Объединяем ячейки
+        ruvv_table.cell(ruvv_n - 1, 1).merge(ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)).text = f"{stvor_num}"
+        ruvv_table.cell(ruvv_n - 1, 2).merge(ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 2)).text = f"{stvor.title}"
+        ruvv_table.cell(ruvv_n - 1, 3).merge(ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)).text = f"{stvor.probability[stvor.design_water_level_index][0]:g}%"
         stvor_num += 1
 
         table_style(
@@ -300,21 +344,38 @@ def insert_summary_QV_tables(stvors, out_filename):
             "Т-таблица",
             width=[
                 0.85,
-                6,
+                7,
                 1.25,
                 1.25,
                 1.25,
-            ],
+            ]
         )
         table_style(
             spd_table,
             "Т-таблица",
             width=[
                 0.85,
-                6,
+                7,
                 1.25,
                 1.25,
                 1.25,
+            ],
+        )
+        table_style(
+            ruvv_table,
+            "Т-таблица",
+            width=[
+                0.85,
+                0.85,
+                3,
+                1,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
+                2,
             ],
         )
 
