@@ -562,10 +562,10 @@ class Morfostvor(object):
             sys.exit(34)
 
         print(
-            f"\n----- Считываем исходные данные из .xlsx файла: {file_path}, страница {page} ({sheet.name}) -----\n"
+            f"\n----- Считываем исходные данные из .xls файла: {file_path}, страница {page} ({sheet.name}) -----\n"
         )
 
-        __raw_data = []  # Сырые строки xlsx файла
+        __raw_data = []  # Сырые строки xls файла
         i = 0
 
         # Позиционирование столбцов с данными в .xls файле
@@ -1698,7 +1698,7 @@ class GraphCurve(Graph):
 
         # Отрисовка легенды
         ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"])
-        labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.2 )
+        labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.01)
 
 
 
@@ -3012,7 +3012,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     для всех листов xls файла. Если задан параметр page, расчет производится только для указанной страницы.
     По результат создается out_filename (результирующий отчет в формате docx).
 
-        :param in_filename: Входные данные по створам (.xls или .xlsx файл)
+        :param in_filename: Входные данные по створам (.xls файл)
         :param out_filename: Результаты расчетов  (.docx файл)
         :param page=None: Номер страницы в xls файле, по умолчанию None (расчеты производятся для всего документа)
     """
@@ -3035,7 +3035,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     stvors = []
 
     def single_page(in_filename, out_filename, page):
-        """Выполнение расчета одной страницы исходных данных из xlsx файла.
+        """Выполнение расчета одной страницы исходных данных из xls файла.
 
         Args:
             in_filename (str): _description_
