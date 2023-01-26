@@ -33,6 +33,7 @@ from hydraulic.lib import (
 )
 warnings.simplefilter(action='ignore', category=UserWarning)
 
+
 @dataclass
 class ProfileSector(object):
     """Класс участка профиля (пойма, русло и т.д.)
@@ -43,7 +44,7 @@ class ProfileSector(object):
     :param end_point: Номер последней точки участка
     :param roughness: Коэффициент шероховатости n
     :param slope: Уклон данного участка I, ‰
-    :param coord: Список с двумя подсписками координат x и y участка
+    :param coord: Кортеж с двумя подсписками координат x и y участка
     """
 
     id: int
@@ -62,7 +63,7 @@ class ProfileSector(object):
 
     def __post_init__(self):
         self.color = self.get_color()
-        if not self.__type_check():
+        if not self.__check_type():
             print('Программа будет завершена.\n')
             sys.exit(35)
 
@@ -89,8 +90,8 @@ class ProfileSector(object):
     def get_length(self):
         return round(self.coord[0][-1] - self.coord[0][0], 3)
 
-    def __type_check(self):
-        ret = True
+    def __check_type(self):
+        result = True
         for field_name, field_def in self.__dataclass_fields__.items():
             if isinstance(field_def.type, typing._SpecialForm):
                 # No check for typing.Any, typing.Union, typing.ClassVar (without parameters)
@@ -110,7 +111,7 @@ class ProfileSector(object):
             if not isinstance(actual_value, actual_type):
                 print()
                 print()
-                
+
                 keys = {
                     'slope': 'уклоны',
                     'roughness': 'коэффициенты шероховатости',
@@ -120,11 +121,13 @@ class ProfileSector(object):
                     'str': 'строка',
                     'int': 'целое число',
                     'float': 'десятичное число',
-                    'list': 'список'                }
+                    'list': 'список'
+                }
 
-                print(f"Внимание! Ошибка типа данных в исходных параметрах — {keys[field_name]}: {types[type(actual_value).__name__]}, вместо {types[field_def.type.__name__]}.")
-                ret = False
-        return ret
+                print(f"Внимание! Ошибка типа данных в исходных параметрах — {keys[field_name]}:\
+                      {types[type(actual_value).__name__]}, вместо {types[field_def.type.__name__]}.")
+                result = False
+        return result
 
 
 @dataclass
@@ -471,7 +474,7 @@ class Calculation(object):
         self.shezi = (1 / self.n) * self.h ** (1 / 6)
         self.type__ = "Коэффициент Шези определён по формуле Маннинга"
 
-    # Коэффициент шези по формуле Павловского для глубин 0.1 < h < 3 (Гидрорасчёты считают по этой формуле)
+    # Коэффициент Шези по формуле Павловского для глубин 0.1 < h < 3 (Гидрорасчёты считают по этой формуле)
     def __shezi_pavlovskij(self):
         y = (
             2.5 * np.sqrt(self.n)
@@ -709,7 +712,8 @@ class Morfostvor(object):
                 if sector.roughness < 0.02 or sector.roughness > 0.2:
                     print()
                     print('-----------------------------------------------------------')
-                    print(f'Обнаружен подозрительный коэффициент шероховатости на участке №{sector.id} «{sector.name}» — {sector.roughness}.')
+                    print(f'Обнаружен подозрительный коэффициент шероховатости\
+                            на участке №{sector.id} «{sector.name}» — {sector.roughness}.')
                     question_continue_app()
 
                 if sector.slope <= 0 or sector.slope > 900:
@@ -961,7 +965,7 @@ class Morfostvor(object):
             self.fig_QHV = GraphQHV(self)
         if config.SPEED_CURVE:
             self.fig_QV = GraphQV(self)
-        if config.SPEED_VH_CURVE:    
+        if config.SPEED_VH_CURVE:
             self.fig_VH = GraphVH(self)
         if config.AREA_CURVE:
             self.fig_QF = GraphQF(self)
@@ -1147,7 +1151,8 @@ class Morfostvor(object):
         # Вывод таблицы участков
         print("    — Записываем таблицу участков ... ", end="")
         param = (
-            ("№", "Описание", "Уклон i, ‰", "Коэффициент шероховатости n", "Q при РУВВ, м³/сек", f"Hср при РУВВ, м{config.ALTITUDE_SYSTEM}", "Vср при РУВВ, м/сек", "B при РУВВ, м", "F при РУВВ, м²"),
+            ("№", "Описание", "Уклон i, ‰", "Коэффициент шероховатости n", "Q при РУВВ, м³/сек",
+             f"Hср при РУВВ, м{config.ALTITUDE_SYSTEM}", "Vср при РУВВ, м/сек", "B при РУВВ, м", "F при РУВВ, м²"),
             (1.3, 4, 4, 4, 4, 4, 4, 4, 4),
             (":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),)
 
@@ -1171,7 +1176,8 @@ class Morfostvor(object):
             (":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         )
         doc.add_paragraph(
-            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
+            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу\
+             {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
             style="Т-примечание",
         )
 
@@ -1263,7 +1269,9 @@ class Morfostvor(object):
         col = ["Участок", "УВ", "F", "B", "Hср", "Hмакс", "V", "Q", "Shezi"]
         df = pd.DataFrame(columns=col, dtype=float)
         # Первый расчётный элемент суммирующей кривой со всеми нулями
-        df = pd.concat([df, pd.DataFrame.from_records([dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0]))])], ignore_index=True)
+        df = pd.concat(
+            [df, pd.DataFrame.from_records([dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0]))])],
+            ignore_index=True)
 
         # Цикл расчёта до максимальной обеспеченности + 20% из исходных данных
         while consumption_summ < consumption_check:
@@ -1443,7 +1451,9 @@ class Morfostvor(object):
             v = float(fV(prob[1]))
             f = float(fF(prob[1]))
 
-            result = pd.concat([result, pd.DataFrame.from_records([{"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}])], ignore_index=True)
+            result = pd.concat(
+                [result, pd.DataFrame.from_records([{"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}])],
+                ignore_index=True)
 
         return result
 
@@ -1659,7 +1669,6 @@ class GraphCurve(Graph):
                     )
         except:
             print("Внимание! Вывод расчётных уровней на график не возможен!")
-        
 
     def draw_curve(self, morfostvor: Morfostvor, ax: plt.subplot, x="Q", y="УВ"):
         """Отрисовка кривой на графике по заданным из морфоствора параметрам.
@@ -1699,7 +1708,6 @@ class GraphCurve(Graph):
         # Отрисовка легенды
         ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"])
         labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.01)
-
 
 
 @dataclass
@@ -1865,6 +1873,8 @@ class GraphQV(GraphCurve):
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "Q", "V")
         self.draw_water_levels(self.morfostvor, self.ax, "Q", "V")
+
+
 @dataclass
 class GraphVH(GraphCurve):
     # Номер рисунка
@@ -2430,7 +2440,7 @@ class GraphProfile(Graph):
                 self.ax.add_patch(polygon)
 
             # Цвет линии дна по участкам
-            if config.PROFILE_SECTOR_BOTTOM_LINE:             
+            if config.PROFILE_SECTOR_BOTTOM_LINE:
                 self.ax.plot(
                     sector.coord[0],
                     sector.coord[1],

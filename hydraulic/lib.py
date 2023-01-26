@@ -249,7 +249,6 @@ def insert_summary_QV_tables(stvors, out_filename):
     ruvv_table.cell(0, 9).text = 'Vср при РУВВ, м/сек'
     ruvv_table.cell(0, 10).text = 'B при РУВВ, м'
     ruvv_table.cell(0, 11).text = 'F при РУВВ, м²'
-    
 
     lev_table.cell(0, 0).merge(lev_table.cell(1, 0)).text = str(param_levels[0][0])
     lev_table.cell(0, 1).merge(lev_table.cell(1, 1)).text = str(param_levels[0][1])
@@ -311,7 +310,7 @@ def insert_summary_QV_tables(stvors, out_filename):
                      Обеспеченности на всех профилях должны быть одинаковые."
                 )
                 print("Сводные таблицы не будут записаны в файл.")
-        
+
         sector_num = 1
         ruvv_cell = ruvv_table.add_row().cells
 
@@ -334,9 +333,12 @@ def insert_summary_QV_tables(stvors, out_filename):
         row._element.getparent().remove(row._element)
 
         # Объединяем ячейки
-        ruvv_table.cell(ruvv_n - 1, 1).merge(ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)).text = f"{stvor_num}"
-        ruvv_table.cell(ruvv_n - 1, 2).merge(ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 2)).text = f"{stvor.title}"
-        ruvv_table.cell(ruvv_n - 1, 3).merge(ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)).text = f"{stvor.probability[stvor.design_water_level_index][0]:g}%"
+        ruvv_table.cell(ruvv_n - 1, 1).merge(
+            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)).text = f"{stvor_num}"
+        ruvv_table.cell(ruvv_n - 1, 2).merge(
+            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 2)).text = f"{stvor.title}"
+        ruvv_table.cell(ruvv_n - 1, 3).merge(
+            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)).text = f"{stvor.probability[stvor.design_water_level_index][0]:g}%"
         stvor_num += 1
 
         table_style(
