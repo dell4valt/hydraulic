@@ -1186,8 +1186,8 @@ class Morfostvor(object):
             (":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         )
         doc.add_paragraph(
-            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу\
-             {self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
+            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу \
+{self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
             style="Т-примечание",
         )
 
