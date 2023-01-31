@@ -470,7 +470,7 @@ class Calculation(object):
                        показатель степени определён по формуле Железнякова"
 
     # Коэффициент шези по формуле Маннинга
-    def __shezi_mannign(self):
+    def __shezi_manning(self):
         self.shezi = (1 / self.n) * self.h ** (1 / 6)
         self.type__ = "Коэффициент Шези определён по формуле Маннинга"
 
@@ -983,18 +983,28 @@ class Morfostvor(object):
             )
 
         # Отрисовка границы предельного размыва профиля
-        if self.erosion_limit and self.erosion_limit_coord:
+        if self.erosion_limit and len(self.erosion_limit_coord) == 2:
             self.fig_profile.draw_erosion_limit(
                 self.erosion_limit,
                 self.erosion_limit_coord[0],
                 self.erosion_limit_coord[1])
+        elif self.erosion_limit and len(self.erosion_limit_coord) == 4:
+            self.fig_profile.draw_erosion_limit(
+                self.erosion_limit,
+                self.erosion_limit_coord[0],
+                self.erosion_limit_coord[1],
+                self.erosion_limit_coord[2],
+                self.erosion_limit_coord[3])
         elif self.erosion_limit:
             self.fig_profile.draw_erosion_limit(self.erosion_limit)
 
-        # Отрисовка уровней воды на графике профиля
+        # Отрисовка расчетных уровней воды на графике профиля
         self.fig_profile.draw_levels_on_profile(self.levels_result)
-
         self.fig_profile._update_limit()
+
+        # TODO: сделать отрисовку линий урезов воды по каждому
+        # участку УВ из описания ситуации исходного файла
+        # Отрисовка урез воды на графике профиля
         if self.waterline and type(self.waterline) != str:
             self.fig_profile.draw_waterline(
                 round(self.waterline, 2), color="blue", linestyle="-"
@@ -2565,8 +2575,8 @@ class GraphProfile(Graph):
                 linestyle="solid",
             )
 
-    def draw_erosion_limit(self, h, x1=None, x2=None, text="▼$H_{{разм.}} = {h:.2f}$"):
-        """Функция отрисовки линии предельного размыва профиля.
+    def draw_erosion_limit(self, h, x1=None, x2=None, x3=None, x4=None, text="▼$H_{{разм.}} = {h:.2f}$"):
+        """Функция отрисовки линии предельного профиля размыва.
 
         Arguments:
             h {[float]} -- Отметка линии предельного размыва
@@ -2574,6 +2584,8 @@ class GraphProfile(Graph):
         Keyword Arguments:
             x1 {[float]} -- Координата начала линии (default: {None})
             x2 {[float]} -- Координата конца линии (default: {None})
+            x3 {[float]} -- Координата начала линии профиля по поверхности  (default: {None})
+            x4 {[float]} -- Координата конца линии профиля по поверхности (default: {None})
             text {[string]} -- Текст подписи линии (default: {'▼$H_{{разм.}} = {h:.2f}$'})
         """
         if config.PROFILE_EROSION_LIMIT and not isinstance(
@@ -2616,10 +2628,22 @@ class GraphProfile(Graph):
                 ]
             )
 
+            y3 = None
+            y4 = None
+
+            # Функция интерполяции координат профиля
+            f = interpolate.interp1d(self.morfostvor.x, self.morfostvor.y)
+
+            if x3:
+                y3 = f(x3)
+
+            if x4:
+                y4 = f(x4)
+
             # Отрисовка линии предельного размыва
             self.ax.plot(
-                [x1, x2],
-                [h, h],
+                [x3, x1, x2, x4],
+                [y3, h, h, y4],
                 color=config.COLOR["erosion_limit_line"],
                 linestyle="--",
                 linewidth=config.LINE_WIDTH["erosion_limit_line"],
