@@ -2637,7 +2637,7 @@ class GraphProfile(Graph):
             # Интерполяция отметок высоты по x и исключение для 0 пикета
             if x3 and x3 == 0:
                 y3 = self.morfostvor.y[0]
-            else:
+            elif x3:
                 y3 = f(float(x3))
 
             if x4:
