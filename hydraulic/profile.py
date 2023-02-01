@@ -2634,11 +2634,14 @@ class GraphProfile(Graph):
             # Функция интерполяции координат профиля
             f = interpolate.interp1d(self.morfostvor.x, self.morfostvor.y)
 
-            if x3:
-                y3 = f(x3)
+            # Интерполяция отметок высоты по x и исключение для 0 пикета
+            if x3 and x3 == 0:
+                y3 = self.morfostvor.y[0]
+            else:
+                y3 = f(float(x3))
 
             if x4:
-                y4 = f(x4)
+                y4 = f(float(x4))
 
             # Отрисовка линии предельного размыва
             self.ax.plot(
