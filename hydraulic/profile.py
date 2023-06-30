@@ -413,7 +413,7 @@ class Calculation(object):
     a: float  # Площадь водного сечений
     v: float = 0  # Скорость
     q: float = 0  # Расход
-    __g: float = 9.80665  # Ускорение свободного падения
+    _g: float = 9.80665  # Ускорение свободного падения
     shezi: float = 0  # Коэффициент Шези
     type__: str = "Не определен"
 
@@ -451,16 +451,16 @@ class Calculation(object):
             1
             / np.log10(self.h)
             * np.log10(
-                (1 / 2 - (self.n * np.sqrt(self.__g) / 0.26) * (1 - np.log10(self.h)))
+                (1 / 2 - (self.n * np.sqrt(self._g) / 0.26) * (1 - np.log10(self.h)))
                 + self.n
                 * np.sqrt(
                     1
                     / 4
-                    * (1 / self.n - np.sqrt(self.__g) / 0.13 * (1 - np.log10(self.h)))
+                    * (1 / self.n - np.sqrt(self._g) / 0.13 * (1 - np.log10(self.h)))
                     ** 2
-                    + np.sqrt(self.__g)
+                    + np.sqrt(self._g)
                     / 0.13
-                    * (1 / self.n + np.sqrt(self.__g) * np.log10(self.h))
+                    * (1 / self.n + np.sqrt(self._g) * np.log10(self.h))
                 )
             )
         )
@@ -489,12 +489,12 @@ class Calculation(object):
     # Коэффициент шези по формуле Железнякова
     def __shezi_zheleznjakov(self):
         self.shezi = 1 / 2 * (
-            (1 / self.n) - (np.sqrt(self.__g) / 0.13) * (1 - np.log10(self.h))
+            (1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.h))
         ) + np.sqrt(
             (1 / 4)
-            * (1 / self.n - (np.sqrt(self.__g) / 0.13) * (1 - np.log10(self.h))) ** 2
-            + (np.sqrt(self.__g) / 0.13)
-            * ((1 / self.n) + (np.sqrt(self.__g) * np.log10(self.h)))
+            * (1 / self.n - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.h))) ** 2
+            + (np.sqrt(self._g) / 0.13)
+            * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.h)))
         )
         self.type__ = "Коэффициент шези определён по формуле Железнякова"
 
@@ -634,7 +634,7 @@ class Morfostvor(object):
             situation[-1].end_point = len(x) - 1
 
             print("успешно.\n")
-            return(situation)
+            return situation
 
         def get_sectors(self):
             """Функция считывания участков и их параметров из исходных файлов."""
@@ -1445,12 +1445,12 @@ class Morfostvor(object):
         # Интерполируем значения гидравлической кривой
         # для необходимых обеспеченностей и обновляем таблицу
         p_table = df.loc[(water_levels, "Сумма"), :].droplevel(1)
-        self.levels_result = self.get_p_table(p_table)
+        self.levels_result = self.get_prob_table(p_table)
         self.hydraulic_table = df
         self.sectors_result = self.get_sectors_result()
         return df
 
-    def get_p_table(self, df: pd.DataFrame):
+    def get_prob_table(self, df: pd.DataFrame):
         result = pd.DataFrame(columns=["P", "Q", "H", "F"])
 
         for prob in self.probability:
@@ -1717,7 +1717,10 @@ class GraphCurve(Graph):
 
         # Отрисовка легенды
         ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"])
-        labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.01)
+        try:
+            labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.01)
+        except ValueError:
+            pass
 
 
 @dataclass
@@ -1937,7 +1940,7 @@ class GraphProfile(Graph):
     ax_bottom_overlay: plt.subplot = fig.add_subplot(__gs[57:, :], frame_on=False)
 
     footers_num: int = 0
-    __footer_y: int = 0
+    _footer_y: int = 0
 
     def __post_init__(self):
         self.clean()
@@ -2057,7 +2060,7 @@ class GraphProfile(Graph):
                     linestyle="solid")
 
         def setup_box():
-            y_top = self.__footer_y
+            y_top = self._footer_y
 
             # Технический разделитель (для увеличения размера границ)
             self.ax_bottom_overlay.plot(
@@ -2071,9 +2074,9 @@ class GraphProfile(Graph):
         def draw_pk():
             """  Отрисовывает нижнюю границу для ПК в подвале, сами значения ПК отрисовываются отдельно
             """
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
             x2 = self.morfostvor.x[-1]
 
@@ -2091,9 +2094,9 @@ class GraphProfile(Graph):
 
         def draw_h():
             hs = hs_big
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
             x2 = self.morfostvor.x[-1]
 
@@ -2121,9 +2124,9 @@ class GraphProfile(Graph):
             self.footers_num += 1
 
         def draw_dist():
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
@@ -2165,9 +2168,9 @@ class GraphProfile(Graph):
 
         def draw_rough():
             hs = hs_small
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
@@ -2181,9 +2184,9 @@ class GraphProfile(Graph):
 
         def draw_depth():
             hs = hs_small
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
@@ -2197,9 +2200,9 @@ class GraphProfile(Graph):
 
         def draw_speed():
             hs = hs_small
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
@@ -2213,9 +2216,9 @@ class GraphProfile(Graph):
 
         def draw_area():
             hs = hs_small
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
@@ -2229,9 +2232,9 @@ class GraphProfile(Graph):
 
         def draw_consumption():
             hs = hs_small
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
@@ -2244,9 +2247,9 @@ class GraphProfile(Graph):
             self.footers_num += 1
 
         def draw_situation():
-            y_bot = self.__footer_y
-            y_top = self.__footer_y + hs
-            self.__footer_y = y_top
+            y_bot = self._footer_y
+            y_top = self._footer_y + hs
+            self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
 
             x1 = self.morfostvor.x[0]
