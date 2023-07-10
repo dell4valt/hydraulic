@@ -2,13 +2,12 @@ import os
 import re
 import sys
 import typing
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
-import warnings
-from labellines import labelLines
+
 import matplotlib
 import matplotlib.patheffects as path_effects
-from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -16,21 +15,17 @@ import scipy.interpolate as interpolate
 import xlrd
 from docx import Document
 from docx.shared import Cm
+from labellines import labelLines
 from matplotlib import gridspec
+from matplotlib.patches import Rectangle
 from pathvalidate import sanitize_filename
+
 import hydraulic.config as config
-from hydraulic.lib import (
-    WD_BREAK,
-    chunk_list,
-    get_xls_sheet_quantity,
-    insert_summary_QV_tables,
-    insertPageBreak,
-    poly_area,
-    rmdir,
-    setLastParagraphStyle,
-    write_table,
-    question_continue_app
-)
+from hydraulic.lib import (WD_BREAK, chunk_list, get_xls_sheet_quantity,
+                           insert_summary_QV_tables, insertPageBreak,
+                           poly_area, question_continue_app, rmdir,
+                           setLastParagraphStyle, write_table)
+
 warnings.simplefilter(action='ignore', category=UserWarning)
 
 
@@ -2551,6 +2546,7 @@ class GraphProfile(Graph):
             linestyle=":",
             linewidth=1,
             alpha=0.9,
+            zorder=0,
         )
 
         self.ax.grid(
@@ -2559,7 +2555,10 @@ class GraphProfile(Graph):
             linestyle=":",
             linewidth=1,
             alpha=0.9,
+            zorder=0,
         )
+
+        self.ax.set_axisbelow(True)
 
         # Установка параметров полей графика
         self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.89, top=0.9)
@@ -2576,6 +2575,7 @@ class GraphProfile(Graph):
                 color=config.COLOR["profile_point_line"],
                 linewidth=config.LINE_WIDTH["profile_point_line"],
                 linestyle="solid",
+                zorder=1
             )
 
     def draw_erosion_limit(self, h, x1=None, x2=None, x3=None, x4=None, text="▼$H_{{разм.}} = {h:.2f}$"):
@@ -2638,10 +2638,10 @@ class GraphProfile(Graph):
             f = interpolate.interp1d(self.morfostvor.x, self.morfostvor.y)
 
             # Интерполяция отметок высоты по x и исключение для 0 пикета
-            if x3 and x3 == 0:
-                y3 = self.morfostvor.y[0]
-            elif x3:
+            if x3:
                 y3 = f(float(x3))
+            elif x3 == 0:
+                y3 = self.morfostvor.y[0]
 
             if x4:
                 y4 = f(float(x4))
