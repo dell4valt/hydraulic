@@ -24,7 +24,7 @@ import hydraulic.config as config
 from hydraulic.lib import (WD_BREAK, chunk_list, get_xls_sheet_quantity,
                            insert_summary_QV_tables, insertPageBreak,
                            poly_area, question_continue_app, rmdir,
-                           setLastParagraphStyle, write_table)
+                           setLastParagraphStyle, write_table, text_sanitize)
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 
@@ -1186,9 +1186,11 @@ class Morfostvor(object):
             (5, 5, 5, 5, 5, 5, 5),
             (":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         )
+
+        prob_text = text_sanitize(self.probability[self.design_water_level_index][0], num_suffix='% обеспеченности')
         doc.add_paragraph(
             f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу \
-{self.probability[self.design_water_level_index][0]:g}% обеспеченности.",
+{prob_text}.",
             style="Т-примечание",
         )
 

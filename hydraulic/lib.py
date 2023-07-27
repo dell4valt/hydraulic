@@ -333,12 +333,13 @@ def insert_summary_QV_tables(stvors, out_filename):
         row._element.getparent().remove(row._element)
 
         # Объединяем ячейки
+        prob_text = text_sanitize(stvor.probability[stvor.design_water_level_index][0], num_suffix='%')
         ruvv_table.cell(ruvv_n - 1, 1).merge(
             ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)).text = f"{stvor_num}"
         ruvv_table.cell(ruvv_n - 1, 2).merge(
             ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 2)).text = f"{stvor.title}"
         ruvv_table.cell(ruvv_n - 1, 3).merge(
-            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)).text = f"{stvor.probability[stvor.design_water_level_index][0]:g}%"
+            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)).text = f"{prob_text}"
         stvor_num += 1
 
         table_style(
@@ -384,6 +385,24 @@ def insert_summary_QV_tables(stvors, out_filename):
     print("успешно!")
     doc.save(out_filename)
 
+def text_sanitize(text, suffix='', prefix='', num_suffix=''):
+    """Возвращает входной параметр text. В случае если число целое, возвращает без десятичных нулей. Если не целое, с указанием десятых.
+    Можно задать префикс и суффикс соответствующими параметрами.
+
+    Args:
+        text (_type_): Входящая строка или число
+        suffix (str, optional): Окончание возвращаемой строки. Defaults to ''.
+        prefix (str, optional): Начало возвращаемой строки. Defaults to ''.
+        num_suffix (str, optional): Окончание возвращаемой строки только если на входе число. Defaults to ''.
+
+    Returns:
+        _type_: Возвращаемая строка
+    """
+
+    try:
+        return f'{prefix}{text:g}{num_suffix}{suffix}'
+    except ValueError:
+        return f'{prefix}{str(text)}{suffix}'
 
 def rmdir(dir):
     directory = Path(str(dir))
