@@ -3,6 +3,7 @@ import re
 import sys
 import typing
 import warnings
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -3064,7 +3065,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         :param out_filename: Результаты расчетов  (.docx файл)
         :param page=None: Номер страницы в xls файле, по умолчанию None (расчеты производятся для всего документа)
     """
-
+    __start_time = time.time()
     # Создаем родительскую папку, если она не существует
     Path(out_filename).parents[0].mkdir(parents=True, exist_ok=True)
 
@@ -3096,10 +3097,21 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         stvor = Morfostvor()
         stvor.read_xls(in_filename, page)
         stvor.calculate()
+        __compute_time = time.time() - __start_time
+        __report_start_time = time.time()
         stvor.doc_export(out_filename)
         print(
-            f"\n------------------------ Файл {out_filename} сохранён успешно ------------------------\n"
+            f"\n------------------------ "
+            f"Файл {out_filename} сохранён успешно "
+            f"------------------------\n"
         )
+        if config.DEBUG:
+            print(f"--- Расчеты: {__compute_time:.4f} секунд ---")
+            print(
+                f"--- Сборка отчета: "
+                f"{time.time() - __report_start_time:.4f} секунд ---"
+            )
+            print(f"--- Всего: {time.time() - __start_time:.4f} секунд ---\n")
         return stvor
 
     # Расчет для всех листов xls файла
@@ -3108,7 +3120,13 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
             stvors.append(single_page(in_filename, out_filename, i))
 
         # Вставка сводных таблиц
+        __summary_start_time = time.time()
         insert_summary_QV_tables(stvors, out_filename)
+        if config.DEBUG:
+            print(
+                f"\n--- Вставка сводных таблиц: "
+                f"{time.time() - __summary_start_time:.4f} секунд ---"
+            )
 
     # Расчет только одного листа xls файла
     elif type(page) == int:
@@ -3117,3 +3135,6 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     else:
         print("Номер листа должен быть целым числом.")
         sys.exit(0)
+
+    if config.DEBUG:
+        print(f"--- Итого: {time.time() - __start_time:.4f} секунд ---\n")
