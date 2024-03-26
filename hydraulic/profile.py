@@ -3106,6 +3106,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         Returns:
             Morfostvor(): Возвращает объект морфоствора с выполненными расчетами, и сохраняет отчет
         """
+        __start_time = time.time()
         stvor = Morfostvor()
         stvor.read_xls(in_filename, page)
         stvor.calculate()
