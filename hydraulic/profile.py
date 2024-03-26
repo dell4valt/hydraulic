@@ -127,8 +127,9 @@ class ProfileSector:
                     'list': 'список'
                 }
 
-                print(f"Внимание! Ошибка типа данных в исходных параметрах — {keys[field_name]}:\
-                      {types[type(actual_value).__name__]}, вместо {types[field_def.type.__name__]}.")
+                print(f"Внимание! Ошибка типа данных в исходных параметрах — {keys[field_name]}:"
+                      "{types[type(actual_value).__name__]}, "
+                      "вместо {types[field_def.type.__name__]}.")
                 result = False
         return result
 
@@ -483,7 +484,8 @@ class Calculation:
         self.shezi = (1 / self.n) * self.h ** (1 / 6)
         self.type__ = "Коэффициент Шези определён по формуле Маннинга"
 
-    # Коэффициент Шези по формуле Павловского для глубин 0.1 < h < 3 (Гидрорасчёты считают по этой формуле)
+    # Коэффициент Шези по формуле Павловского
+    # для глубин 0.1 < h < 3 (Гидрорасчёты считают по этой формуле)
     def __shezi_pavlovskij(self):
         y = (
             2.5 * np.sqrt(self.n)
@@ -574,7 +576,8 @@ class Morfostvor:
             sys.exit(34)
 
         print(
-            f"\n----- Считываем исходные данные из .xls файла: {file_path}, страница {page} ({sheet.name}) -----\n"
+            f"\n----- Считываем исходные данные из .xls файла: "
+            f"{file_path}, страница {page} ({sheet.name}) -----\n"
         )
 
         __raw_data = []  # Сырые строки xls файла
@@ -598,7 +601,7 @@ class Morfostvor:
 
             # Считываем количество строк с не пустыми координатами
             for line in __raw_data:
-                if type(line[__x_coord_col]) != str:
+                if not isinstance(line[__x_coord_col], str):
                     lines_num += 1
 
             situation = self.situation
@@ -655,7 +658,7 @@ class Morfostvor:
 
             # Считываем количество строк с не пустыми координатами
             for line in __raw_data:
-                if type(line[__x_coord_col]) != str:
+                if not isinstance(line[__x_coord_col], str):
                     lines_num += 1
 
             sectors = self.sectors  # Список участков
@@ -679,7 +682,8 @@ class Morfostvor:
                         ProfileSector(num, name, line, line, roughness, slope, coord)
                     )
 
-                # Сравниваем имя предыдущего участка с текущим, и если не совпадают то создаем новый сектор:
+                # Сравниваем имя предыдущего участка с текущим,
+                # если не совпадают то создаем новый сектор:
                 elif name.lower() != sectors[num - 1].name.lower():
 
                     # TODO: Проверить это условие
@@ -687,7 +691,8 @@ class Morfostvor:
                         # Записываем номер последний точки - 1
                         sectors[num - 1].end_point = line
                     else:  # Если все остальные участки
-                        # Записываем номер последний точки в предыдущий участок для всех остальных участков
+                        # Записываем номер последний точки
+                        # в предыдущий участок для всех остальных участков
                         sectors[num - 1].end_point = line
 
                     num += 1  # Увеличиваем номер сектора на 1
@@ -708,7 +713,8 @@ class Morfostvor:
                 if sector.roughness == '':
                     print()
                     print('-----------------------------------------------------------')
-                    print(f'Ошибка! В участке №{sector.id} «{sector.name}» не задан коэффициент шероховатости n.')
+                    print(f"Ошибка! В участке №{sector.id} «{sector.name}» "
+                          "не задан коэффициент шероховатости n.")
                     print('Программа будет завершена.\n')
                     sys.exit()
                 elif sector.slope == '':
@@ -728,7 +734,8 @@ class Morfostvor:
                 if sector.slope <= 0 or sector.slope > 900:
                     print()
                     print('-----------------------------------------------------------')
-                    print(f'Обнаружен подозрительный уклон на участке №{sector.id} «{sector.name}» — {sector.slope}‰.')
+                    print("Обнаружен подозрительный уклон "
+                          f"на участке №{sector.id} «{sector.name}» — {sector.slope}‰.")
                     question_continue_app()
 
             # Номер последней точки в последнем секторе
@@ -772,7 +779,7 @@ class Morfostvor:
 
         self.waterline = __raw_data[4][__description_col]  # Отметка уреза воды
         # Проверяем задан ли урез текстом, если нет округляем до 2 знаков
-        if type(self.waterline) is not str:
+        if not isinstance(self.waterline, str):
             self.waterline = round(self.waterline, 2)
 
         self.dH = __raw_data[5][__description_col]  # Расчётный шаг по глубине
@@ -780,9 +787,13 @@ class Morfostvor:
 
         # Считываем отметку предела размыва (в скобках можно указать границы)
         try:
-            erosion_limit_list = [float(x.strip()) for x in __raw_data[7][__description_col].split(',')]
-            self.erosion_limit = erosion_limit_list[0]  # Предел размыва
-            self.erosion_limit_coord = erosion_limit_list[1:]   # координаты предела размыва
+            erosion_limit_list = [
+                float(x.strip()) for x in __raw_data[7][__description_col].split(",")
+            ]
+            # Предел размыва
+            self.erosion_limit = erosion_limit_list[0]
+            # координаты предела размыва
+            self.erosion_limit_coord = erosion_limit_list[1:]
         except:
             self.erosion_limit = __raw_data[7][__description_col]
 
@@ -795,7 +806,7 @@ class Morfostvor:
         # Считываем и записываем все точки x и y профиля
         print("    — Считываем координаты профиля ... ", end="")
         for i in range(len(__raw_data)):
-            if type(__raw_data[i][__x_coord_col]) != str:
+            if not isinstance(__raw_data[i][__x_coord_col], str):
                 self.x.append(__raw_data[i][__x_coord_col])
                 self.y.append(__raw_data[i][__y_coord_col])
         print(f"успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]:.2f} м")
@@ -815,7 +826,8 @@ class Morfostvor:
                     self.probability.append([float(prob_ind[:-1]), prob_val])
                 except ValueError:
                     self.probability.append([prob_ind[:-1], prob_val])
-                self.design_water_level_index = i - 6  # Устанавливаем индекс РУВВ из таблицы обеспеченностей
+                # Устанавливаем индекс РУВВ из таблицы обеспеченностей
+                self.design_water_level_index = i - 6
             else:
                 self.probability.append([prob_ind, prob_val])
 
@@ -840,11 +852,26 @@ class Morfostvor:
         for sector in self.sectors:
             try:
                 if wl >= df.loc[sector.name].index.min() and wl <= df.loc[sector.name].index.max():
-                    fQ = interpolate.interp1d(df.loc[(sector.name), 'Q'].index, df.loc[(sector.name), 'Q'].values)
-                    fV = interpolate.interp1d(df.loc[(sector.name), 'V'].index, df.loc[(sector.name), 'V'].values)
-                    fH = interpolate.interp1d(df.loc[(sector.name), 'Hср'].index, df.loc[(sector.name), 'Hср'].values)
-                    fB = interpolate.interp1d(df.loc[(sector.name), 'B'].index, df.loc[(sector.name), 'B'].values)
-                    fF = interpolate.interp1d(df.loc[(sector.name), 'F'].index, df.loc[(sector.name), 'F'].values)
+                    fQ = interpolate.interp1d(
+                        df.loc[(sector.name), "Q"].index,
+                        df.loc[(sector.name), "Q"].values,
+                    )
+                    fV = interpolate.interp1d(
+                        df.loc[(sector.name), "V"].index,
+                        df.loc[(sector.name), "V"].values,
+                    )
+                    fH = interpolate.interp1d(
+                        df.loc[(sector.name), "Hср"].index,
+                        df.loc[(sector.name), "Hср"].values,
+                    )
+                    fB = interpolate.interp1d(
+                        df.loc[(sector.name), "B"].index,
+                        df.loc[(sector.name), "B"].values,
+                    )
+                    fF = interpolate.interp1d(
+                        df.loc[(sector.name), "F"].index,
+                        df.loc[(sector.name), "F"].values,
+                    )
 
                     q = float(fQ(wl))
                     h = float(fH(wl))
@@ -1055,7 +1082,8 @@ class Morfostvor:
                 )
 
         if config.HYDRAULIC_AND_SPEED_CURVE:
-            print("    — Сохраняем график гидравлической кривой с совмещенным графиком скорости ... ", end="")
+            print("    — Сохраняем график гидравлической кривой "
+                  "с совмещенным графиком скорости ... ", end="")
             self.fig_QHV.fig.savefig(
                 Path(f"{config.TEMP_DIR_NAME}/QHV.png", dpi=config.FIG_DPI)
             )
@@ -1191,10 +1219,13 @@ class Morfostvor:
 
         # Вывод таблицы гидравлической кривой
         print("    — Записываем таблицу кривой расхода воды ... ", end="")
-        prob_text = text_sanitize(self.probability[self.design_water_level_index][0], num_suffix='% обеспеченности')
+        prob_text = text_sanitize(
+            self.probability[self.design_water_level_index][0],
+            num_suffix="% обеспеченности",
+        )
         doc.add_paragraph(
-            f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу \
-{prob_text}.",
+            "Примечание: Расчетный уровень высоких вод (РУВВ) "
+            f"принят по расходу {prob_text}.",
             style="Т-примечание",
         )
 
@@ -1245,7 +1276,8 @@ class Morfostvor:
         )
 
         doc.add_paragraph(
-            f"Расчётный шаг: {self.dH:g} см. В таблице приведён каждый {divider}-й результат расчёта.",
+            f"Расчётный шаг: {self.dH:g} см. "
+            f"В таблице приведён каждый {divider}-й результат расчёта.",
             style="Т-примечание",
         )
         print("успешно!")
@@ -1257,7 +1289,8 @@ class Morfostvor:
             doc.save(doc_file)
         except PermissionError:
             print(
-                "\nОшибка! Не удалось сохранить файл. Проверьте возможность записи файла по указанному пути."
+                "\nОшибка! Не удалось сохранить файл. "
+                "Проверьте возможность записи файла по указанному пути."
             )
             print("Возможно записываемый файл уже существует и открыт.")
             sys.exit(1)
@@ -1268,7 +1301,8 @@ class Morfostvor:
         print("успешно!")
 
     def calculate(self):
-        # Значение расхода до которого необходимо считать (максимальной введенная обеспеченности + 20%)
+        # Значение расхода до которого необходимо
+        # считать (максимальной введенная обеспеченности + 20%)
         consumption_check = self.get_q_max()[1] + (self.get_q_max()[1] * 0.20)
 
         # Проверяем задан ли расчётный шаг в исходных данных
@@ -1298,8 +1332,14 @@ class Morfostvor:
         df = pd.DataFrame(columns=col, dtype=float)
         # Первый расчётный элемент суммирующей кривой со всеми нулями
         df = pd.concat(
-            [df, pd.DataFrame.from_records([dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0]))])],
-            ignore_index=True)
+            [
+                df,
+                pd.DataFrame.from_records(
+                    [dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0]))]
+                ),
+            ],
+            ignore_index=True,
+        )
 
         # Цикл расчёта до максимальной обеспеченности + 20% из исходных данных
         while consumption_summ < consumption_check:
@@ -1480,8 +1520,14 @@ class Morfostvor:
             f = float(fF(prob[1]))
 
             result = pd.concat(
-                [result, pd.DataFrame.from_records([{"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}])],
-                ignore_index=True)
+                [
+                    result,
+                    pd.DataFrame.from_records(
+                        [{"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}]
+                    ),
+                ],
+                ignore_index=True,
+            )
 
         return result
 
@@ -1756,7 +1802,9 @@ class GraphQHV(GraphCurve):
     _y2_label_text = "V, м/с"
     _ax_title_text = "Гидравлическая кривая Q=f(H) с наложением Q=f(V)"
 
-    def draw_curve(self, morfostvor: Morfostvor, ax: plt.subplot, ax_secondary, x="Q", y="УВ", yy="V"):
+    def draw_curve(self, morfostvor: Morfostvor,
+                   ax: plt.subplot, ax_secondary,
+                   x="Q", y="УВ", yy="V"):
         """Отрисовка кривой на графике по заданным из морфоствора параметрам.
 
         Args:
@@ -1808,7 +1856,9 @@ class GraphQHV(GraphCurve):
         # Отрисовка легенды
         ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"],
                   title="Q = f(H)", title_fontsize=14)
-        ax_secondary.legend(fontsize=config.FONT_SIZE["legend"], title="Q = f(V)", title_fontsize=14)
+        ax_secondary.legend(
+            fontsize=config.FONT_SIZE["legend"], title="Q = f(V)", title_fontsize=14
+        )
 
         # Настраиваем границы и толщину линий границ
         ax_secondary.spines["top"].set_linewidth(config.LINE_WIDTH["ax_border"])
@@ -2030,7 +2080,9 @@ class GraphProfile(Graph):
                 fontsize=config.FONT_SIZE["bottom_description"],
                 horizontalalignment='left', verticalalignment='center')
 
-        def __draw_sectors(morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top, float_precision=2):
+        def __draw_sectors(
+            morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top, float_precision=2
+        ):
             # Цикл по участкам
             for sector in morfostvor.sectors:
                 x = morfostvor.x[sector.start_point]
@@ -2090,7 +2142,8 @@ class GraphProfile(Graph):
             )
 
         def draw_pk():
-            """  Отрисовывает нижнюю границу для ПК в подвале, сами значения ПК отрисовываются отдельно
+            """  Отрисовывает нижнюю границу для ПК в подвале,
+            сами значения ПК отрисовываются отдельно
             """
             y_bot = self._footer_y
             y_top = self._footer_y + hs
@@ -2377,7 +2430,8 @@ class GraphProfile(Graph):
 
         :param fill: [bool] - заливка полигонов участков на профиле соответствующими цветами
         :param bottom: [bool] - заливка линии дна соответствующими участкам цветами
-        :param label: [bool] - отрисовка названий участков, их длин и стрелок обозначающих границы участков
+        :param label: [bool] - отрисовка названий участков,
+        их длин и стрелок обозначающих границы участков
         :return: Отрисовка графической информации по участкам профиля на графике ax_profile.
         """
 
@@ -2601,7 +2655,8 @@ class GraphProfile(Graph):
                 zorder=1
             )
 
-    def draw_erosion_limit(self, h, x1=None, x2=None, x3=None, x4=None, text="▼$H_{{разм.}} = {h:.2f}$"):
+    def draw_erosion_limit(self, h, x1=None, x2=None,
+                           x3=None, x4=None, text="▼$H_{{разм.}} = {h:.2f}$"):
         """Функция отрисовки линии предельного профиля размыва.
 
         Arguments:
@@ -2843,9 +2898,13 @@ class GraphProfile(Graph):
                     )
 
             try:
-                label.append(f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n")
+                label.append(
+                    f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+                )
             except ValueError:
-                label.append(f"${row['P']} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n")
+                label.append(
+                    f"${row['P']} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+                )
 
             # Вывод линий сносок от уровней воды к таблице
             if config.PROFILE_LEVELS_TABLE_LINES:
@@ -3071,13 +3130,16 @@ class GraphProfile(Graph):
 def xls_calculate_hydraulic(in_filename, out_filename, page=None):
     """
     Выполнение гидравлических расчетов и создание отчета по результатам расчетов.
-    Исходные данные представлены в in_filename (xls файл). По умолчанию расчеты производятся
-    для всех листов xls файла. Если задан параметр page, расчет производится только для указанной страницы.
-    По результат создается out_filename (результирующий отчет в формате docx).
+    Исходные данные представлены в in_filename (xls файл).
+    По умолчанию расчеты производятся для всех листов xls файла.
+    Если задан параметр page, расчет производится только
+    для указанной страницы. По результат создается out_filename
+    (результирующий отчет в формате docx).
 
         :param in_filename: Входные данные по створам (.xls файл)
         :param out_filename: Результаты расчетов  (.docx файл)
-        :param page=None: Номер страницы в xls файле, по умолчанию None (расчеты производятся для всего документа)
+        :param page=None: Номер страницы в xls файле,
+    по умолчанию None (расчеты производятся для всего документа)
     """
     __start_time = time.time()
     # Создаем родительскую папку, если она не существует
@@ -3090,7 +3152,8 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         except FileNotFoundError:
             pass
         except PermissionError:
-            print(f'\nОшибка! Программа не может получить доступ к файлу {out_filename}, возможно он открыт?')
+            print(f"\nОшибка! Программа не может получить доступ "
+                  f"к файлу {out_filename}, возможно он открыт?")
             print('Программа будет завершена.')
             sys.exit(35)
 
@@ -3144,7 +3207,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
             )
 
     # Расчет только одного листа xls файла
-    elif type(page) == int:
+    elif isinstance(page, int):
         single_page(in_filename, out_filename, page)
 
     else:

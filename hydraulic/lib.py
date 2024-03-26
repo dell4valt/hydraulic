@@ -47,7 +47,8 @@ def chunk_list(seq, num):
 
 
 def insert_summary_QV_tables(stvors, out_filename):
-    print("Формируем и вставляем сводные таблицы уровней, скоростей и таблиц параметров при РУВВ... ", end="")
+    print("Формируем и вставляем сводные таблицы уровней, "
+          "скоростей и таблиц параметров при РУВВ... ", end="")
     # Подготовка данных для записи результирующей таблицы
     levels_table = []
     speed_table = []
@@ -96,9 +97,9 @@ def insert_summary_QV_tables(stvors, out_filename):
 
             if title_check is False:
                 try:
-                    param_levels[0].append("P{:g}%".format(obsp[0]))
+                    param_levels[0].append("P{obsp[0]:g}%")
                 except ValueError:
-                    param_levels[0].append("{}".format(obsp[0]))
+                    param_levels[0].append("{obsp[0]}")
                 param_levels[1].append(1.25)
                 param_levels[2].append(":.2f")
 
@@ -107,9 +108,9 @@ def insert_summary_QV_tables(stvors, out_filename):
 
             if title2_check is False:
                 try:
-                    param_speed[0].append("V{:g}%".format(obsp[0]))
+                    param_speed[0].append(f"V{obsp[0]:g}%")
                 except ValueError:
-                    param_speed[0].append("{}".format(obsp[0]))
+                    param_speed[0].append(f"{obsp[0]}")
 
                 param_speed[1].append(1.25)
                 param_speed[2].append(":.2f")
@@ -124,13 +125,13 @@ def insert_summary_QV_tables(stvors, out_filename):
     #############################################
     # Таблицы расчётных уровней и скоростей воды
     doc.add_paragraph(
-        "Таблица — Расчётные уровни {}".format(stvor.strings["type"]),
+        f"Таблица — Расчётные уровни {stvor.strings['type']}",
         style="Т-название",
     )
     lev_table = doc.add_table(2, cols, style="Table Grid")
 
     doc.add_paragraph(
-        "Таблица — Расчётные скорости {}".format(stvor.strings["type"]),
+        f"Таблица — Расчётные скорости {stvor.strings['type']}",
         style="Т-название",
     )
     spd_table = doc.add_table(2, cols, style="Table Grid")
@@ -173,11 +174,11 @@ def insert_summary_QV_tables(stvors, out_filename):
     # Подписываем вероятности
     for i in range(len(stvors[0].probability)):
         try:
-            lev_table.cell(1, i + 4).text = "{:g}".format(stvors[0].probability[i][0])
-            spd_table.cell(1, i + 4).text = "{:g}".format(stvors[0].probability[i][0])
+            lev_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]:g}"
+            spd_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]:g}"
         except ValueError:
-            lev_table.cell(1, i + 4).text = "{}".format(stvors[0].probability[i][0])
-            spd_table.cell(1, i + 4).text = "{}".format(stvors[0].probability[i][0])
+            lev_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]}"
+            spd_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]}"
 
     # Заполняем сводные таблицы данными
     ruvv_n = 1
@@ -188,25 +189,25 @@ def insert_summary_QV_tables(stvors, out_filename):
         lev_cell = lev_table.add_row().cells
         lev_cell[0].text = str(stvor_num)
         lev_cell[1].text = str(stvor.title)
-        lev_cell[2].text = str("{:.2f}".format(stvor.ele_min))
+        lev_cell[2].text = str(f"{stvor.ele_min:.2f}")
 
         spd_cell = spd_table.add_row().cells
         spd_cell[0].text = str(stvor_num)
         spd_cell[1].text = str(stvor.title)
-        spd_cell[2].text = str("{:.2f}".format(stvor.ele_min))
+        spd_cell[2].text = str(f"{stvor.ele_min:.2f}")
 
         # Проверка наличия уреза воды и вставка его в таблицу
-        if type(stvor.waterline) == float:
-            lev_cell[3].text = str("{:.2f}".format(stvor.waterline))
-            spd_cell[3].text = str("{:.2f}".format(stvor.waterline))
+        if isinstance(stvor.waterline, float):
+            lev_cell[3].text = str("f{stvor.waterline:.2f}")
+            spd_cell[3].text = str("f{stvor.waterline:.2f}")
         else:
             lev_cell[3].text = "-"
             spd_cell[3].text = "-"
 
         for i in range(4, len(levels) + 4):
             try:
-                lev_cell[i].text = str("{:.2f}".format(levels[i - 4][1]))
-                spd_cell[i].text = str("{:.2f}".format(speed[i - 4][2]))
+                lev_cell[i].text = str(f"{levels[i - 4][1]:.2f}")
+                spd_cell[i].text = str(f"{speed[i - 4][2]:.2f}")
             except:
                 print(
                     "\n\nОшибка соответствия обеспеченностей в профилях.\
@@ -220,13 +221,17 @@ def insert_summary_QV_tables(stvors, out_filename):
         for i in range(stvor.sectors_result.index.max() + 1):
             ruvv_cell[0].text = f"{ruvv_n}"
             ruvv_cell[4].text = f"{stvor.sectors_result.loc[i]['name']}"
-            ruvv_cell[5].text = "{:.2f}".format(stvor.sectors_result.loc[i]['slope']).replace('nan', '-')
-            ruvv_cell[6].text = "{:.3f}".format(stvor.sectors_result.loc[i]['roughness']).replace('nan', '-')
-            ruvv_cell[7].text = "{:.2f}".format(stvor.sectors_result.loc[i]['consumption']).replace('nan', '-')
-            ruvv_cell[8].text = "{:.2f}".format(stvor.sectors_result.loc[i]['depth']).replace('nan', '-')
-            ruvv_cell[9].text = "{:.2f}".format(stvor.sectors_result.loc[i]['speed']).replace('nan', '-')
-            ruvv_cell[10].text = "{:.2f}".format(stvor.sectors_result.loc[i]['width']).replace('nan', '-')
-            ruvv_cell[11].text = "{:.2f}".format(stvor.sectors_result.loc[i]['area']).replace('nan', '-')
+            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace("nan", "-")
+            ruvv_cell[6].text = (
+                f"{stvor.sectors_result.loc[i]['roughness']:.3f}".replace("nan", "-")
+            )
+            ruvv_cell[7].text = (
+                f"{stvor.sectors_result.loc[i]['consumption']:.2f}".replace("nan", "-")
+            )
+            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace("nan", "-")
+            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace("nan", "-")
+            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace("nan", "-")
+            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace("nan", "-")
             sector_num += 1
             ruvv_cell = ruvv_table.add_row().cells
             ruvv_n += 1
@@ -236,13 +241,18 @@ def insert_summary_QV_tables(stvors, out_filename):
         row._element.getparent().remove(row._element)
 
         # Объединяем ячейки
-        prob_text = text_sanitize(stvor.probability[stvor.design_water_level_index][0], num_suffix='%')
+        prob_text = text_sanitize(
+            stvor.probability[stvor.design_water_level_index][0], num_suffix="%"
+        )
         ruvv_table.cell(ruvv_n - 1, 1).merge(
-            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)).text = f"{stvor_num}"
+            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)
+        ).text = f"{stvor_num}"
         ruvv_table.cell(ruvv_n - 1, 2).merge(
-            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 2)).text = f"{stvor.title}"
+            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 2)
+        ).text = f"{stvor.title}"
         ruvv_table.cell(ruvv_n - 1, 3).merge(
-            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)).text = f"{prob_text}"
+            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)
+        ).text = f"{prob_text}"
         stvor_num += 1
 
         set_table_style(lev_table)
@@ -309,7 +319,8 @@ def text_sanitize(text, suffix='', prefix='', num_suffix=''):
         text (str, int, float): Входящая строка или число
         suffix (str, optional): Окончание возвращаемой строки. Defaults to ''.
         prefix (str, optional): Начало возвращаемой строки. Defaults to ''.
-        num_suffix (str, optional): Окончание возвращаемой строки только если на входе число. Defaults to ''.
+        num_suffix (str, optional): Окончание возвращаемой строки
+        только если на входе число. Defaults to ''.
 
     Returns:
         _type_: Возвращаемая строка
@@ -321,8 +332,8 @@ def text_sanitize(text, suffix='', prefix='', num_suffix=''):
         return f'{prefix}{str(text)}{suffix}'
 
 
-def rmdir(dir):
-    directory = Path(str(dir))
+def rmdir(dir_path):
+    directory = Path(str(dir_path))
 
     for item in directory.iterdir():
         if item.is_dir():
