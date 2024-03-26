@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import typing
-import warnings
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -37,11 +36,9 @@ from hydraulic.lib import (
     text_sanitize,
 )
 
-warnings.simplefilter(action='ignore', category=UserWarning)
-
 
 @dataclass
-class ProfileSector(object):
+class ProfileSector:
     """Класс участка профиля (пойма, русло и т.д.)
 
     :param id: Номер участка
@@ -137,7 +134,7 @@ class ProfileSector(object):
 
 
 @dataclass
-class SituationSector(object):
+class SituationSector:
     id: int
     type: str
     start_point: int
@@ -179,14 +176,14 @@ class SituationSector(object):
 
 
 @dataclass
-class SituationBorder(object):
+class SituationBorder:
     id: int
     type: str
     point: int
 
 
 @dataclass
-class WaterSection(object):
+class WaterSection:
     """Класс водного сечения
 
     :param x: Точки x всего профиля
@@ -408,7 +405,7 @@ class WaterSection(object):
 
 
 @dataclass
-class Calculation(object):
+class Calculation:
     """
     Класс гидравлических расчётов скорости, расхода воды и коэффициента Шези для водного объекта.
 
@@ -512,7 +509,7 @@ class Calculation(object):
 
 
 @dataclass
-class Morfostvor(object):
+class Morfostvor:
 
     """Класс описывающий морфоствор."""
 
@@ -1490,7 +1487,7 @@ class Morfostvor(object):
 
 
 @dataclass
-class Graph(object):
+class Graph:
     _fig_size = (16.5, 9)
     _y_limits = []
     _fig_num = 0
