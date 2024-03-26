@@ -22,10 +22,13 @@ from matplotlib.patches import Rectangle
 from pathvalidate import sanitize_filename
 
 import hydraulic.config as config
+from hydraulic.doc_lib import insert_df_to_table
 from hydraulic.lib import (WD_BREAK, chunk_list, get_xls_sheet_quantity,
                            insert_summary_QV_tables, insertPageBreak,
                            poly_area, question_continue_app, rmdir,
-                           setLastParagraphStyle, write_table, text_sanitize)
+                           setLastParagraphStyle,
+                           text_sanitize)
+
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 
@@ -1145,49 +1148,47 @@ class Morfostvor(object):
 
         # Вывод таблицы расчётных уровней воды
         print("    — Записываем таблицу уровней воды ... ", end="")
-        param = (
-            ("Обеспеченность P, %", "Расход Q, м³/сек", f"Уровень H, м{config.ALTITUDE_SYSTEM}"),
-            (5.6, 5.6, 5.6),
-            (":g", ":g", ":.2f"),
+        insert_df_to_table(
+            doc,
+            self.levels_result[["P", "Q", "H"]],
+            f"{config.STRING['table']}Расчётные уровни {self.strings['type']}",
+            col_names=(
+                "Обеспеченность P, %",
+                "Расход Q, м³/сек",
+                f"Уровень H, м{config.ALTITUDE_SYSTEM}",
+            ),
+            col_widths=(6, 6, 6),
+            col_format=(":g", ":g", ":.2f"),
         )
         print("успешно!")
-
-        levels_result = self.levels_result[["P", "Q", "H"]].round(3).values.tolist()
-        write_table(
-            doc,
-            levels_result,
-            param,
-            f"Таблица - Расчётные уровни {self.strings['type']}",
-        )
 
         # Вывод таблицы участков
         print("    — Записываем таблицу участков ... ", end="")
-        param = (
-            ("№", "Описание", "Уклон i, ‰", "Коэффициент шероховатости n", "Q при РУВВ, м³/сек",
-             f"Hср при РУВВ, м{config.ALTITUDE_SYSTEM}", "Vср при РУВВ, м/сек", "B при РУВВ, м", "F при РУВВ, м²"),
-            (1.3, 4, 4, 4, 4, 4, 4, 4, 4),
-            (":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),)
-
-        sectors = self.sectors_result.replace(np.NaN, '-').values.tolist()
-        [sector.insert(0, idx + 1) for idx, sector in enumerate(sectors)]  # Вставляем порядковые номера участков
-        write_table(doc, sectors, param, "Таблица - Расчётные участки и их параметры")
+        # Заменяем пустые значения на прочерк и добавляем номер участка
+        df_sectors = self.sectors_result.replace(np.NaN, '-')
+        df_sectors.insert(loc=0, column='N', value=df_sectors.index + 1)
+        insert_df_to_table(
+            doc,
+            df_sectors,
+            f"{config.STRING['table']}Расчётные участки и их параметры",
+            col_names=(
+                "№",
+                "Описание",
+                "Уклон i, ‰",
+                "Коэффициент шероховатости n",
+                "Q при РУВВ, м³/сек",
+                f"Hср при РУВВ, м{config.ALTITUDE_SYSTEM}",
+                "Vср при РУВВ, м/сек",
+                "B при РУВВ, м",
+                "F при РУВВ, м²",
+            ),
+            col_widths=(1.3, 4, 4, 4, 4, 4, 4, 4, 4),
+            col_format=(":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),
+        )
         print("успешно!")
 
-        print("    — Записываем таблицу кривой расхода воды ... ", end="")
         # Вывод таблицы гидравлической кривой
-        param = ((
-                f"Отм. уровня H, м{config.ALTITUDE_SYSTEM}",
-                "Площадь F, м²",
-                "Ширина B, м",
-                "Средняя глубина Hср, м",
-                "Макс. глубина Hмакс, м",
-                "Средняя скорость Vср, м/сек",
-                "Расход Q, м³/сек",
-            ),
-            (5, 5, 5, 5, 5, 5, 5),
-            (":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
-        )
-
+        print("    — Записываем таблицу кривой расхода воды ... ", end="")
         prob_text = text_sanitize(self.probability[self.design_water_level_index][0], num_suffix='% обеспеченности')
         doc.add_paragraph(
             f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу \
@@ -1223,13 +1224,24 @@ class Morfostvor(object):
 
         # Записываем только чётные элементы таблицы
         table_round = table_round[table_round.index % divider == 0]
-        sum_hydraulic = table_round.values.tolist()  # Переводим в список
-        write_table(
+
+        insert_df_to_table(
             doc,
-            sum_hydraulic,
-            param,
-            f"Таблица - Параметры расчёта кривой расхода {self.strings['type']}",
+            table_round,
+            f"{config.STRING['table']}Параметры расчёта кривой расхода {self.strings['type']}",
+            col_names=(
+                f"Отм. уровня H, м{config.ALTITUDE_SYSTEM}",
+                "Площадь F, м²",
+                "Ширина B, м",
+                "Средняя глубина Hср, м",
+                "Макс. глубина Hмакс, м",
+                "Средняя скорость Vср, м/сек",
+                "Расход Q, м³/сек",
+            ),
+            col_widths=(5, 5, 5, 5, 5, 5, 5),
+            col_format=(":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         )
+
         doc.add_paragraph(
             f"Расчётный шаг: {self.dH:g} см. В таблице приведён каждый {divider}-й результат расчёта.",
             style="Т-примечание",
