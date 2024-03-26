@@ -22,13 +22,20 @@ from matplotlib.patches import Rectangle
 from pathvalidate import sanitize_filename
 
 import hydraulic.config as config
-from hydraulic.doc_lib import insert_df_to_table
-from hydraulic.lib import (WD_BREAK, chunk_list, get_xls_sheet_quantity,
-                           insert_summary_QV_tables, insertPageBreak,
-                           poly_area, question_continue_app, rmdir,
-                           setLastParagraphStyle,
-                           text_sanitize)
-
+from hydraulic.doc_lib import (
+    insert_df_to_table,
+    set_last_paragraph_style,
+    insert_page_break,
+    get_xls_sheet_quantity,
+)
+from hydraulic.lib import (
+    chunk_list,
+    insert_summary_QV_tables,
+    poly_area,
+    question_continue_app,
+    rmdir,
+    text_sanitize,
+)
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 
@@ -952,9 +959,7 @@ class Morfostvor(object):
         else:
             if os.path.isfile(doc_file):
                 doc = Document(doc_file)
-                paragraphs = doc.paragraphs
-                run = paragraphs[-1].add_run()
-                run.add_break(WD_BREAK.PAGE)
+                insert_page_break(doc)
             else:
                 if config.REWRITE_DOC_FILE:
                     print(
@@ -1027,7 +1032,7 @@ class Morfostvor(object):
         # Добавляем изображения профиля и гидравлической кривой
         print("    — Вставляем графику (профиль и кривую)... ", end="")
         doc.add_picture(f"{config.TEMP_DIR_NAME}/Profile.png", width=Cm(16.5))
-        setLastParagraphStyle("Р-рисунок", doc)
+        set_last_paragraph_style(doc, "Р-рисунок")
 
         # Подпись рисунков
         if config.GRAPHICS_TITLES_TEXT:
@@ -1045,7 +1050,7 @@ class Morfostvor(object):
             print("успешно!")
 
             doc.add_picture(f"{config.TEMP_DIR_NAME}/QH.png", width=Cm(16.5))
-            setLastParagraphStyle("Р-рисунок", doc)
+            set_last_paragraph_style(doc, "Р-рисунок")
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
@@ -1060,14 +1065,14 @@ class Morfostvor(object):
             print("успешно!")
 
             doc.add_picture(f"{config.TEMP_DIR_NAME}/QHV.png", width=Cm(16.5))
-            setLastParagraphStyle("Р-рисунок", doc)
+            set_last_paragraph_style(doc, "Р-рисунок")
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
                     "Рисунок — " + self.fig_QHV._ax_title_text, style="Р-название"
                 )
         # Вставляем разрыв страницы
-        insertPageBreak(doc)
+        insert_page_break(doc)
 
         if config.SPEED_CURVE:
             print("    — Сохраняем график кривой скоростей ... ", end="")
@@ -1080,9 +1085,9 @@ class Morfostvor(object):
             print("успешно!")
 
             doc.add_picture(f"{config.TEMP_DIR_NAME}/HV.png", width=Cm(16.5))
-            setLastParagraphStyle("Р-рисунок", doc)
+            set_last_paragraph_style(doc, "Р-рисунок")
             doc.add_picture(f"{config.TEMP_DIR_NAME}/QV.png", width=Cm(16.5))
-            setLastParagraphStyle("Р-рисунок", doc)
+            set_last_paragraph_style(doc, "Р-рисунок")
             print("успешно!")
 
             if config.GRAPHICS_TITLES_TEXT:
@@ -1096,7 +1101,7 @@ class Morfostvor(object):
                 Path(f"{config.TEMP_DIR_NAME}/VH.png", dpi=config.FIG_DPI)
             )
             doc.add_picture(f"{config.TEMP_DIR_NAME}/VH.png", width=Cm(16.5))
-            setLastParagraphStyle("Р-рисунок", doc)
+            set_last_paragraph_style(doc, "Р-рисунок")
             print("успешно!")
 
             if config.GRAPHICS_TITLES_TEXT:
@@ -1112,7 +1117,7 @@ class Morfostvor(object):
             print("успешно!")
 
             doc.add_picture(f"{config.TEMP_DIR_NAME}/QF.png", width=Cm(16.5))
-            setLastParagraphStyle("Р-рисунок", doc)
+            set_last_paragraph_style(doc, "Р-рисунок")
             print("успешно!")
 
             if config.GRAPHICS_TITLES_TEXT:

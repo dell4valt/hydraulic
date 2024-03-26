@@ -1,11 +1,8 @@
 import sys
 from pathlib import Path
-
 import numpy as np
-import xlrd
 from docx import Document
-from docx.enum.text import WD_BREAK
-from docx.shared import Cm
+from hydraulic.doc_lib import (insert_page_break, set_table_style, set_table_columns_width)
 
 
 def question_continue_app():
@@ -19,17 +16,6 @@ def question_continue_app():
             sys.exit()
         else:
             continue
-
-
-def insertPageBreak(Document):
-    paragraphs = Document.paragraphs
-    run = paragraphs[-1].add_run()
-    run.add_break(WD_BREAK.PAGE)
-
-
-def setLastParagraphStyle(style, Document):
-    last_paragraph = Document.paragraphs[-1]
-    last_paragraph.style = style
 
 
 def poly_area(x, y):
@@ -60,89 +46,6 @@ def chunk_list(seq, num):
     return out
 
 
-def get_xls_sheet_quantity(file_path):
-    """
-    Функция считываем количество листов в xls файле
-        :param file_path: Путь к xls файлу
-    """
-    try:
-        data_file = xlrd.open_workbook(file_path)  # Открываем xls файл
-    except FileNotFoundError:
-        print("Ошибка! Файл {} не найден. Программа будет завершена.".format(file_path))
-        sys.exit(33)
-
-    quantity = data_file.nsheets
-    return quantity
-
-
-def table_style(table, style, width=False):
-    """
-    Функция устанавливает стиль параграфов в таблице.
-
-        :param table: Исходная таблица
-        :param style: Название устанавливаемого стиля
-    """
-
-    for row in table.rows:
-        i = 0
-        for cell in row.cells:
-            for paragraph in cell.paragraphs:
-                paragraph.style = style
-
-            if width is not False:
-                try:
-                    success_width = Cm(width[i])
-                    cell.width = success_width
-                except IndexError:
-                    cell.width = success_width
-                i += 1
-
-
-def write_table(doc, table, param, title="Таблица"):
-    """
-    Функция записи таблицы в док файл
-    (док файл, таблица которую записываем, параметры((заголовки),
-    (название столбцов), (ширина столбцов)), заголовок)
-
-        :param doc: Document()
-        :param table:
-        :param param:
-        :param title='Таблица':
-    """
-    doc.add_paragraph(title, style="Т-название")
-    rows = 0  # Количество строк
-
-    # Считаем количество не пустых строк
-    for row in table:
-        rows += 1
-    result = doc.add_table(rows + 1, len(param[0]), style="Table Grid")
-
-    # Устанавливаем заголовки столбцов
-    for i in range(len(param[0])):
-        result.cell(0, i).text = param[0][i]
-
-    # Устанавливаем ширину столбцов
-    for row in result.rows:
-        for idx, width in enumerate(param[1]):
-            row.cells[idx].width = Cm(width)
-
-    i = 1
-    # Записываем не пустые значения в таблицу
-    for row in table:
-        j = 0
-        for element in row:
-            # Если есть массив с форматами строк, подставляем форматы
-            try:
-                var = "{" + "{}".format(param[2][j]) + "}"
-                result.cell(i, j).text = var.format(element)
-            except:
-                result.cell(i, j).text = str(element)
-            j += 1
-        i += 1
-    table_style(result, "Т-таблица")
-    return result
-
-
 def insert_summary_QV_tables(stvors, out_filename):
     print("Формируем и вставляем сводные таблицы уровней, скоростей и таблиц параметров при РУВВ... ", end="")
     # Подготовка данных для записи результирующей таблицы
@@ -151,7 +54,7 @@ def insert_summary_QV_tables(stvors, out_filename):
     i = 1
     doc = Document(out_filename)
 
-    insertPageBreak(doc)
+    insert_page_break(doc)
 
     doc.add_paragraph("Сводные таблицы", style="З-приложение-подзаголовок")
 
@@ -342,32 +245,34 @@ def insert_summary_QV_tables(stvors, out_filename):
             ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)).text = f"{prob_text}"
         stvor_num += 1
 
-        table_style(
+        set_table_style(lev_table)
+        set_table_columns_width(
             lev_table,
-            "Т-таблица",
-            width=[
+            (
                 0.85,
                 7,
                 1.25,
                 1.25,
                 1.25,
-            ]
+            ),
         )
-        table_style(
+
+        set_table_style(spd_table)
+        set_table_columns_width(
             spd_table,
-            "Т-таблица",
-            width=[
+            (
                 0.85,
                 7,
                 1.25,
                 1.25,
                 1.25,
-            ],
+            ),
         )
-        table_style(
+
+        set_table_style(ruvv_table)
+        set_table_columns_width(
             ruvv_table,
-            "Т-таблица",
-            width=[
+            (
                 0.85,
                 0.85,
                 3,
@@ -379,18 +284,20 @@ def insert_summary_QV_tables(stvors, out_filename):
                 2,
                 2,
                 2,
-            ],
+            ),
         )
 
     print("успешно!")
     doc.save(out_filename)
 
+
 def text_sanitize(text, suffix='', prefix='', num_suffix=''):
-    """Возвращает входной параметр text. В случае если число целое, возвращает без десятичных нулей. Если не целое, с указанием десятых.
+    """Возвращает входной параметр text. В случае если число целое,
+    возвращает без десятичных нулей. Если не целое, с указанием десятых.
     Можно задать префикс и суффикс соответствующими параметрами.
 
     Args:
-        text (_type_): Входящая строка или число
+        text (str, int, float): Входящая строка или число
         suffix (str, optional): Окончание возвращаемой строки. Defaults to ''.
         prefix (str, optional): Начало возвращаемой строки. Defaults to ''.
         num_suffix (str, optional): Окончание возвращаемой строки только если на входе число. Defaults to ''.
@@ -403,6 +310,7 @@ def text_sanitize(text, suffix='', prefix='', num_suffix=''):
         return f'{prefix}{text:g}{num_suffix}{suffix}'
     except ValueError:
         return f'{prefix}{str(text)}{suffix}'
+
 
 def rmdir(dir):
     directory = Path(str(dir))

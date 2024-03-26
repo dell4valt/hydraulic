@@ -5,9 +5,15 @@
     * insert_df_to_table - вставка таблицы из Pandas DataFrame
     * set_table_columns_width - установка ширины колонок в таблице
     * set_table_style - установка стиля текста в ячейках таблицы
+    * set_last_paragraph_style - установка стиля текста последнего параграфа
+    * get_xls_sheet_quantity - получить количество листов в файле Excel
+    * insert_page_break - вставка разрыва страницы
 """
 
+import sys
+import xlrd
 from docx.shared import Cm
+from docx.enum.text import WD_BREAK
 
 
 def insert_df_to_table(
@@ -19,7 +25,7 @@ def insert_df_to_table(
     col_format=None,
     table_style="Table Grid",
     text_style="Т-таблица",
-    first_row_table_style="Т-таблица-заголовок",
+    first_row_table_style="Т-таблица-заголовок"
 ):
     """
     Функция вставляет Pandas DataFrame в документ Word как отформатированную
@@ -93,7 +99,7 @@ def insert_df_to_table(
 
 
 def set_table_columns_width(table, col_widths: tuple):
-    """Функция устанавливает ширину столбцов в таблице docx
+    """Процедура устанавливает ширину столбцов в таблице docx
     поочередно проходя по каждой ячейке таблицы.
 
     Args:
@@ -130,9 +136,8 @@ def set_table_columns_width(table, col_widths: tuple):
                 cells[cell_n].width = success_width
 
 
-def set_table_style(table, style="Т-таблица", first_row_style=None):
-    """
-    Функция проходил по всем ячейкам таблицы table и устанавливает
+def set_table_style(table, style="Т-таблица", first_row_style="Т-таблица-заголовок"):
+    """Процедура проходил по всем ячейкам таблицы table и устанавливает
     заданный стиль style параграфов в таблице. При желании можно
     указать стиль для заголовков таблицы (1-ая строка).
 
@@ -163,3 +168,49 @@ def set_table_style(table, style="Т-таблица", first_row_style=None):
             if row_idx == 0 and first_row_style:
                 for paragraph in cells[cell_n].paragraphs:
                     paragraph.style = first_row_style
+
+
+def set_last_paragraph_style(doc, style: str):
+    """Процедура устанавливает стиль последнего по порядку
+    параграфа в документе Word.
+
+    Args:
+        doc (docx.Document): Файл документа в котором устанавливается стиль
+    последнего по порядку параграфа.
+        style (str): Название стиля в документе
+    (стиль обязательно должен присутствовать в файле).
+    """
+    last_paragraph = doc.paragraphs[-1]
+    last_paragraph.style = style
+
+
+def get_xls_sheet_quantity(file_path):
+    """Функция возвращает количество листов в указанном xls файле.
+
+    Args:
+        file_path (str): Путь к xls файлу
+    """
+    try:
+        # Открываем xls файл
+        data_file = xlrd.open_workbook(file_path)
+    except FileNotFoundError:
+        print(
+            "Ошибка определения количества листов в Excel файле! "
+            f"Файл {file_path} не найден. Программа будет завершена."
+        )
+        sys.exit(33)
+
+    return data_file.nsheets
+
+
+def insert_page_break(doc):
+    """Процедура вставляет в документ Word разрыв страницы
+    в том месте где вызывается.
+
+    Args:
+        doc (docx.Document): Файл документа в который вставляется
+    разрыв страницы.
+    """
+    paragraphs = doc.paragraphs
+    run = paragraphs[-1].add_run()
+    run.add_break(WD_BREAK.PAGE)
