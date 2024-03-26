@@ -254,6 +254,10 @@ def insert_summary_QV_tables(stvors, out_filename):
                 1.25,
                 1.25,
                 1.25,
+                1.25,
+                1.25,
+                1.25,
+                1.25,
             ),
         )
 
@@ -263,6 +267,10 @@ def insert_summary_QV_tables(stvors, out_filename):
             (
                 0.85,
                 7,
+                1.25,
+                1.25,
+                1.25,
+                1.25,
                 1.25,
                 1.25,
                 1.25,
@@ -277,6 +285,7 @@ def insert_summary_QV_tables(stvors, out_filename):
                 0.85,
                 3,
                 1,
+                2,
                 2,
                 2,
                 2,
