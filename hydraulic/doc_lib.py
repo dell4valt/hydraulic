@@ -3,23 +3,28 @@
 с помощью библиотеки python-docx. Таких как:
 
     * insert_df_to_table - вставка таблицы из Pandas DataFrame
+    * insert_chart - вставка графика Matplotlib в документ
+    * insert_page_break - вставка разрыва страницы
     * set_table_columns_width - установка ширины колонок в таблице
     * set_table_style - установка стиля текста в ячейках таблицы
     * set_last_paragraph_style - установка стиля текста последнего параграфа
     * get_xls_sheet_quantity - получить количество листов в файле Excel
-    * insert_page_break - вставка разрыва страницы
 """
 
+import os
+import random
 import sys
+from pathlib import Path
+
 import xlrd
-from docx.shared import Cm
 from docx.enum.text import WD_BREAK
+from docx.shared import Cm
 
 
 def insert_df_to_table(
     doc,
     df,
-    title="",
+    title=None,
     col_names=None,
     col_widths=None,
     col_format=None,
@@ -56,7 +61,8 @@ def insert_df_to_table(
         Функция возвращает экземпляр docx.table.Table с произведенными изменениям.
     """
     # Вставляем заголовок таблицы
-    doc.add_paragraph(f"{title}", style="Т-название")
+    if title:
+        doc.add_paragraph(f"{title}", style="Т-название")
 
     # Количество строк и столбцов в таблице
     rows = df.shape[0]
@@ -95,7 +101,62 @@ def insert_df_to_table(
         set_table_columns_width(table, col_widths)
 
     set_table_style(table, text_style, first_row_table_style)
+
+    # Записываем служебный параграф после таблиц
+    doc.add_paragraph('', style='Т-примечание')
     return table
+
+
+def insert_chart(doc, chart, title='', dpi=200):
+    """Функция вставляет график Matplotlib.plt в документ, предварительно
+     сохранив его во временный файл. Устанавливает стили, добавляет заголовок
+     и затем удаляет временный файл.
+
+    Args:
+      doc (docx.Document): Документ в который вставляется график
+      chart (Matplotlib.plt): график который необходимо вставить в документ
+      title (str): заголовок графика
+    """
+
+    # Временная директория в которую сохраняется график
+    temp_dir = "TEMP"
+
+    # Название временного файла графика
+    filename = f'temp_{random.randrange(1, 10**3):03}.png'
+
+    # Путь сохранения графика в файл
+    file_path = f'{temp_dir}/{filename}'
+    # Создаем временную папку, если она отсутствует
+    Path(file_path).parents[0].mkdir(parents=True, exist_ok=True)
+    # Сохраняем график в файл
+    chart.savefig(file_path, dpi=dpi)
+    # Вставляем график в документ отчёта
+    doc.add_picture(file_path)
+    # Устанавливаем стиль графика
+    last_paragraph = doc.paragraphs[-1]
+    last_paragraph.style = 'Р-рисунок'
+    doc.add_paragraph(
+        f'{title}',
+        style='Р-название')
+
+    # Пытаемся удалить файл графика
+    try:
+        os.remove(file_path)
+    except FileNotFoundError:
+        pass
+
+
+def insert_page_break(doc):
+    """Процедура вставляет в документ Word разрыв страницы
+    в том месте где вызывается.
+
+    Args:
+        doc (docx.Document): Файл документа в который вставляется
+    разрыв страницы.
+    """
+    paragraphs = doc.paragraphs
+    run = paragraphs[-1].add_run()
+    run.add_break(WD_BREAK.PAGE)
 
 
 def set_table_columns_width(table, col_widths: tuple):
@@ -167,7 +228,11 @@ def set_table_style(table, style="Т-таблица", first_row_style="Т-таб
 
             if row_idx == 0 and first_row_style:
                 for paragraph in cells[cell_n].paragraphs:
-                    paragraph.style = first_row_style
+                    try:
+                        paragraph.style = first_row_style
+                    except TypeError:
+                        print("Ошибка установки стиля первой строки, "
+                              f"заголовок: {paragraph.text}, стиль: {first_row_style}")
 
 
 def set_last_paragraph_style(doc, style: str):
@@ -201,16 +266,3 @@ def get_xls_sheet_quantity(file_path):
         sys.exit(33)
 
     return data_file.nsheets
-
-
-def insert_page_break(doc):
-    """Процедура вставляет в документ Word разрыв страницы
-    в том месте где вызывается.
-
-    Args:
-        doc (docx.Document): Файл документа в который вставляется
-    разрыв страницы.
-    """
-    paragraphs = doc.paragraphs
-    run = paragraphs[-1].add_run()
-    run.add_break(WD_BREAK.PAGE)
