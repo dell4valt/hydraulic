@@ -25,6 +25,7 @@ def insert_df_to_table(
     doc,
     df,
     title=None,
+    footer_text=None,
     col_names=None,
     col_widths=None,
     col_format=None,
@@ -103,11 +104,14 @@ def insert_df_to_table(
     set_table_style(table, text_style, first_row_table_style)
 
     # Записываем служебный параграф после таблиц
-    doc.add_paragraph('', style='Т-примечание')
+    if footer_text:
+        doc.add_paragraph(footer_text, style='Т-примечание')
+    else:
+        doc.add_paragraph('', style='Т-примечание')
     return table
 
 
-def insert_chart(doc, chart, title='', dpi=200):
+def insert_figure(doc, chart, title='', dpi=200, width=16.5):
     """Функция вставляет график Matplotlib.plt в документ, предварительно
      сохранив его во временный файл. Устанавливает стили, добавляет заголовок
      и затем удаляет временный файл.
@@ -131,7 +135,7 @@ def insert_chart(doc, chart, title='', dpi=200):
     # Сохраняем график в файл
     chart.savefig(file_path, dpi=dpi)
     # Вставляем график в документ отчёта
-    doc.add_picture(file_path)
+    doc.add_picture(file_path, width=Cm(width))
     # Устанавливаем стиль графика
     last_paragraph = doc.paragraphs[-1]
     last_paragraph.style = 'Р-рисунок'

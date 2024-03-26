@@ -1,8 +1,8 @@
 import os
 import re
 import sys
-import typing
 import time
+import typing
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -14,27 +14,16 @@ import pandas as pd
 import scipy.interpolate as interpolate
 import xlrd
 from docx import Document
-from docx.shared import Cm
 from labellines import labelLines
 from matplotlib import gridspec
 from matplotlib.patches import Rectangle
 from pathvalidate import sanitize_filename
 
 import hydraulic.config as config
-from hydraulic.doc_lib import (
-    insert_df_to_table,
-    set_last_paragraph_style,
-    insert_page_break,
-    get_xls_sheet_quantity,
-)
-from hydraulic.lib import (
-    chunk_list,
-    insert_summary_QV_tables,
-    poly_area,
-    question_continue_app,
-    rmdir,
-    text_sanitize,
-)
+from hydraulic.doc_lib import (get_xls_sheet_quantity, insert_figure,
+                               insert_df_to_table, insert_page_break)
+from hydraulic.lib import (chunk_list, insert_summary_QV_tables, poly_area,
+                           question_continue_app, rmdir, text_sanitize)
 
 
 @dataclass
@@ -1044,110 +1033,77 @@ class Morfostvor:
                 round(self.waterline, 2), color="blue", linestyle="-"
             )
 
-        print("    — Сохраняем график профиля ... ", end="")
-        self.fig_profile.fig.savefig(
-            Path(f"{config.TEMP_DIR_NAME}/Profile.png", dpi=config.FIG_DPI)
-        )
-        print("успешно!")
-
         # Вставляем заголовок профиля
         doc.add_paragraph(self.title, style="З-приложение-подзаголовок")
-
         # Добавляем изображения профиля и гидравлической кривой
-        print("    — Вставляем графику (профиль и кривую)... ", end="")
-        doc.add_picture(f"{config.TEMP_DIR_NAME}/Profile.png", width=Cm(16.5))
-        set_last_paragraph_style(doc, "Р-рисунок")
+        print("    — Вставляем графику (профиль)... ", end="")
+        insert_figure(doc, self.fig_profile.fig, width=16)
 
         # Подпись рисунков
         if config.GRAPHICS_TITLES_TEXT:
             doc.add_paragraph(
-                "Рисунок — " + self.fig_profile.morfostvor.title, style="Р-название"
+                f"{config.STRING['figure']}{self.fig_profile.morfostvor.title}",
+                style="Р-название",
             )
-
         print("успешно!")
 
         if config.HYDRAULIC_CURVE:
-            print("    — Сохраняем график гидравлической кривой QH ... ", end="")
-            self.fig_QH.fig.savefig(
-                Path(f"{config.TEMP_DIR_NAME}/QH.png", dpi=config.FIG_DPI)
+            print("    — Вставляем графику (кривая QH)... ", end="")
+            insert_figure(
+                doc,
+                self.fig_QH.fig,
+                width=16
             )
-            print("успешно!")
-
-            doc.add_picture(f"{config.TEMP_DIR_NAME}/QH.png", width=Cm(16.5))
-            set_last_paragraph_style(doc, "Р-рисунок")
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
-                    "Рисунок — " + self.fig_QH._ax_title_text, style="Р-название"
+                    f"{config.STRING['figure']}{self.fig_QH._ax_title_text}",
+                    style="Р-название",
                 )
+            print("успешно!")
 
         if config.HYDRAULIC_AND_SPEED_CURVE:
-            print("    — Сохраняем график гидравлической кривой "
-                  "с совмещенным графиком скорости ... ", end="")
-            self.fig_QHV.fig.savefig(
-                Path(f"{config.TEMP_DIR_NAME}/QHV.png", dpi=config.FIG_DPI)
-            )
-            print("успешно!")
-
-            doc.add_picture(f"{config.TEMP_DIR_NAME}/QHV.png", width=Cm(16.5))
-            set_last_paragraph_style(doc, "Р-рисунок")
+            print("    — Вставляем графику (кривая QHV)... ", end="")
+            insert_figure(doc, self.fig_QHV.fig, width=16)
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
-                    "Рисунок — " + self.fig_QHV._ax_title_text, style="Р-название"
+                    f"{config.STRING['figure']}{self.fig_QHV._ax_title_text}",
+                    style="Р-название",
                 )
-        # Вставляем разрыв страницы
-        insert_page_break(doc)
+            print("успешно!")
 
         if config.SPEED_CURVE:
-            print("    — Сохраняем график кривой скоростей ... ", end="")
-            self.fig_QV.fig.savefig(
-                Path(f"{config.TEMP_DIR_NAME}/QV.png", dpi=config.FIG_DPI)
-            )
-            self.fig_VH.fig.savefig(
-                Path(f"{config.TEMP_DIR_NAME}/HV.png", dpi=config.FIG_DPI)
-            )
-            print("успешно!")
-
-            doc.add_picture(f"{config.TEMP_DIR_NAME}/HV.png", width=Cm(16.5))
-            set_last_paragraph_style(doc, "Р-рисунок")
-            doc.add_picture(f"{config.TEMP_DIR_NAME}/QV.png", width=Cm(16.5))
-            set_last_paragraph_style(doc, "Р-рисунок")
+            print("    — Вставляем график кривой скоростей QV ... ", end="")
+            insert_figure(doc, self.fig_QV.fig)
             print("успешно!")
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
-                    "Рисунок — " + self.fig_QV._ax_title_text, style="Р-название"
+                    f"{config.STRING['figure']}{self.fig_QV._ax_title_text}",
+                    style="Р-название",
                 )
 
         if config.SPEED_VH_CURVE:
-            print("    — Сохраняем график кривой скоростей VH ... ", end="")
-            self.fig_VH.fig.savefig(
-                Path(f"{config.TEMP_DIR_NAME}/VH.png", dpi=config.FIG_DPI)
-            )
-            doc.add_picture(f"{config.TEMP_DIR_NAME}/VH.png", width=Cm(16.5))
-            set_last_paragraph_style(doc, "Р-рисунок")
+            print("    — Вставляем график кривой скоростей VH ... ", end="")
+            insert_figure(doc, self.fig_VH.fig)
             print("успешно!")
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
-                    "Рисунок — " + self.fig_VH._ax_title_text, style="Р-название"
+                    f"{config.STRING['figure']}{self.fig_VH._ax_title_text}",
+                    style="Р-название",
                 )
 
         if config.AREA_CURVE:
-            print("    — Сохраняем график кривой площадей ... ", end="")
-            self.fig_QF.fig.savefig(
-                Path(f"{config.TEMP_DIR_NAME}/QF.png", dpi=config.FIG_DPI)
-            )
-            print("успешно!")
-
-            doc.add_picture(f"{config.TEMP_DIR_NAME}/QF.png", width=Cm(16.5))
-            set_last_paragraph_style(doc, "Р-рисунок")
+            print("    — Вставляем график кривой площадей ... ", end="")
+            insert_figure(doc, self.fig_QF.fig)
             print("успешно!")
 
             if config.GRAPHICS_TITLES_TEXT:
                 doc.add_paragraph(
-                    "Рисунок — " + self.fig_QF._ax_title_text, style="Р-название"
+                    f"{config.STRING['figure']}{self.fig_QF._ax_title_text}",
+                    style="Р-название",
                 )
 
         # Проверяем имя файла
