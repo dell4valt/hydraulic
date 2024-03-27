@@ -154,18 +154,18 @@ def insert_summary_QV_tables(stvors, out_filename):
     ruvv_table.cell(0, 10).text = 'B при РУВВ, м'
     ruvv_table.cell(0, 11).text = 'F при РУВВ, м²'
 
-    lev_table.cell(0, 0).merge(lev_table.cell(1, 0)).text = str(param_levels[0][0])
-    lev_table.cell(0, 1).merge(lev_table.cell(1, 1)).text = str(param_levels[0][1])
-    lev_table.cell(0, 2).merge(lev_table.cell(1, 2)).text = str(param_levels[0][2])
-    lev_table.cell(0, 3).merge(lev_table.cell(1, 3)).text = str(param_levels[0][3])
+    lev_table.cell(0, 0).merge(lev_table.cell(1, 0)).text = param_levels[0][0]
+    lev_table.cell(0, 1).merge(lev_table.cell(1, 1)).text = param_levels[0][1]
+    lev_table.cell(0, 2).merge(lev_table.cell(1, 2)).text = param_levels[0][2]
+    lev_table.cell(0, 3).merge(lev_table.cell(1, 3)).text = param_levels[0][3]
     lev_table.cell(0, 4).merge(
         lev_table.cell(0, len(param_levels[0]) - 1)
     ).text = "Уровни воды (м БС), обеспеченностью Р%"
 
-    spd_table.cell(0, 0).merge(spd_table.cell(1, 0)).text = str(param_levels[0][0])
-    spd_table.cell(0, 1).merge(spd_table.cell(1, 1)).text = str(param_levels[0][1])
-    spd_table.cell(0, 2).merge(spd_table.cell(1, 2)).text = str(param_levels[0][2])
-    spd_table.cell(0, 3).merge(spd_table.cell(1, 3)).text = str(param_levels[0][3])
+    spd_table.cell(0, 0).merge(spd_table.cell(1, 0)).text = param_levels[0][0]
+    spd_table.cell(0, 1).merge(spd_table.cell(1, 1)).text = param_levels[0][1]
+    spd_table.cell(0, 2).merge(spd_table.cell(1, 2)).text = param_levels[0][2]
+    spd_table.cell(0, 3).merge(spd_table.cell(1, 3)).text = param_levels[0][3]
     spd_table.cell(0, 4).merge(
         spd_table.cell(0, len(param_levels[0]) - 1)
     ).text = "Скорости воды (м/с), обеспеченностью Р%"
@@ -189,25 +189,25 @@ def insert_summary_QV_tables(stvors, out_filename):
         lev_cell = lev_table.add_row().cells
         lev_cell[0].text = str(stvor_num)
         lev_cell[1].text = str(stvor.title)
-        lev_cell[2].text = str(f"{stvor.ele_min:.2f}")
+        lev_cell[2].text = f"{stvor.ele_min:.2f}"
 
         spd_cell = spd_table.add_row().cells
         spd_cell[0].text = str(stvor_num)
         spd_cell[1].text = str(stvor.title)
-        spd_cell[2].text = str(f"{stvor.ele_min:.2f}")
+        spd_cell[2].text = f"{stvor.ele_min:.2f}"
 
         # Проверка наличия уреза воды и вставка его в таблицу
         if isinstance(stvor.waterline, float):
-            lev_cell[3].text = str("f{stvor.waterline:.2f}")
-            spd_cell[3].text = str("f{stvor.waterline:.2f}")
+            lev_cell[3].text = f"{stvor.waterline:.2f}"
+            spd_cell[3].text = f"{stvor.waterline:.2f}"
         else:
             lev_cell[3].text = "-"
             spd_cell[3].text = "-"
 
         for i in range(4, len(levels) + 4):
             try:
-                lev_cell[i].text = str(f"{levels[i - 4][1]:.2f}")
-                spd_cell[i].text = str(f"{speed[i - 4][2]:.2f}")
+                lev_cell[i].text = f"{levels[i - 4][1]:.2f}"
+                spd_cell[i].text = f"{speed[i - 4][2]:.2f}"
             except:
                 print(
                     "\n\nОшибка соответствия обеспеченностей в профилях.\
