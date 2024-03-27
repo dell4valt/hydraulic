@@ -18,10 +18,9 @@ from matplotlib import gridspec
 from matplotlib.patches import Rectangle
 
 import hydraulic.config as config
-from hydraulic.doc_lib import (get_xls_sheet_quantity)
+from hydraulic.doc_lib import get_xls_sheet_quantity
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables, poly_area,
-                           question_continue_app,)
-
+                           question_continue_app)
 from hydraulic.profile_report import generate_morfostvor_report
 
 

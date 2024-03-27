@@ -1,8 +1,11 @@
 import sys
 from pathlib import Path
+
 import numpy as np
 from docx import Document
-from hydraulic.doc_lib import (insert_page_break, set_table_style, set_table_columns_width)
+
+from hydraulic.doc_lib import (insert_page_break, set_table_columns_width,
+                               set_table_style)
 
 
 def question_continue_app():
