@@ -1153,6 +1153,12 @@ class Morfostvor:
         # Заменяем пустые значения на прочерк и добавляем номер участка
         df_sectors = self.sectors_result.replace(np.NaN, '-')
         df_sectors.insert(loc=0, column='N', value=df_sectors.index + 1)
+
+        prob_text = text_sanitize(
+            self.probability[self.design_water_level_index][0],
+            num_suffix="% обеспеченности",
+        )
+
         insert_df_to_table(
             doc,
             df_sectors,
@@ -1170,20 +1176,15 @@ class Morfostvor:
             ),
             col_widths=(1.3, 4, 4, 4, 4, 4, 4, 4, 4),
             col_format=(":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),
+            footer_text=(
+                "Примечание: Расчетный уровень высоких вод (РУВВ) "
+                f"принят по расходу {prob_text}."
+            ),
         )
         print("успешно!")
 
         # Вывод таблицы гидравлической кривой
         print("    — Записываем таблицу кривой расхода воды ... ", end="")
-        prob_text = text_sanitize(
-            self.probability[self.design_water_level_index][0],
-            num_suffix="% обеспеченности",
-        )
-        doc.add_paragraph(
-            "Примечание: Расчетный уровень высоких вод (РУВВ) "
-            f"принят по расходу {prob_text}.",
-            style="Т-примечание",
-        )
 
         table = self.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
         table_round = table.round(3)  # Округляем
@@ -1229,13 +1230,12 @@ class Morfostvor:
             ),
             col_widths=(5, 5, 5, 5, 5, 5, 5),
             col_format=(":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
+            footer_text=(
+                f"Расчётный шаг: {self.dH:g} см. "
+                f"В таблице приведён каждый {divider}-й результат расчёта."
+            ),
         )
 
-        doc.add_paragraph(
-            f"Расчётный шаг: {self.dH:g} см. "
-            f"В таблице приведён каждый {divider}-й результат расчёта.",
-            style="Т-примечание",
-        )
         print("успешно!")
 
         # Удаляем объект профиля
