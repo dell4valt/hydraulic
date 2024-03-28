@@ -884,6 +884,9 @@ class Morfostvor:
             sector.width = b
             sector.area = f
             sector.depth = h
+            # Удаляем столбцы полностью состоящие из NaN для избежания предупреждения
+            # Pandas: FutureWarning concatenation with empty or all-NA entries is deprecated
+            result.dropna(axis=1, how='all', inplace=True)
             result = pd.concat([result, pd.DataFrame.from_records([row])], ignore_index=True)
             q, h, v, b, f = np.NaN, np.NaN, np.NaN, np.NaN, np.NaN
 
@@ -1182,6 +1185,9 @@ class Morfostvor:
             v = float(fV(prob[1]))
             f = float(fF(prob[1]))
 
+            # Удаляем столбцы полностью состоящие из NaN для избежания предупреждения
+            # Pandas: FutureWarning concatenation with empty or all-NA entries is deprecated
+            result.dropna(axis=1, how='all', inplace=True)
             result = pd.concat(
                 [
                     result,
