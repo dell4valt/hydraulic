@@ -1764,6 +1764,7 @@ class GraphProfile(Graph):
         def __draw_sectors(
             morfostvor: Morfostvor, parameter, y_mid, y_bot, y_top, float_precision=2
         ):
+            i = 0
             # Цикл по участкам
             for sector in morfostvor.sectors:
                 x = morfostvor.x[sector.start_point]
@@ -1798,17 +1799,23 @@ class GraphProfile(Graph):
                     (x, x),
                     (y_bot, y_top),
                     color=config.COLOR["border"],
-                    linewidth=config.LINE_WIDTH["profile_bottom"],
+                    linewidth=config.LINE_WIDTH["profile_footer_divider"],
                     linestyle="solid",
+                    alpha=config.TRANSPARENCY["profile_footer_divider"],
                 )
 
-                # Правая граница
-                self.ax_bottom.plot(
-                    (x1, x1),
-                    (y_bot, y_top),
-                    color=config.COLOR["border"],
-                    linewidth=config.LINE_WIDTH["profile_bottom"],
-                    linestyle="solid")
+                # Отрисовка правой границы на последнем участке
+                if i == len(morfostvor.sectors) - 1:
+                    # Правая граница
+                    self.ax_bottom.plot(
+                        (x1, x1),
+                        (y_bot, y_top),
+                        color=config.COLOR["border"],
+                        linewidth=config.LINE_WIDTH["profile_footer_divider"],
+                        linestyle="solid",
+                        alpha=config.TRANSPARENCY["profile_footer_divider"],
+                    )
+                i += 1
 
         def setup_box():
             y_top = self._footer_y
@@ -1840,8 +1847,9 @@ class GraphProfile(Graph):
                 (x1, x2),
                 (y_bot, y_bot),
                 color=config.COLOR["border"],
-                linewidth=config.LINE_WIDTH["profile_bottom"],
+                linewidth=config.LINE_WIDTH["profile_footer_divider"],
                 linestyle="solid",
+                alpha=config.TRANSPARENCY["profile_footer_divider"],
             )
 
         def draw_h():
@@ -1898,8 +1906,9 @@ class GraphProfile(Graph):
                     (x, x),
                     (y_bot, y_top),
                     color=config.COLOR["border"],
-                    linewidth=config.LINE_WIDTH["profile_bottom"],
+                    linewidth=config.LINE_WIDTH["profile_footer_divider"],
                     linestyle="solid",
+                    alpha=config.TRANSPARENCY["profile_footer_divider"],
                 )
 
                 # Подписи расстояний между точками
@@ -2028,10 +2037,11 @@ class GraphProfile(Graph):
                 # Определение толщины и типа вертикальных линий
                 if sector.type == "УВ":
                     linestyle = 'solid'
-                    linewidth = 2
                 else:
                     linestyle = '--'
-                    linewidth = 1
+
+                linewidth = config.LINE_WIDTH["profile_footer_divider"]
+                alpha = config.TRANSPARENCY["profile_footer_divider_situation"]
 
                 # Подпись в ситуации
                 self.ax_bottom.text(
@@ -2052,6 +2062,7 @@ class GraphProfile(Graph):
                     color=config.COLOR["border"],
                     linewidth=linewidth,
                     linestyle=linestyle,
+                    alpha=alpha,
                 )
 
                 # Правая граница
@@ -2061,6 +2072,7 @@ class GraphProfile(Graph):
                     color=config.COLOR["border"],
                     linewidth=linewidth,
                     linestyle=linestyle,
+                    alpha=alpha,
                 )
 
             # Отрисовка границ специальными линиями
