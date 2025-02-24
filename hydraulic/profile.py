@@ -1859,6 +1859,9 @@ class GraphProfile(Graph):
             self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
             x2 = self.morfostvor.x[-1]
+            
+            # Длина вертикальной засечки
+            divider_length = 1
 
             # Подпись ячейки
             label = 'Отм. земли'
@@ -1881,6 +1884,27 @@ class GraphProfile(Graph):
                     horizontalalignment="center",
                     rotation="vertical",
                 )
+
+                # засечка низ
+                self.ax_bottom.plot(
+                    (x, x),
+                    (y_top, y_top - divider_length),
+                    color=config.COLOR["border"],
+                    linewidth=config.LINE_WIDTH["profile_footer_divider"],
+                    linestyle="solid",
+                    alpha=config.TRANSPARENCY["profile_footer_divider"],
+                )
+
+                # засечки
+                self.ax_bottom.plot(
+                    (x, x),
+                    (y_bot, y_bot + divider_length),
+                    color=config.COLOR["border"],
+                    linewidth=config.LINE_WIDTH["profile_footer_divider"],
+                    linestyle="solid",
+                    alpha=config.TRANSPARENCY["profile_footer_divider"],
+                )
+
             self.footers_num += 1
 
         def draw_dist():
