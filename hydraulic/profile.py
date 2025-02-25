@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import ClassVar, Dict, List
 
 import matplotlib
+import matplotlib.figure
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
+plt.close('all')  # Закрывает все открытые графики
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
@@ -1166,6 +1168,8 @@ class Morfostvor:
             self.fig_QF = GraphQF(self)
         if config.AREA_FH_CURVE:
             self.fig_FH = GraphFH(self)
+        if config.QWVH_CURVE:
+            self.fig_QWVH = GraphQWVH(morfostvor=self)
 
         return df
 
@@ -1200,14 +1204,13 @@ class Morfostvor:
 class Graph:
     _fig_size = (16.5, 9)
     _y_limits = []
-    _fig_num = 0
 
     _x_label_text = ""
     _y_label_text = ""
     _ax_title_text = ""
 
     morfostvor: Morfostvor = Morfostvor
-    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    fig: plt.Figure = plt.figure(figsize=_fig_size)
     ax: plt.subplot = fig.add_subplot(111)
 
     def __post_init__(self):
@@ -1321,6 +1324,8 @@ class Graph:
     def clean(self):
         """Очистка осей графика и обнуление связанных переменных"""
         # Очищаем все оси
+        plt.close(self.fig)
+
         for ax in vars(self):
             if ax.startswith("ax"):
                 command = "self." + ax + ".cla()"
@@ -1443,12 +1448,123 @@ class GraphCurve(Graph):
                 color=self.sector_colors[sector],
             )
 
+    def draw_legend(self, ax: plt.subplot):
         # Отрисовка легенды
         ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"])
         try:
             labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.01)
         except ValueError:
             pass
+
+
+class GraphQWVH(GraphCurve):
+    def __init__(self, morfostvor: Morfostvor):
+        self.clean()
+        self.morfostvor = morfostvor
+        self._initialize_colors()
+        self._initialize_figure()
+        self._draw_graphs()
+
+    def _initialize_colors(self):
+        """Извлекает цвета секторов из morfostvor."""
+        self.sector_colors = {sector.name: sector.color for sector in self.morfostvor.sectors}
+
+    def _initialize_figure(self):
+        """Создаёт фигуру и оси для трёх графиков."""
+        self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(
+            1, 3, figsize=(12, 6), sharey=True, gridspec_kw={'wspace': -0.2}
+        )
+        plt.subplots_adjust(left=0.09, bottom=0.28, right=0.945)
+
+    def _draw_graphs(self):
+        """Отрисовывает три графика Q(H), W(H) и V(H)."""
+        df = self._prepare_dataframe()
+        y_min = df["УВ"].min()
+
+        self._draw_qh_graph(df, y_min)
+        self._draw_wh_graph(df, y_min)
+        self._draw_vh_graph(df, y_min)
+
+        self.fig.legend()
+
+    def _prepare_dataframe(self):
+        """Подготавливает и нормализует таблицу гидравлических данных."""
+        df = self.morfostvor.hydraulic_table.reset_index(level=0)
+        df.index = df.index.str.lower()
+        return df
+
+    def _draw_qh_graph(self, df, y_min):
+        """Отрисовка графика Q(H)."""
+        self.draw_water_levels(self.morfostvor, self.ax1, "Q", "H", y_min)
+        self._plot_graph(self.ax1, df, "Q", "УВ", "Q=f(H)", "red")
+        self.ax1.set_ylabel("H (м)", **self._label_style("black"))
+        self.style_axis(self.ax1, 0, r"$Q=f(H)$", "r")
+
+    def _draw_wh_graph(self, df, y_min):
+        """Отрисовка графика W(H)."""
+        self.draw_water_levels(self.morfostvor, self.ax2, "F", "H", y_min)
+        self._plot_graph(self.ax2, df, "F", "УВ", "W=f(H)", "green")
+        self.ax2.set_xlabel("W (м²)")
+        self.ax2.spines["left"].set_visible(False)
+        self.style_axis(self.ax2, -0.13, r"$W=f(H)$", "g")
+        self.ax2.tick_params(which="both", axis="y", length=0, labelleft=False)
+
+    def _draw_vh_graph(self, df, y_min):
+        """Отрисовка графика V(H)."""
+        self.draw_water_levels(self.morfostvor, self.ax3, "V", "H", y_min)
+        self._plot_graph(self.ax3, df, "V", "УВ", "V_{cp}=f(H)", "blue")
+        self.ax3.set_xlabel("Vср (м/сек)")
+        self.ax3.spines["left"].set_visible(False)
+        self.style_axis(self.ax3, -0.26, r"$V_{cp}=f(H)$", "b")
+        self.ax3.tick_params(which="both", axis="y", length=0, labelleft=False)
+
+    def _plot_graph(self, ax, df, x, y, label, color):
+        """Функция для отрисовки линий графиков."""
+        ax.plot(df.loc["сумма", x], df.loc["сумма", y], label=fr"${label}$", linewidth=2, color=color)
+        if "русло" in df.index:
+            ax.plot(df.loc["русло", x], df.loc["русло", y], linestyle="--", linewidth=1, color=color)
+
+    @staticmethod
+    def _label_style(color):
+        """Возвращает параметры стиля подписи оси."""
+        return {"color": color, "fontsize": config.FONT_SIZE["ax_label"], "fontstyle": "italic", "weight": "normal"}
+
+# Функция для стилизации графиков
+    @staticmethod
+    def style_axis(ax, x_offset, x_label, color):
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.spines["bottom"].set_position(("axes", x_offset))
+        ax.spines[["bottom", "left"]].set_linewidth(config.LINE_WIDTH["ax_border"])
+        ax.spines[["bottom", "left"]].set_color(color)
+
+        ax.xaxis.set_label_coords(0.5, x_offset - 0.12)
+        ax.set_facecolor("none")
+        ax.grid(False)
+        ax.minorticks_on()
+
+        ax.tick_params(
+            which="both",
+            direction="out",
+            width=2,
+            length=5,
+            pad=config.PADDING["ax_tick_labels"],
+            labelsize=config.FONT_SIZE["ax_major"],
+            labelcolor=color,
+            colors=color,
+        )
+
+        ax.tick_params(which="minor", width=1.5, length=3)
+        ax.xaxis.set_tick_params(labelcolor=color)
+        ax.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.10g"))
+        ax.set_xlabel(
+            x_label,
+            color=color,
+            fontsize=config.FONT_SIZE["ax_label"],
+            fontstyle="italic",
+            weight="normal",
+        )
+        # ax.margins(0.025)
+        ax.margins(0.0)
 
 
 @dataclass
@@ -1600,6 +1716,7 @@ class GraphQH(GraphCurve):
         )
         self.draw_curve(self.morfostvor, self.ax, "Q", "УВ")
         self.draw_water_levels(self.morfostvor, self.ax, "Q", "H", y_min)
+        self.draw_legend(self.ax)
 
 
 @dataclass
@@ -1618,6 +1735,7 @@ class GraphQV(GraphCurve):
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "Q", "V")
         self.draw_water_levels(self.morfostvor, self.ax, "Q", "V")
+        self.draw_legend(self.ax)
 
 
 @dataclass
@@ -1637,6 +1755,8 @@ class GraphVH(GraphCurve):
         self.draw_curve(self.morfostvor, self.ax, "V", "УВ")
         y_min = self.ax.get_ylim()[0]
         # self.draw_water_levels(self.morfostvor, self.ax, "V", "H", y_min=y_min, )
+        self.draw_legend(self.ax)
+
 
 @dataclass
 class GraphFH(GraphCurve):
@@ -1654,6 +1774,7 @@ class GraphFH(GraphCurve):
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "F", "УВ")
         # self.draw_water_levels(self.morfostvor, self.ax, "F", "УВ")
+        self.draw_legend(self.ax)
 
 
 @dataclass
@@ -1672,14 +1793,14 @@ class GraphQF(GraphCurve):
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "Q", "F")
         self.draw_water_levels(self.morfostvor, self.ax, "Q", "F")
+        self.draw_legend(self.ax)
 
 
 @dataclass
 class GraphProfile(Graph):
     _fig_size = config.PROFILE_SIZE
-    _fig_num = 1
 
-    fig: plt.figure = plt.figure(_fig_num, figsize=_fig_size)
+    fig: plt.figure = plt.figure(figsize=_fig_size)
 
     __gs = gridspec.GridSpec(80, 3)
 
@@ -1859,7 +1980,6 @@ class GraphProfile(Graph):
             self._footer_y = y_top
             y_mid = y_top - ((y_top - y_bot) / 2)
             x2 = self.morfostvor.x[-1]
-            
             # Длина вертикальной засечки
             divider_length = 1
 

@@ -125,6 +125,11 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
             )
         print("успешно!")
 
+    if config.QWVH_CURVE:
+        print("    — Вставляем графику (кривая QWVH)... ", end="")
+        insert_figure(doc, morfostvor.fig_QWVH.fig, width=16.5)
+        print("успешно!")
+
     if config.HYDRAULIC_AND_SPEED_CURVE:
         print("    — Вставляем графику (кривая QHV)... ", end="")
         insert_figure(doc, morfostvor.fig_QHV.fig, width=16)
