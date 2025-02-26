@@ -36,13 +36,6 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
     temp_dir = Path(config.TEMP_DIR_NAME)
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    # Создаем папку для сохранения отдельных изображений
-    if config.PROFILE_SAVE_PICTURES:
-        picture_dir = Path(
-            str(Path(out_filename).parents[0]) + "/" + config.GRAPHICS_DIR_NAME
-        )
-        picture_dir.mkdir(parents=True, exist_ok=True)
-
     if r:
         doc = Document(template_file)
     else:
@@ -185,33 +178,7 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
                 style="Р-название",
             )
 
-    # Проверяем имя файла
-    profile_name = sanitize_filename(morfostvor.title)
-
-    # Сохраняем картинки в отдельные файлы в папку graphics
-    if config.PROFILE_SAVE_PICTURES:
-        morfostvor.fig_profile.fig.savefig(
-            Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI)
-        )
-    if config.CURVE_SAVE_PICTURES:
-        if config.HYDRAULIC_CURVE:
-            morfostvor.fig_QH.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI)
-            )
-        if config.HYDRAULIC_AND_SPEED_CURVE:
-            morfostvor.fig_QHV.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI)
-            )
-        if config.SPEED_CURVE:
-            morfostvor.fig_QV.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI)
-            )
-        if config.AREA_CURVE:
-            morfostvor.fig_QF.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI)
-            )
-
-    # Вывод таблицы расчётных уровней воды
+     # Вывод таблицы расчётных уровней воды
     print("    — Записываем таблицу уровней воды ... ", end="")
     insert_df_to_table(
         doc,
@@ -317,9 +284,6 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
 
     print("успешно!")
 
-    # Удаляем объект профиля
-    morfostvor.fig_profile.clean()
-
     try:
         doc.save(doc_file)
     except PermissionError:
@@ -334,3 +298,45 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
     print("    — Удаляем временную папку ... ", end="")
     rmdir(Path(f"{config.TEMP_DIR_NAME}"))
     print("успешно!")
+
+
+def save_graphic(morfostvor, path):
+    # Создаем временную папку, и папку для графики если они не существуют
+    temp_dir = Path(config.TEMP_DIR_NAME)
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    # Проверяем имя файла
+    profile_name = sanitize_filename(morfostvor.title)  
+
+    # Создаем папку для сохранения отдельных изображений
+    picture_dir = Path(
+        str(Path(path)) + "/" + config.GRAPHICS_DIR_NAME
+    )
+    picture_dir.mkdir(parents=True, exist_ok=True)
+
+    # Сохраняем картинки в отдельные файлы в папку graphics
+    if config.PROFILE_SAVE_PICTURES:
+        morfostvor.fig_profile.fig.savefig(
+            Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI)
+        )
+    if config.CURVE_SAVE_PICTURES:
+        if config.HYDRAULIC_CURVE:
+            morfostvor.fig_QH.fig.savefig(
+                Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI)
+            )
+        if config.HYDRAULIC_AND_SPEED_CURVE:
+            morfostvor.fig_QHV.fig.savefig(
+                Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI)
+            )
+        if config.SPEED_CURVE:
+            morfostvor.fig_QV.fig.savefig(
+                Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI)
+            )
+        if config.AREA_CURVE:
+            morfostvor.fig_QF.fig.savefig(
+                Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI)
+            )
+        if config.QWVH_CURVE:
+            morfostvor.fig_QWVH.fig.savefig(
+                Path(f"{picture_dir}/{profile_name}_QWVH.png", dpi=config.FIG_DPI)
+            )

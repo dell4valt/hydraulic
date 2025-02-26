@@ -3015,6 +3015,9 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         __compute_time = time.time() - __start_time
         __report_start_time = time.time()
         generate_morfostvor_report(stvor, out_filename)
+        if config.PROFILE_SAVE_PICTURES or config.CURVE_SAVE_PICTURES:
+            save_graphic(stvor, str(Path(out_filename).parents[0]))
+
         print(
             f"\n------------------------ "
             f"Файл {out_filename} сохранён успешно "
