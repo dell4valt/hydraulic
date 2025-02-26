@@ -9,6 +9,7 @@ from typing import ClassVar, Dict, List
 
 import matplotlib
 import matplotlib.figure
+import matplotlib.patches as patches
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 plt.close('all')  # Закрывает все открытые графики
@@ -19,13 +20,26 @@ import xlrd
 from labellines import labelLines
 from matplotlib import gridspec
 from matplotlib.patches import Rectangle
+import matplotlib.patheffects as pe
 
 import hydraulic.config as config
 from hydraulic.doc_lib import get_xls_sheet_quantity
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables, poly_area,
                            question_continue_app)
-from hydraulic.profile_report import generate_morfostvor_report
+from hydraulic.profile_report import generate_morfostvor_report, save_graphic
 
+
+def floor_float(a, precision=0):
+    return np.true_divide(np.floor(a * 10**precision), 10**precision)
+
+def closest_upper_multiple(n, k):
+    # Проверяем, что k больше нуля
+    if k <= 0:
+        raise ValueError("Второй аргумент (k) должен быть больше нуля.")
+
+    # Вычисляем ближайшее старшее кратное
+    result = np.ceil(n / k) * k
+    return result
 
 @dataclass
 class ProfileSector:
@@ -1458,6 +1472,8 @@ class GraphCurve(Graph):
 
 
 class GraphQWVH(GraphCurve):
+    vertical_offset = [0, -0.13, -0.12]
+
     def __init__(self, morfostvor: Morfostvor):
         self.clean()
         self.morfostvor = morfostvor
@@ -1472,20 +1488,20 @@ class GraphQWVH(GraphCurve):
     def _initialize_figure(self):
         """Создаёт фигуру и оси для трёх графиков."""
         self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(
-            1, 3, figsize=(12, 6), sharey=True, gridspec_kw={'wspace': -0.2}
+            1, 3, figsize=(12, 6), sharey=True, gridspec_kw={'wspace': -0.1}
         )
-        plt.subplots_adjust(left=0.09, bottom=0.28, right=0.945)
+        plt.subplots_adjust(left=0.09, bottom=0.13, right=0.945)
 
     def _draw_graphs(self):
         """Отрисовывает три графика Q(H), W(H) и V(H)."""
         df = self._prepare_dataframe()
         y_min = df["УВ"].min()
 
-        self._draw_qh_graph(df, y_min)
-        self._draw_wh_graph(df, y_min)
-        self._draw_vh_graph(df, y_min)
+        self._draw_qh_graph(df)
+        self._draw_wh_graph(df)
+        self._draw_vh_graph(df)
 
-        self.fig.legend()
+        self.fig.legend(loc="upper center", ncols=6)
 
     def _prepare_dataframe(self):
         """Подготавливает и нормализует таблицу гидравлических данных."""
@@ -1493,51 +1509,297 @@ class GraphQWVH(GraphCurve):
         df.index = df.index.str.lower()
         return df
 
-    def _draw_qh_graph(self, df, y_min):
-        """Отрисовка графика Q(H)."""
-        self.draw_water_levels(self.morfostvor, self.ax1, "Q", "H", y_min)
-        self._plot_graph(self.ax1, df, "Q", "УВ", "Q=f(H)", "red")
-        self.ax1.set_ylabel("H (м)", **self._label_style("black"))
-        self.style_axis(self.ax1, 0, r"$Q=f(H)$", "r")
+    def _draw_water_levels_x(
+        self,
+        morfostvor: Morfostvor,
+        ax: plt.subplot,
+        x="Q",
+        y="H",
+        col_name="сумма",
+        color="black",
+        x_ax_v_offset=0,
+    ):
+        x_min = 0
+        x_max = ax.get_xlim()[1]
+        y_limits = ax.get_ylim()
 
-    def _draw_wh_graph(self, df, y_min):
+        # Минимальное значение по оси Y кривых
+        min_value = morfostvor.hydraulic_table.index.get_level_values(0).min()
+
+        # Получаем текущие засечки оси y
+        yticks = ax.get_yticks()
+
+        # Фильтруем засечки, чтобы оставить только те, которые больше или равны min_value
+        new_yticks = yticks[yticks >= min_value]
+
+        # Удаляем первую засечку если она ниже оси X
+        if new_yticks[0] < min_value:
+            new_yticks = np.delete(new_yticks, 0)
+
+        # Применяем новые основные засечки
+        ax.set_yticks(new_yticks)
+
+        # Скрываем все значения на оси y, которые меньше оси x
+        ax.set_yticklabels(
+            [f"{y_tick:.2f}" if y_tick >= min_value else "" for y_tick in new_yticks]
+        )
+
+        # Включаем основные засечки
+        ax.minorticks_on()
+
+        # Расстояние между засечками
+        minor_tick_dist = 0.1
+        # Определяем границы отрисовки засечек
+        minor_tick_min_y = closest_upper_multiple(min_value, minor_tick_dist)
+        minor_tick_max_y = new_yticks[-1]
+
+        # Включаем вспомогательные засечки
+        ax.set_yticks(
+            np.arange(minor_tick_min_y, minor_tick_max_y, minor_tick_dist), minor=True
+        )
+
+        # Вычисляем фактическое положение оси X с учетом смещения
+        x_ax_position_on_y = y_limits[0] + (y_limits[1] - y_limits[0]) * x_ax_v_offset
+
+        # Принудительно устанавливаем y_limits так, чтобы ось X не обрезалась
+        ax.set_ylim(min(y_limits[0], x_ax_position_on_y), y_limits[1])
+
+        # Сдвигаем ось X выше, чтобы вертикальные линии доходили до неё
+        ax.spines["bottom"].set_position(("data", x_ax_position_on_y))
+
+        # Обрезаем линию оси Y ниже оси X
+        clip_rect = patches.Rectangle(
+            (-1e6, x_ax_position_on_y),  # Координаты (широкий прямоугольник слева)
+            2e6,  # Ширина (очень большая, чтобы покрыть всю область)
+            1e6,  # Высота (очень большая вверх)
+            transform=ax.transData,  # Учитываем систему координат оси
+            clip_on=False,  # Обрезаем только элементы оси
+        )
+        ax.spines["left"].set_clip_path(clip_rect)
+
+        # Отрисовка линий
+        for index, row in morfostvor.levels_result.iterrows():
+            if x == "V":
+                x_max = row[x]
+
+            x1, x2 = x_min, x_max
+            y1, y2 = row[y], row[y]
+
+            # Горизонтальная линия
+            ax.plot(
+                [x1, x2],
+                [y1, y2],
+                linestyle="-",
+                color="lightgray",
+                # marker="",
+                linewidth=1,
+                markersize=1,
+                alpha=1,
+            )
+
+            # Вертикальная линия
+            ax.plot(
+                [row[x], row[x]],
+                [y2, x_ax_position_on_y],
+                linestyle="-",
+                color=color,
+                marker="o",
+                linewidth=1,
+                markersize=1,
+                alpha=0.3,
+            )
+
+
+    def _draw_water_levels_labels(
+        self,
+        morfostvor: Morfostvor,
+        ax: plt.subplot,
+        x="Q",
+        y="H",
+        col_name="сумма",
+        color="black",
+        x_ax_v_offset=0,
+    ):
+        x_lim = ax.get_xlim()
+        step = (x_lim[-1] - x_lim[0]) / 10
+
+        for index, row in morfostvor.levels_result.iterrows():
+            dist = 0  # index * (step * 0.3)
+
+            # Вывод значений округленных, проверка на содержание значений
+            try:
+                water_level_text = ax.text(
+                    step / 5 + dist,
+                    row[y],
+                    f"$P_{{{row['P']:.2g}\\%}}={row[y]:.2f}$",
+                    color="gray",
+                    fontsize=8,
+                    weight="normal",
+                    alpha=.8,
+                    zorder=25,
+                )
+
+                water_level_text.set_path_effects(
+                    [
+                        path_effects.Stroke(
+                            linewidth=3, foreground="white", alpha=0.55
+                        ),
+                        path_effects.Normal(),
+                    ]
+                )
+
+            except ValueError:
+                water_level_text = ax.text(
+                    step + dist,
+                    row[y],
+                    f"▼${row['P']} = {row[y]:.2f}$",
+                    color="gray",
+                    fontsize=8,
+                    weight="normal",
+                    alpha=.8,
+                    zorder=16,
+                )
+
+                water_level_text.set_path_effects(
+                    [
+                        path_effects.Stroke(
+                            linewidth=2, foreground="white"#, alpha=0.8
+                        ),
+                        path_effects.Normal(),
+                    ]
+                )
+
+    def _draw_qh_graph(self, df):
+        """Отрисовка графика Q(H)."""
+        self.ax1.set_ylabel("H (м)", **self._label_style("black"))
+        self.style_axis(self.ax1, self.vertical_offset[0], r"$Q=f(H)$", "r")
+        self.ax1.tick_params(axis="y", which="both", color="black", labelcolor="black")
+        self.ax1.spines[["left"]].set_color("black")
+
+        self._plot_graph(
+            ax=self.ax1,
+            df=df,
+            x="Q",
+            y="УВ",
+            col_name="сумма",
+            label=r"Q_{сум}=f(H)",
+            color="red",
+            zorder=9,
+        )
+        self._plot_graph(
+            ax=self.ax1,
+            df=df,
+            x="Q",
+            y="УВ",
+            col_name="русло",
+            label=r"Q_{русл}=f(H)",
+            color="red",
+            linestyle="--",
+            linewidth=1,
+            zorder=10,
+            path_effects=[pe.Stroke(linewidth=5, foreground="white"), pe.Normal()],
+        )
+        self._draw_water_levels_x(
+            self.morfostvor, self.ax1, "Q", "H", "сумма", "red", self.vertical_offset[0]
+        )
+
+        self._draw_water_levels_labels(self.morfostvor, self.ax1, "Q", "H", "сумма", "red", self.vertical_offset[0])
+
+    def _draw_wh_graph(self, df):
         """Отрисовка графика W(H)."""
-        self.draw_water_levels(self.morfostvor, self.ax2, "F", "H", y_min)
-        self._plot_graph(self.ax2, df, "F", "УВ", "W=f(H)", "green")
-        self.ax2.set_xlabel("W (м²)")
+        self._plot_graph(
+            ax=self.ax2,
+            df=df,
+            x="F",
+            y="УВ",
+            col_name="сумма",
+            label="W_{сум}=f(H)",
+            color="green",
+            zorder=9,
+        )
+        self._plot_graph(
+            ax=self.ax2,
+            df=df,
+            x="F",
+            y="УВ",
+            col_name="русло",
+            label=r"W_{русл}=f(H)",
+            color="green",
+            linestyle="--",
+            linewidth=1,
+            zorder=10,
+        )
+        # self.ax2.set_xlabel("W (м²)")
         self.ax2.spines["left"].set_visible(False)
-        self.style_axis(self.ax2, -0.13, r"$W=f(H)$", "g")
+        self.style_axis(self.ax2, self.vertical_offset[1], r"$W=f(H)$", "g")
+        self._draw_water_levels_x(
+            self.morfostvor,
+            self.ax2,
+            "F",
+            "H",
+            "сумма",
+            "green",
+            self.vertical_offset[1],
+        )
         self.ax2.tick_params(which="both", axis="y", length=0, labelleft=False)
 
-    def _draw_vh_graph(self, df, y_min):
+    def _draw_vh_graph(self, df):
         """Отрисовка графика V(H)."""
-        self.draw_water_levels(self.morfostvor, self.ax3, "V", "H", y_min)
-        self._plot_graph(self.ax3, df, "V", "УВ", "V_{cp}=f(H)", "blue")
-        self.ax3.set_xlabel("Vср (м/сек)")
+        self._plot_graph(
+            ax=self.ax3,
+            df=df,
+            x="V",
+            y="УВ",
+            col_name="сумма",
+            label=r"V_{сум}=f(H)",
+            color="blue",
+            
+            zorder=9,
+        )
+        self._plot_graph(
+            ax=self.ax3,
+            df=df,
+            x="V",
+            y="УВ",
+            col_name="русло",
+            label=r"V_{русл}=f(H)",
+            color="blue",
+            linestyle="--",
+            linewidth=1,
+            zorder=10,
+        )
         self.ax3.spines["left"].set_visible(False)
-        self.style_axis(self.ax3, -0.26, r"$V_{cp}=f(H)$", "b")
+        self.style_axis(self.ax3, self.vertical_offset[2], r"$V_{cp}=f(H)$", "b")
+        self._draw_water_levels_x(
+            self.morfostvor, self.ax3, "V", "H", "сумма", "b", self.vertical_offset[2]
+        )
         self.ax3.tick_params(which="both", axis="y", length=0, labelleft=False)
 
-    def _plot_graph(self, ax, df, x, y, label, color):
+    def _plot_graph(
+        self, ax, df, x, y, col_name="сумма", label="", color="b", **kwargs
+    ):
         """Функция для отрисовки линий графиков."""
-        ax.plot(df.loc["сумма", x], df.loc["сумма", y], label=fr"${label}$", linewidth=2, color=color)
-        if "русло" in df.index:
-            ax.plot(df.loc["русло", x], df.loc["русло", y], linestyle="--", linewidth=1, color=color)
+        ax.plot(
+            df.loc[(col_name), x],
+            df.loc[(col_name), y],
+            label=rf"${label}$",
+            color=color,
+            **kwargs,
+        )
 
     @staticmethod
     def _label_style(color):
         """Возвращает параметры стиля подписи оси."""
         return {"color": color, "fontsize": config.FONT_SIZE["ax_label"], "fontstyle": "italic", "weight": "normal"}
 
-# Функция для стилизации графиков
+    # Функция для стилизации графиков
     @staticmethod
-    def style_axis(ax, x_offset, x_label, color):
+    def style_axis(ax, x_ax_v_offset, x_label, color):
         ax.spines[["top", "right"]].set_visible(False)
-        ax.spines["bottom"].set_position(("axes", x_offset))
+        ax.spines["bottom"].set_position(("axes", x_ax_v_offset))
         ax.spines[["bottom", "left"]].set_linewidth(config.LINE_WIDTH["ax_border"])
         ax.spines[["bottom", "left"]].set_color(color)
 
-        ax.xaxis.set_label_coords(0.5, x_offset - 0.12)
         ax.set_facecolor("none")
         ax.grid(False)
         ax.minorticks_on()
@@ -1563,7 +1825,6 @@ class GraphQWVH(GraphCurve):
             fontstyle="italic",
             weight="normal",
         )
-        # ax.margins(0.025)
         ax.margins(0.0)
 
 
