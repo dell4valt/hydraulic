@@ -1963,7 +1963,7 @@ class GraphQH(GraphCurve):
     # Подписи осей
     _x_label_text = "Q, м³/с"
     _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
-    _ax_title_text = "Гидравлическая кривая"
+    _ax_title_text = "Гидравлическая кривая Q=f(H)"
 
     def draw(self):
         y_min = min(
@@ -1987,7 +1987,7 @@ class GraphQV(GraphCurve):
     # Подписи осей
     _x_label_text = "Q, м³/с"
     _y_label_text = "V, м/c"
-    _ax_title_text = "Кривая скоростей"
+    _ax_title_text = "Кривая скоростей V=f(Q)"
 
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "Q", "V")
@@ -2006,7 +2006,7 @@ class GraphVH(GraphCurve):
     # Подписи осей
     _x_label_text = "V, м/c"
     _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
-    _ax_title_text = "Кривая скоростей"
+    _ax_title_text = "Кривая скоростей V=f(H)"
 
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "V", "УВ")
@@ -2026,7 +2026,7 @@ class GraphFH(GraphCurve):
     # Подписи осей
     _x_label_text = "F, м²"
     _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
-    _ax_title_text = "Кривая площадей"
+    _ax_title_text = "Кривая площадей F=f(H)"
 
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "F", "УВ")
@@ -2045,7 +2045,7 @@ class GraphQF(GraphCurve):
     # Подписи осей
     _x_label_text = "Q, м³/с"
     _y_label_text = "F, м²"
-    _ax_title_text = "Кривая площадей"
+    _ax_title_text = "Кривая площадей F=f(Q)"
 
     def draw(self):
         self.draw_curve(self.morfostvor, self.ax, "Q", "F")
