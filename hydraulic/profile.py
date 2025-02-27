@@ -1472,7 +1472,7 @@ class GraphCurve(Graph):
 
 
 class GraphQWVH(GraphCurve):
-    vertical_offset = [0, -0.13, -0.12]
+    vertical_offset = [0, -0.08, -0.08]
 
     def __init__(self, morfostvor: Morfostvor):
         self.clean()
@@ -1492,17 +1492,58 @@ class GraphQWVH(GraphCurve):
         self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(
             1, 3, figsize=(16, 8), sharey=True, gridspec_kw={"wspace": -0.08}
         )
-        plt.subplots_adjust(left=0.07, bottom=0.10, right=0.98)
+        plt.subplots_adjust(left=0.07, bottom=0.10, right=0.97, top=0.95)
 
     def _draw_graphs(self):
         """Отрисовывает три графика Q(H), W(H) и V(H)."""
         df = self._prepare_dataframe()
 
-        self._draw_qh_graph(df)
-        self._draw_wh_graph(df)
-        self._draw_vh_graph(df)
+        graph_specs = [
+            (self.ax1, "Q", "red", r"$Q=f(H), м³/сек$"),
+            (self.ax2, "F", "green", r"$F=f(H), м²$"),
+            (self.ax3, "V", "blue", r"$V=f(H), м/сек$")
+        ]
+
+        for i, (ax, x, color, label) in enumerate(graph_specs):
+            self._draw_graph(ax, df, x, color, label, self.vertical_offset[i])
+
 
         self.fig.legend(loc="upper center", ncols=6)
+
+    def _draw_graph(self, ax, df, x, color, label, offset):
+        """Отрисовка одного графика графика."""
+        self.style_axis(ax, offset, label, color)
+
+        # Пописи линий
+        main_label = f"{x}_{{сумм.}}"
+        secondary_label = f"{x}_{{русл.}}"
+        if ax == self.ax3:
+            main_label = f"{x}_{{ср.}}"
+            secondary_label = f"{x}_{{ср. русл.}}"
+
+        # Отрисовка линий
+        self._plot_graph(ax, df, x, "УВ", "сумма", main_label, color, zorder=10)
+        self._plot_graph(ax, df, x, "УВ", "русло", secondary_label, color, linestyle="--", linewidth=1, zorder=11)
+
+        # Отрисовка линий пересечений и подписей
+        self._draw_water_levels_x(self.morfostvor, ax, x, "H", color, offset)
+        self._draw_water_vertical_labels(self.morfostvor, ax, x, color, offset)
+
+        if ax == self.ax1:
+            self.ax1.set_ylabel(
+                f"H, м{config.ALTITUDE_SYSTEM}",
+                color="black",
+                fontsize=config.FONT_SIZE["ax_label"],
+                fontstyle="italic",
+                weight="normal",
+            )
+            ax.tick_params(axis="y", which="both", color="black", labelcolor="black")
+            ax.spines[["left"]].set_color("black")
+            self._draw_water_horizontal_labels(self.morfostvor, ax, "H")
+
+        else:
+            ax.spines["left"].set_visible(False)
+            ax.tick_params(which="both", axis="y", length=0, labelleft=False)
 
     def _prepare_dataframe(self):
         """Подготавливает и нормализует таблицу гидравлических данных."""
@@ -1516,7 +1557,6 @@ class GraphQWVH(GraphCurve):
         ax: plt.subplot,
         x="Q",
         y="H",
-        col_name="сумма",
         color="black",
         x_ax_v_offset=0,
     ):
@@ -1592,7 +1632,6 @@ class GraphQWVH(GraphCurve):
                 [y1, y2],
                 linestyle="-",
                 color="lightgray",
-                # marker="",
                 linewidth=1,
                 markersize=1,
                 alpha=1,
@@ -1606,7 +1645,7 @@ class GraphQWVH(GraphCurve):
                 color=color,
                 marker="o",
                 linewidth=1,
-                markersize=1,
+                markersize=4,
                 alpha=0.3,
             )
 
@@ -1614,20 +1653,16 @@ class GraphQWVH(GraphCurve):
         self,
         morfostvor: Morfostvor,
         ax: plt.subplot,
-        x_col="Q",
         y_col="H",
-        col_name="сумма",
-        color="black",
-        x_ax_v_offset=0,
     ):
+        # Отрисовка подписей отметок по расчетным обеспеченностям
         x_lim = ax.get_xlim()
         y_lim = ax.get_ylim()
         step_x = (x_lim[-1] - x_lim[0]) / 10
         step_y = (y_lim[-1] - y_lim[0]) / 10
 
         for index, row in morfostvor.levels_result.iterrows():
-            dist = 0  # index * (step * 0.3)
-            x = step_x / 5 + dist
+            x = step_x / 5
             y = row[y_col] + step_y / 20
 
             # Вывод значений округленных, проверка на содержание значений
@@ -1678,10 +1713,10 @@ class GraphQWVH(GraphCurve):
         morfostvor: Morfostvor,
         ax: plt.subplot,
         x_col="Q",
-        y_col="H",
         color="black",
         x_ax_v_offset=0.0,
     ):
+        # Отрисовка подписей параметров по расчетным обеспеченностям
         x_lim = ax.get_xlim()
         y_lim = ax.get_ylim()
         step_x = (x_lim[-1] - x_lim[0]) / 10
@@ -1695,9 +1730,7 @@ class GraphQWVH(GraphCurve):
         )
 
         for index, row in morfostvor.levels_result.iterrows():
-            dist = 0  # index * (step * 0.3)
             x = row[x_col]
-            y = morfostvor.hydraulic_table.reset_index()["УВ"].min()
             y = x_ax_position_on_y
 
             # Вывод значений округленных, проверка на содержание значений
@@ -1743,144 +1776,17 @@ class GraphQWVH(GraphCurve):
                     ]
                 )
 
-    def _draw_qh_graph(self, df):
-        """Отрисовка графика Q(H)."""
-        self.ax1.set_ylabel(
-            f"H, м{config.ALTITUDE_SYSTEM}", **self._label_style("black")
-        )
-        self.style_axis(self.ax1, self.vertical_offset[0], r"$Q=f(H)$", "r")
-        self.ax1.tick_params(axis="y", which="both", color="black", labelcolor="black")
-        self.ax1.spines[["left"]].set_color("black")
-
-        self._plot_graph(
-            ax=self.ax1,
-            df=df,
-            x="Q",
-            y="УВ",
-            col_name="сумма",
-            label=r"Q_{сум}=f(H)",
-            color="red",
-            zorder=9,
-        )
-        self._plot_graph(
-            ax=self.ax1,
-            df=df,
-            x="Q",
-            y="УВ",
-            col_name="русло",
-            label=r"Q_{русл}=f(H)",
-            color="red",
-            linestyle="--",
-            linewidth=1,
-            zorder=10,
-            path_effects=[pe.Stroke(linewidth=5, foreground="white"), pe.Normal()],
-        )
-        self._draw_water_levels_x(
-            self.morfostvor, self.ax1, "Q", "H", "сумма", "red", self.vertical_offset[0]
-        )
-
-        self._draw_water_horizontal_labels(
-            self.morfostvor, self.ax1, "Q", "H", "сумма", "red", self.vertical_offset[0]
-        )
-        self._draw_water_vertical_labels(
-            self.morfostvor, self.ax1, "Q", "H", "red", self.vertical_offset[0]
-        )
-
-    def _draw_wh_graph(self, df):
-        """Отрисовка графика W(H)."""
-        self._plot_graph(
-            ax=self.ax2,
-            df=df,
-            x="F",
-            y="УВ",
-            col_name="сумма",
-            label="W_{сум}=f(H)",
-            color="green",
-            zorder=9,
-        )
-        self._plot_graph(
-            ax=self.ax2,
-            df=df,
-            x="F",
-            y="УВ",
-            col_name="русло",
-            label=r"W_{русл}=f(H)",
-            color="green",
-            linestyle="--",
-            linewidth=1,
-            zorder=10,
-        )
-        self.ax2.spines["left"].set_visible(False)
-        self.style_axis(self.ax2, self.vertical_offset[1], r"$W=f(H)$", "g")
-        self._draw_water_levels_x(
-            self.morfostvor,
-            self.ax2,
-            "F",
-            "H",
-            "сумма",
-            "green",
-            self.vertical_offset[1],
-        )
-        self._draw_water_vertical_labels(
-            self.morfostvor, self.ax2, "F", "H", "green", self.vertical_offset[1]
-        )
-        self.ax2.tick_params(which="both", axis="y", length=0, labelleft=False)
-
-    def _draw_vh_graph(self, df):
-        """Отрисовка графика V(H)."""
-        self._plot_graph(
-            ax=self.ax3,
-            df=df,
-            x="V",
-            y="УВ",
-            col_name="сумма",
-            label=r"V_{сум}=f(H)",
-            color="blue",
-            zorder=9,
-        )
-        self._plot_graph(
-            ax=self.ax3,
-            df=df,
-            x="V",
-            y="УВ",
-            col_name="русло",
-            label=r"V_{русл}=f(H)",
-            color="blue",
-            linestyle="--",
-            linewidth=1,
-            zorder=10,
-        )
-        self.ax3.spines["left"].set_visible(False)
-        self.style_axis(self.ax3, self.vertical_offset[2], r"$V_{cp}=f(H)$", "blue")
-        self._draw_water_levels_x(
-            self.morfostvor, self.ax3, "V", "H", "сумма", "b", self.vertical_offset[2]
-        )
-        self._draw_water_vertical_labels(
-            self.morfostvor, self.ax3, "V", "H", "blue", self.vertical_offset[2]
-        )
-        self.ax3.tick_params(which="both", axis="y", length=0, labelleft=False)
-
     def _plot_graph(
-        self, ax, df, x, y, col_name="сумма", label="", color="b", **kwargs
+        self, ax, df, x_col, y_col, sector_name="сумма", label="", color="b", **kwargs
     ):
         """Функция для отрисовки линий графиков."""
         ax.plot(
-            df.loc[(col_name), x],
-            df.loc[(col_name), y],
+            df.loc[(sector_name), x_col],
+            df.loc[(sector_name), y_col],
             label=rf"${label}$",
             color=color,
             **kwargs,
         )
-
-    @staticmethod
-    def _label_style(color):
-        """Возвращает параметры стиля подписи оси."""
-        return {
-            "color": color,
-            "fontsize": config.FONT_SIZE["ax_label"],
-            "fontstyle": "italic",
-            "weight": "normal",
-        }
 
     # Функция для стилизации графиков
     @staticmethod
