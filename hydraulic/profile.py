@@ -1515,10 +1515,10 @@ class GraphQWVH(GraphCurve):
         self.style_axis(ax, offset, label, color)
 
         # Пописи линий
-        main_label = f"{x}_{{сумм.}}"
+        main_label = f"{x}_{{общ.}}"
         secondary_label = f"{x}_{{русл.}}"
         if ax == self.ax3:
-            main_label = f"{x}_{{ср.}}"
+            main_label = f"{x}_{{ср. общ.}}"
             secondary_label = f"{x}_{{ср. русл.}}"
 
         # Отрисовка линий
