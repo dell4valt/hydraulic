@@ -211,7 +211,7 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
     )
 
     topography_table = morfostvor.get_topography_table()
-    topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x))
+    topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x, decimal=True))
     insert_df_to_table(
         doc,
         topography_table,

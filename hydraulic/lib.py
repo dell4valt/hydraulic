@@ -346,7 +346,7 @@ def rmdir(dir_path):
     directory.rmdir()
 
 
-def get_pk(distance: float, divider=100) -> str:
+def get_pk(distance: float, divider=100, decimal=False) -> str:
     """Возвращает строку пикетажа в формате 'мкм+мм'.
 
     Args:
@@ -361,7 +361,12 @@ def get_pk(distance: float, divider=100) -> str:
     first = distance // divider
     second = distance % divider
 
+    if decimal:
+        decimal = f".{int(distance - int(distance)):02d}"
+    else:
+        decimal = ""
+
     # Форматируем строку пикетажа
     if divider < 1000:
-        return f"{int(first)}+{int(second):02d}"
+        return f"{int(first)}+{int(second):02d}{decimal}"
     return f"{first}+{second:03d}"
