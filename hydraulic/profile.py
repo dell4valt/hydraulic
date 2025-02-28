@@ -1213,6 +1213,37 @@ class Morfostvor:
 
         return result
 
+    def get_topography_table(self):
+        # Создаем базовый словарь с координатами
+        topography_data = {
+            "x": self.x,
+            "h": self.y,
+        }
+
+        # Инициализируем списки для данных о секторах
+        sectors = []
+        roughness = []
+        slope = []
+
+        # Заполняем списки данными из секторов
+        for sector in self.sectors:
+            for _ in range(sector.start_point, sector.end_point):
+                sectors.append(sector.name)
+                roughness.append(sector.roughness)
+                slope.append(sector.slope)
+            # Дописываем данные для последней точки
+            if sector == self.sectors[-1]:
+                sectors.append(sector.name)
+                roughness.append(sector.roughness)
+                slope.append(sector.slope)
+
+        # Добавляем данные в основной словарь
+        topography_data['sectors'] = sectors
+        topography_data['roughness'] = roughness
+        topography_data['slope'] = slope
+
+        # Создаем DataFrame и возвращаем его
+        return pd.DataFrame(topography_data)
 
 @dataclass
 class Graph:

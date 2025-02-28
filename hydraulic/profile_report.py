@@ -14,7 +14,7 @@ from pathvalidate import sanitize_filename
 import hydraulic.config as config
 from hydraulic.doc_lib import (insert_df_to_table, insert_figure,
                                insert_page_break)
-from hydraulic.lib import rmdir, text_sanitize
+from hydraulic.lib import rmdir, text_sanitize, get_pk
 
 
 def generate_morfostvor_report(morfostvor, out_filename, r=False):
@@ -208,6 +208,21 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
     prob_text = text_sanitize(
         morfostvor.probability[morfostvor.design_water_level_index][0],
         num_suffix="% обеспеченности",
+    )
+
+    topography_table = morfostvor.get_topography_table()
+    topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x))
+    insert_df_to_table(
+        doc,
+        topography_table,
+        f"{config.STRING['table']}Топографические данные створа",
+        col_names=(
+            "ПК",
+            f"Отметка, м{config.ALTITUDE_SYSTEM}",
+            "Участок",
+            "Коэффициент шероховатости, n",
+            "Уклон I, ‰",
+        )
     )
 
     insert_df_to_table(
