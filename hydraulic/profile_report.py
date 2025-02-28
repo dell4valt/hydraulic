@@ -178,19 +178,24 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
                 style="Р-название",
             )
 
-     # Вывод таблицы расчётных уровней воды
-    print("    — Записываем таблицу уровней воды ... ", end="")
+    # Вывод таблицы расчётных уровней, скоростей и площадей воды
+    print("    — Записываем таблицу уровней, скоростей и площадей воды ... ", end="")
     insert_df_to_table(
         doc,
-        morfostvor.levels_result[["P", "Q", "H"]],
-        f"{config.STRING['table']}Расчётные уровни {morfostvor.strings['type']}",
+        morfostvor.levels_result[["P", "Q", "H", "V", "F"]],
+        (
+            f"{config.STRING['table']}Расчётные уровни, скорости и площади "
+            f"к заданным расходам {morfostvor.strings['type']}"
+        ),
         col_names=(
             "Обеспеченность P, %",
             "Расход Q, м³/сек",
             f"Уровень H, м{config.ALTITUDE_SYSTEM}",
+            f"Средняя скорость Vср, м/сек",
+            f"Площадь живого сечения F, м²",
         ),
-        col_widths=(6, 6, 6),
-        col_format=(":g", ":g", ":.2f"),
+        col_widths=(6, 6, 6, 6, 6),
+        col_format=(":g", ":g", ":.2f", ":.2f", ":.2f"),
     )
     print("успешно!")
 
