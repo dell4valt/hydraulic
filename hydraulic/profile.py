@@ -25,7 +25,7 @@ import matplotlib.patheffects as pe
 import hydraulic.config as config
 from hydraulic.doc_lib import get_xls_sheet_quantity
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables, poly_area,
-                           question_continue_app)
+                           question_continue_app, get_pk)
 from hydraulic.profile_report import generate_morfostvor_report, save_graphic
 
 
@@ -2697,6 +2697,10 @@ class GraphProfile(Graph):
         self.ax_top.set_xticks([])
         self.ax_top.set_yticks([])
 
+        def format_picketage(x, pos):
+            """Функция для форматирования значений оси x в пикетаж."""
+            return get_pk(x)
+
         # Устанавливаем параметры подписей осей
         self.ax.set_ylabel(
             f"H, м{config.ALTITUDE_SYSTEM}",
@@ -2704,6 +2708,9 @@ class GraphProfile(Graph):
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
         )
+
+        # Настраиваем вывод значений оси x в виде пикетажа
+        self.ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_picketage))
 
         self.ax.yaxis.set_label_coords(-0.025, 1.08)
 

@@ -344,3 +344,24 @@ def rmdir(dir_path):
         else:
             item.unlink()
     directory.rmdir()
+
+
+def get_pk(distance: float, divider=100) -> str:
+    """Возвращает строку пикетажа в формате 'мкм+мм'.
+
+    Args:
+        distance (float): Расстояние в метрах
+        divider (int, optional): Делитель расстояния. Defaults to 100.
+
+    Returns:
+        str: Строка пикетажа
+    """
+
+    # Переводим метры в километры и метры
+    first = distance // divider
+    second = distance % divider
+
+    # Форматируем строку пикетажа
+    if divider < 1000:
+        return f"{int(first)}+{int(second):02d}"
+    return f"{first}+{second:03d}"
