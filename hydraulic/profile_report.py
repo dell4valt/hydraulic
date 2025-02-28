@@ -222,7 +222,8 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
             "Участок",
             "Коэффициент шероховатости, n",
             "Уклон I, ‰",
-        )
+        ),
+        col_format=("", ":.2f", "", ":.3f", ":.2f"),
     )
 
     insert_df_to_table(
