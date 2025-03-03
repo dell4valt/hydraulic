@@ -12,12 +12,12 @@ from docx import Document
 from pathvalidate import sanitize_filename
 
 import hydraulic.config as config
-from hydraulic.doc_lib import (insert_df_to_table, insert_figure,
-                               insert_page_break)
+
 from hydraulic.lib import rmdir, text_sanitize, get_pk
+from report.core import Report
 
 
-def generate_morfostvor_report(morfostvor, out_filename, r=False):
+def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     """Процедура создает отчет по заданному морфоствору и сохраняет
     его в указанный .docx файл.
 
@@ -25,31 +25,23 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
         morfostvor (hydraulic.Morfostvor): Экземпляр объекта класса Morfostvor
         out_filename (_type_): путь и названия файла куда будет сохранен отчет,
         на конце должно быть указание расширения .docx
-        r (bool, optional): Параметр позволяет включить перезапись файла отчета,
+        rewrite (bool, optional): Параметр позволяет включить перезапись файла отчета,
         если выключен то отчет будет добавлен в конец документа. Defaults to False.
     """
     print("\n\nФормируем doc файл: ")
-    doc_file = out_filename
-    template_file = Path("hydraulic/assets/report_template.docx")
+
+    if rewrite:
+        report = Report()
+    else:
+        report = Report(out_filename)
+        # Если документ уже содержит параграфы,
+        # то вставляем разрыв страницы перед добавлением нового отчета
+        if len(report.doc.paragraphs) > 2:
+            report.insert_page_break()
 
     # Создаем временную папку, и папку для графики если они не существуют
     temp_dir = Path(config.TEMP_DIR_NAME)
     temp_dir.mkdir(parents=True, exist_ok=True)
-
-    if r:
-        doc = Document(template_file)
-    else:
-        if os.path.isfile(doc_file):
-            doc = Document(doc_file)
-            insert_page_break(doc)
-        else:
-            if config.REWRITE_DOC_FILE:
-                print(
-                    "    — Включена перезапись файла, удаляем старый и создаём новый."
-                )
-            else:
-                print("    — Файл не найден! Создаём новый.")
-            doc = Document(template_file)
 
     # Отрисовка смоченного периметра
     if config.PROFILE_WET_PERIMETER:
@@ -89,102 +81,77 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
             round(morfostvor.waterline, 2), color="blue", linestyle="-"
         )
 
+    if config.GRAPHICS_TITLES_TEXT:
+        profile_title = f"{morfostvor.fig_profile.morfostvor.title}"
+        qh_title = f"{morfostvor.fig_QH._ax_title_text}"
+        qhv_title = f"{morfostvor.fig_QHV._ax_title_text}"
+        qv_title = f"{morfostvor.fig_QV._ax_title_text}"
+        vh_title = f"{morfostvor.fig_VH._ax_title_text}"
+        qf_title = f"{morfostvor.fig_QF._ax_title_text}"
+        fh_title = f"{morfostvor.fig_FH._ax_title_text}"
+        qwvh_title = f"{morfostvor.fig_QWVH._ax_title_text}"
+    else:
+        profile_title = ""
+        qh_title = ""
+        qhv_title = ""
+        qv_title = ""
+        vh_title = ""
+        qf_title = ""
+        fh_title = ""
+        qwvh_title = ""
+
     # Вставляем заголовок профиля
-    doc.add_paragraph(morfostvor.title, style="З-приложение-подзаголовок")
+    report.add_paragraph(morfostvor.title, style="З-приложение-подзаголовок")
+
     # Добавляем изображения профиля и гидравлической кривой
     print("    — Вставляем графику (профиль)... ", end="")
-    insert_figure(doc, morfostvor.fig_profile.fig, width=16)
-
-    # Подпись рисунков
-    if config.GRAPHICS_TITLES_TEXT:
-        doc.add_paragraph(
-            f"{config.STRING['figure']}{morfostvor.fig_profile.morfostvor.title}",
-            style="Р-название",
-        )
+    report.insert_mpl_figure(morfostvor.fig_profile.fig, width=16, title=profile_title)
     print("успешно!")
 
     if config.HYDRAULIC_CURVE:
         print("    — Вставляем графику (кривая QH)... ", end="")
-        insert_figure(
-            doc,
-            morfostvor.fig_QH.fig,
-            width=16
-        )
-
-        if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                f"{config.STRING['figure']}{morfostvor.fig_QH._ax_title_text}",
-                style="Р-название",
-            )
+        report.insert_mpl_figure(morfostvor.fig_QH.fig, width=16, title=qh_title)
         print("успешно!")
 
     if config.QWVH_CURVE:
         print("    — Вставляем графику (кривая QWVH)... ", end="")
-        insert_figure(doc, morfostvor.fig_QWVH.fig, width=16.5)
+        report.insert_mpl_figure(morfostvor.fig_QWVH.fig, width=16.5, title=qwvh_title)
         print("успешно!")
 
     if config.HYDRAULIC_AND_SPEED_CURVE:
         print("    — Вставляем графику (кривая QHV)... ", end="")
-        insert_figure(doc, morfostvor.fig_QHV.fig, width=16)
-
-        if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                f"{config.STRING['figure']}{morfostvor.fig_QHV._ax_title_text}",
-                style="Р-название",
-            )
+        report.insert_mpl_figure(morfostvor.fig_QHV.fig, width=16, title=qhv_title)
         print("успешно!")
 
     if config.SPEED_CURVE:
         print("    — Вставляем график кривой скоростей QV ... ", end="")
-        insert_figure(doc, morfostvor.fig_QV.fig)
+        report.insert_mpl_figure(morfostvor.fig_QV.fig, width=16, title=qv_title)
         print("успешно!")
 
-        if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                f"{config.STRING['figure']}{morfostvor.fig_QV._ax_title_text}",
-                style="Р-название",
-            )
 
     if config.SPEED_VH_CURVE:
         print("    — Вставляем график кривой скоростей VH ... ", end="")
-        insert_figure(doc, morfostvor.fig_VH.fig)
+        report.insert_mpl_figure(morfostvor.fig_VH.fig, width=16, title=vh_title)
         print("успешно!")
-
-        if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                f"{config.STRING['figure']}{morfostvor.fig_VH._ax_title_text}",
-                style="Р-название",
-            )
 
     if config.AREA_CURVE:
         print("    — Вставляем график кривой площадей от расхода воды ... ", end="")
-        insert_figure(doc, morfostvor.fig_QF.fig)
+        report.insert_mpl_figure(morfostvor.fig_QF.fig, width=16, title=qf_title)
         print("успешно!")
 
-        if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                f"{config.STRING['figure']}{morfostvor.fig_QF._ax_title_text}",
-                style="Р-название",
-            )
 
     if config.AREA_FH_CURVE:
         print("    — Вставляем график кривой площадей от уровня ... ", end="")
-        insert_figure(doc, morfostvor.fig_FH.fig)
+        report.insert_mpl_figure(morfostvor.fig_FH.fig, width=16, title=fh_title)
         print("успешно!")
 
-        if config.GRAPHICS_TITLES_TEXT:
-            doc.add_paragraph(
-                f"{config.STRING['figure']}{morfostvor.fig_FH._ax_title_text}",
-                style="Р-название",
-            )
 
     # Вывод таблицы расчётных уровней, скоростей и площадей воды
     print("    — Записываем таблицу уровней, скоростей и площадей воды ... ", end="")
-    insert_df_to_table(
-        doc,
+    report.insert_df_to_table(
         morfostvor.levels_result[["P", "Q", "H", "V", "F"]],
         (
-            f"{config.STRING['table']}Расчётные уровни, скорости и площади "
+            f"Расчётные уровни, скорости и площади "
             f"к заданным расходам {morfostvor.strings['type']}"
         ),
         col_names=(
@@ -212,10 +179,9 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
 
     topography_table = morfostvor.get_topography_table()
     topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x, decimal=True))
-    insert_df_to_table(
-        doc,
+    report.insert_df_to_table(
         topography_table,
-        f"{config.STRING['table']}Топографические данные створа",
+        f"Топографические данные створа",
         col_names=(
             "ПК",
             f"Отметка, м{config.ALTITUDE_SYSTEM}",
@@ -226,10 +192,9 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
         col_format=("", ":.2f", "", ":.3f", ":.2f"),
     )
 
-    insert_df_to_table(
-        doc,
+    report.insert_df_to_table(
         df_sectors,
-        f"{config.STRING['table']}Расчётные участки и их параметры",
+        f"Расчётные участки и их параметры",
         col_names=(
             "№",
             "Описание",
@@ -282,10 +247,9 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
     # Записываем только чётные элементы таблицы
     table_round = table_round[table_round.index % divider == 0]
 
-    insert_df_to_table(
-        doc,
+    report.insert_df_to_table(
         table_round,
-        f"{config.STRING['table']}Параметры расчёта кривой расхода {morfostvor.strings['type']}",
+        f"Параметры расчёта кривой расхода {morfostvor.strings['type']}",
         col_names=(
             f"Отм. уровня H, м{config.ALTITUDE_SYSTEM}",
             "Площадь F, м²",
@@ -306,7 +270,7 @@ def generate_morfostvor_report(morfostvor, out_filename, r=False):
     print("успешно!")
 
     try:
-        doc.save(doc_file)
+        report.save(out_filename)
     except PermissionError:
         print(
             "\nОшибка! Не удалось сохранить файл. "
@@ -327,7 +291,7 @@ def save_graphic(morfostvor, path):
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     # Проверяем имя файла
-    profile_name = sanitize_filename(morfostvor.title)  
+    profile_name = sanitize_filename(morfostvor.title)
 
     # Создаем папку для сохранения отдельных изображений
     picture_dir = Path(
