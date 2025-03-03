@@ -108,42 +108,30 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     report.insert_mpl_figure(morfostvor.fig_profile.fig, width=16, title=profile_title)
     print("успешно!")
 
-    if config.HYDRAULIC_CURVE:
-        print("    — Вставляем графику (кривая QH)... ", end="")
-        report.insert_mpl_figure(morfostvor.fig_QH.fig, width=16, title=qh_title)
-        print("успешно!")
+    # Dictionary of curve configurations with their properties
+    curves = [
+        {"config": "HYDRAULIC_CURVE", "fig": morfostvor.fig_QH.fig, "title": qh_title,
+         "message": "Вставляем график (кривая QH)"},
+        {"config": "QWVH_CURVE", "fig": morfostvor.fig_QWVH.fig, "title": qwvh_title,
+         "message": "Вставляем график (кривая QWVH)"},
+        {"config": "HYDRAULIC_AND_SPEED_CURVE", "fig": morfostvor.fig_QHV.fig, "title": qhv_title,
+         "message": "Вставляем график (кривая QHV)"},
+        {"config": "SPEED_CURVE", "fig": morfostvor.fig_QV.fig, "title": qv_title,
+         "message": "Вставляем график кривой скоростей QV"},
+        {"config": "SPEED_VH_CURVE", "fig": morfostvor.fig_VH.fig, "title": vh_title,
+         "message": "Вставляем график кривой скоростей VH"},
+        {"config": "AREA_CURVE", "fig": morfostvor.fig_QF.fig, "title": qf_title,
+         "message": "Вставляем график кривой площадей от расхода воды"},
+        {"config": "AREA_FH_CURVE", "fig": morfostvor.fig_FH.fig, "title": fh_title,
+         "message": "Вставляем график кривой площадей от уровня"}
+    ]
 
-    if config.QWVH_CURVE:
-        print("    — Вставляем графику (кривая QWVH)... ", end="")
-        report.insert_mpl_figure(morfostvor.fig_QWVH.fig, width=16.5, title=qwvh_title)
-        print("успешно!")
-
-    if config.HYDRAULIC_AND_SPEED_CURVE:
-        print("    — Вставляем графику (кривая QHV)... ", end="")
-        report.insert_mpl_figure(morfostvor.fig_QHV.fig, width=16, title=qhv_title)
-        print("успешно!")
-
-    if config.SPEED_CURVE:
-        print("    — Вставляем график кривой скоростей QV ... ", end="")
-        report.insert_mpl_figure(morfostvor.fig_QV.fig, width=16, title=qv_title)
-        print("успешно!")
-
-
-    if config.SPEED_VH_CURVE:
-        print("    — Вставляем график кривой скоростей VH ... ", end="")
-        report.insert_mpl_figure(morfostvor.fig_VH.fig, width=16, title=vh_title)
-        print("успешно!")
-
-    if config.AREA_CURVE:
-        print("    — Вставляем график кривой площадей от расхода воды ... ", end="")
-        report.insert_mpl_figure(morfostvor.fig_QF.fig, width=16, title=qf_title)
-        print("успешно!")
-
-
-    if config.AREA_FH_CURVE:
-        print("    — Вставляем график кривой площадей от уровня ... ", end="")
-        report.insert_mpl_figure(morfostvor.fig_FH.fig, width=16, title=fh_title)
-        print("успешно!")
+    # Insert all configured curves
+    for curve in curves:
+        if getattr(config, curve["config"]):
+            print(f"    — {curve['message']}... ", end="")
+            report.insert_mpl_figure(curve["fig"], width=16, title=curve["title"])
+            print("успешно!")
 
 
     # Вывод таблицы расчётных уровней, скоростей и площадей воды
