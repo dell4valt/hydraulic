@@ -2,10 +2,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from docx import Document
-
-from hydraulic.doc_lib import (insert_page_break, set_table_columns_width,
-                               set_table_style)
+from report.core import Report
 
 
 def question_continue_app():
@@ -56,11 +53,10 @@ def insert_summary_QV_tables(stvors, out_filename):
     levels_table = []
     speed_table = []
     i = 1
-    doc = Document(out_filename)
+    report = Report(out_filename)
+    report.insert_page_break()
 
-    insert_page_break(doc)
-
-    doc.add_paragraph("Сводные таблицы", style="З-приложение-подзаголовок")
+    report.add_paragraph("Сводные таблицы", style="З-приложение-подзаголовок")
 
     param_levels = (
         ["№", "Описание", "Мин. отм", "УВ"],
@@ -122,28 +118,27 @@ def insert_summary_QV_tables(stvors, out_filename):
         title2_check = True
         i += 1
 
-    # rows = len(levels_table)
     cols = len(levels_table[0])
 
     #############################################
     # Таблицы расчётных уровней и скоростей воды
-    doc.add_paragraph(
+    report.add_paragraph(
         f"Таблица — Расчётные уровни {stvor.strings['type']}",
         style="Т-название",
     )
-    lev_table = doc.add_table(2, cols, style="Table Grid")
+    lev_table = report.doc.add_table(2, cols, style="Table Grid")
 
-    doc.add_paragraph(
+    report.add_paragraph(
         f"Таблица — Расчётные скорости {stvor.strings['type']}",
         style="Т-название",
     )
-    spd_table = doc.add_table(2, cols, style="Table Grid")
+    spd_table = report.doc.add_table(2, cols, style="Table Grid")
 
-    doc.add_paragraph(
+    report.add_paragraph(
         "Таблица — Сводная таблица параметров РУВВ по поперечным профилям",
         style="Т-название",
     )
-    ruvv_table = doc.add_table(1, 12, style="Table Grid")
+    ruvv_table = report.doc.add_table(1, 12, style="Table Grid")
     ruvv_table.cell(0, 0).text = '№'
     ruvv_table.cell(0, 1).text = '№ про-филя'
     ruvv_table.cell(0, 2).text = 'Описание'
@@ -258,8 +253,8 @@ def insert_summary_QV_tables(stvors, out_filename):
         ).text = f"{prob_text}"
         stvor_num += 1
 
-        set_table_style(lev_table)
-        set_table_columns_width(
+        report._set_table_style(lev_table)
+        report._set_table_columns_width(
             lev_table,
             (
                 0.85,
@@ -274,8 +269,8 @@ def insert_summary_QV_tables(stvors, out_filename):
             ),
         )
 
-        set_table_style(spd_table)
-        set_table_columns_width(
+        report._set_table_style(spd_table)
+        report._set_table_columns_width(
             spd_table,
             (
                 0.85,
@@ -290,8 +285,8 @@ def insert_summary_QV_tables(stvors, out_filename):
             ),
         )
 
-        set_table_style(ruvv_table)
-        set_table_columns_width(
+        report._set_table_style(ruvv_table)
+        report._set_table_columns_width(
             ruvv_table,
             (
                 0.85,
@@ -310,7 +305,7 @@ def insert_summary_QV_tables(stvors, out_filename):
         )
 
     print("успешно!")
-    doc.save(out_filename)
+    report.save(out_filename)
 
 
 def text_sanitize(text, suffix='', prefix='', num_suffix=''):

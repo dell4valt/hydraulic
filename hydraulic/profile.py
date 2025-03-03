@@ -16,14 +16,14 @@ plt.close('all')  # Закрывает все открытые графики
 import numpy as np
 import pandas as pd
 import scipy.interpolate as interpolate
-import xlrd
+from openpyxl import load_workbook
 from labellines import labelLines
 from matplotlib import gridspec
 from matplotlib.patches import Rectangle
 import matplotlib.patheffects as pe
 
 import hydraulic.config as config
-from hydraulic.doc_lib import get_xls_sheet_quantity
+from report.utils import get_xls_sheet_quantity
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables, poly_area,
                            question_continue_app, get_pk)
 from hydraulic.profile_report import generate_morfostvor_report, save_graphic
@@ -158,12 +158,12 @@ class SituationSector:
 
     def get_color(self) -> str:
         """Возвращает цвет сектора на основе его типа.
-        
+
         Returns:
             str: Название цвета в CSS-формате или 'white' если тип не распознан
         """
         normalized_type = self._normalize_type(self.type)
-        
+
         for category, keywords in self.CATEGORIES.items():
             if normalized_type in keywords:
                 return self.COLOR_MAPPING[category]
@@ -559,14 +559,14 @@ class Morfostvor:
     def read_xls(self, file_path, page=0):
         """Функция чтения из xls файла."""
         try:
-            data_file = xlrd.open_workbook(file_path)  # Открываем xls файл
+            data_file = load_workbook(file_path)  # Открываем xls файл
         except FileNotFoundError:
             print(f"Ошибка! Файл {file_path} не найден. Программа будет завершена.")
             sys.exit(33)
 
         try:
             # Открываем лист по заданному номеру
-            sheet = data_file.sheet_by_index(page)
+            sheet = data_file.worksheets[page]
         except IndexError:
             print(
                 "Неверно указан индекс листа .xls файла. Проверьте параметры запуска расчёта."
@@ -575,7 +575,7 @@ class Morfostvor:
 
         print(
             f"\n----- Считываем исходные данные из .xls файла: "
-            f"{file_path}, страница {page} ({sheet.name}) -----\n"
+            f"{file_path}, страница {page} ({sheet.title}) -----\n"
         )
 
         __raw_data = []  # Сырые строки xls файла
@@ -671,7 +671,11 @@ class Morfostvor:
                 name = __raw_data[line][__sector_name_col].strip()  # Название участка
                 # Коэффициент шероховатости
                 roughness = __raw_data[line][__roughness_col]
-                slope = __raw_data[line][__slope_col]  # Уклон
+                # Костыль обхода типа данных, нужен float
+                try:
+                    slope = float(__raw_data[line][__slope_col])  # Уклон
+                except ValueError:
+                    slope = __raw_data[line][__slope_col]
 
                 # По первой строке создаём первый сектор
                 if line == 0:
@@ -762,11 +766,14 @@ class Morfostvor:
             print(f"успешно, найдено {len(sectors)} участка.")
             return sectors
 
-        # Перебираем все строки
+        # Перебираем все строки, начиная со второй (min_row=2)
         # И получаем список сырых данных
-        for rownum in range(1, sheet.nrows):
-            row = sheet.row_values(rownum)
-            __raw_data.append(row)  # Записываем данные
+        for row in sheet.iter_rows(min_row=2, values_only=True):
+            # Проверяем, что строка не пустая
+            if any(cell is not None and cell != "" for cell in row):
+                # Заменяем None на пустую строку
+                processed_row = [cell if cell is not None else "" for cell in row]
+                __raw_data.append(processed_row)
 
         # Устанавливаем основные параметры морфоствора
         print("    — Устанавливаем основные параметры морфоствора ... ", end="")
