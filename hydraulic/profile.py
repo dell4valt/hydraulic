@@ -1499,14 +1499,13 @@ class GraphCurve(Graph):
                 label=sector,
                 color=self.sector_colors[sector],
             )
+        # Подписи на линиях
+        labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
+
 
     def draw_legend(self, ax: plt.subplot):
         # Отрисовка легенды
         ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"])
-        try:
-            labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.01)
-        except ValueError:
-            pass
 
 
 class GraphQWVH(GraphCurve):
