@@ -1627,7 +1627,8 @@ class GraphQWVH(GraphCurve):
         ax.minorticks_on()
 
         # Расстояние между засечками
-        minor_tick_dist = 0.1
+        minor_tick_dist = (new_yticks[1] - new_yticks[0]) / 5
+
         # Определяем границы отрисовки засечек
         minor_tick_min_y = closest_upper_multiple(min_value, minor_tick_dist)
         minor_tick_max_y = new_yticks[-1]
