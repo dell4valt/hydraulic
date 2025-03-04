@@ -559,7 +559,7 @@ class Morfostvor:
     def read_xls(self, file_path, page=0):
         """Функция чтения из xls файла."""
         try:
-            data_file = load_workbook(file_path)  # Открываем xls файл
+            data_file = load_workbook(file_path, data_only=True)  # Открываем xls файл
         except FileNotFoundError:
             print(f"Ошибка! Файл {file_path} не найден. Программа будет завершена.")
             sys.exit(33)
@@ -814,6 +814,7 @@ class Morfostvor:
                 self.y.append(__raw_data[i][__y_coord_col])
         print(f"успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]:.2f} м")
 
+        print(self.y)
         self.ele_min = min(self.y)  # Минимальная отметка профиля
         self.ele_max = max(self.y)  # Максимальная отметка профиля
 
