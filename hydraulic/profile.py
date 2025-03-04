@@ -1177,20 +1177,13 @@ class Morfostvor:
 
         self.fig_profile = GraphProfile(self)
 
-        if config.HYDRAULIC_CURVE:
-            self.fig_QH = GraphQH(self)
-        if config.HYDRAULIC_AND_SPEED_CURVE:
-            self.fig_QHV = GraphQHV(self)
-        if config.SPEED_CURVE:
-            self.fig_QV = GraphQV(self)
-        if config.SPEED_VH_CURVE:
-            self.fig_VH = GraphVH(self)
-        if config.AREA_CURVE:
-            self.fig_QF = GraphQF(self)
-        if config.AREA_FH_CURVE:
-            self.fig_FH = GraphFH(self)
-        if config.QWVH_CURVE:
-            self.fig_QWVH = GraphQWVH(morfostvor=self)
+        self.fig_QH = GraphQH(self)
+        self.fig_QHV = GraphQHV(self)
+        self.fig_QV = GraphQV(self)
+        self.fig_VH = GraphVH(self)
+        self.fig_QF = GraphQF(self)
+        self.fig_FH = GraphFH(self)
+        self.fig_QWVH = GraphQWVH(morfostvor=self)
 
         return df
 
