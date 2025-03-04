@@ -133,7 +133,6 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             report.insert_mpl_figure(curve["fig"], width=16, title=curve["title"])
             print("успешно!")
 
-
     # Вывод таблицы расчётных уровней, скоростей и площадей воды
     print("    — Записываем таблицу уровней, скоростей и площадей воды ... ", end="")
     report.insert_df_to_table(
@@ -167,7 +166,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
 
     topography_table = morfostvor.get_topography_table()
     topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x, decimal=True))
-    report.insert_df_to_table(
+    topo_table = report.insert_df_to_table(
         topography_table,
         f"Топографические данные створа",
         col_names=(
@@ -179,6 +178,54 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         ),
         col_format=("", ":.2f", "", ":.3f", ":.2f"),
     )
+
+    # Объединение ячеек участков 
+    for sector in morfostvor.sectors:
+        if sector == morfostvor.sectors[-1]:
+            report.merge_table_cells(
+                topo_table,
+                sector.start_point + 1,
+                sector.end_point + 1,
+                2,
+                2,
+                sector.name,
+            )
+            report.merge_table_cells(
+                topo_table,
+                sector.start_point + 1,
+                sector.end_point + 1,
+                3,
+                3,
+                f"{sector.roughness:.3f}",
+            )
+            report.merge_table_cells(
+                topo_table,
+                sector.start_point + 1,
+                sector.end_point + 1,
+                4,
+                4,
+                f"{sector.slope:.2f}",
+            )
+        else:
+            report.merge_table_cells(
+                topo_table, sector.start_point + 1, sector.end_point, 2, 2, sector.name
+            )
+            report.merge_table_cells(
+                topo_table,
+                sector.start_point + 1,
+                sector.end_point,
+                3,
+                3,
+                f"{sector.roughness:.3f}",
+            )
+            report.merge_table_cells(
+                topo_table,
+                sector.start_point + 1,
+                sector.end_point,
+                4,
+                4,
+                f"{sector.slope:.2f}",
+            )
 
     report.insert_df_to_table(
         df_sectors,
