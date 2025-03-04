@@ -814,7 +814,6 @@ class Morfostvor:
                 self.y.append(__raw_data[i][__y_coord_col])
         print(f"успешно, найдено {len(self.x)} точки, длина профиля {self.x[-1]:.2f} м")
 
-        print(self.y)
         self.ele_min = min(self.y)  # Минимальная отметка профиля
         self.ele_max = max(self.y)  # Максимальная отметка профиля
 
@@ -1343,7 +1342,7 @@ class Graph:
             fontstyle="italic",
             weight="normal"
         )
-        ax.yaxis.set_label_coords(-0.06, 0.5)
+        ax.yaxis.set_label_coords(-0.065, 0.5)
 
         # Устанавливает параметры вывода значений осей
         ax.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.10g"))
