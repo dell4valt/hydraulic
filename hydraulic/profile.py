@@ -1530,7 +1530,7 @@ class GraphQWVH(GraphCurve):
         self.fig, (self.ax1, self.ax2, self.ax3) = plt.subplots(
             1, 3, figsize=(16, 8), sharey=True, gridspec_kw={"wspace": -0.08}
         )
-        plt.subplots_adjust(left=0.07, bottom=0.10, right=0.97, top=0.95)
+        plt.subplots_adjust(left=0.075, bottom=0.10, right=0.97, top=0.95)
 
     def _draw_graphs(self):
         """Отрисовывает три графика Q(H), W(H) и V(H)."""
@@ -1545,14 +1545,13 @@ class GraphQWVH(GraphCurve):
         for i, (ax, x, color, label) in enumerate(graph_specs):
             self._draw_graph(ax, df, x, color, label, self.vertical_offset[i])
 
-
         self.fig.legend(loc="upper center", ncols=6)
 
     def _draw_graph(self, ax, df, x, color, label, offset):
         """Отрисовка одного графика графика."""
         self.style_axis(ax, offset, label, color)
 
-        # Пописи линий
+        # Подписи линий
         main_label = f"{x}_{{общ.}}"
         secondary_label = f"{x}_{{русл.}}"
         if ax == self.ax3:
@@ -1560,7 +1559,7 @@ class GraphQWVH(GraphCurve):
             secondary_label = f"{x}_{{ср. русл.}}"
 
         # Отрисовка линий
-        self._plot_graph(ax, df, x, "УВ", "сумма", main_label, color, zorder=10)
+        self._plot_graph(ax, df, x, "УВ", "сумма", main_label, color, zorder=10, alpha=0.5)
         self._plot_graph(ax, df, x, "УВ", "русло", secondary_label, color, linestyle="--", linewidth=1, zorder=11)
 
         # Отрисовка линий пересечений и подписей
@@ -1575,6 +1574,8 @@ class GraphQWVH(GraphCurve):
                 fontstyle="italic",
                 weight="normal",
             )
+            # Расположение подписи оси Y
+            self.ax1.yaxis.set_label_coords(-0.18, 0.61)
             ax.tick_params(axis="y", which="both", color="black", labelcolor="black")
             ax.spines[["left"]].set_color("black")
             self._draw_water_horizontal_labels(self.morfostvor, ax, "H")
