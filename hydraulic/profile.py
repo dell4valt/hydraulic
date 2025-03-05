@@ -1563,7 +1563,7 @@ class GraphQWVH(GraphCurve):
 
         if ax == self.ax1:
             self.ax1.set_ylabel(
-                f"H, м{config.ALTITUDE_SYSTEM}",
+                f"H, м {config.ALTITUDE_SYSTEM}",
                 color="black",
                 fontsize=config.FONT_SIZE["ax_label"],
                 fontstyle="italic",
@@ -1870,7 +1870,7 @@ class GraphQHV(GraphCurve):
 
     # Подписи осей
     _x_label_text = "Q, м³/с"
-    _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
+    _y_label_text = f"H, м {config.ALTITUDE_SYSTEM}"
     _y2_label_text = "V, м/с"
     _ax_title_text = "Гидравлическая кривая Q=f(H) с наложением Q=f(V)"
 
@@ -1997,7 +1997,7 @@ class GraphQH(GraphCurve):
 
     # Подписи осей
     _x_label_text = "Q, м³/с"
-    _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
+    _y_label_text = f"H, м {config.ALTITUDE_SYSTEM}"
     _ax_title_text = "Гидравлическая кривая Q=f(H)"
 
     def draw(self):
@@ -2040,7 +2040,7 @@ class GraphVH(GraphCurve):
 
     # Подписи осей
     _x_label_text = "V, м/c"
-    _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
+    _y_label_text = f"H, м {config.ALTITUDE_SYSTEM}"
     _ax_title_text = "Кривая скоростей V=f(H)"
 
     def draw(self):
@@ -2060,7 +2060,7 @@ class GraphFH(GraphCurve):
 
     # Подписи осей
     _x_label_text = "F, м²"
-    _y_label_text = f"H, м{config.ALTITUDE_SYSTEM}"
+    _y_label_text = f"H, м {config.ALTITUDE_SYSTEM}"
     _ax_title_text = "Кривая площадей F=f(H)"
 
     def draw(self):
@@ -2738,7 +2738,7 @@ class GraphProfile(Graph):
 
         # Устанавливаем параметры подписей осей
         self.ax.set_ylabel(
-            f"H, м{config.ALTITUDE_SYSTEM}",
+            f"H, м {config.ALTITUDE_SYSTEM}",
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
@@ -3036,20 +3036,20 @@ class GraphProfile(Graph):
             try:
                 if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
                     label.append(
-                        f"$\\mathbf{{ P_{{ {row['P']:2g}\\% }} = {water_level:.2f}\\ м{config.ALTITUDE_SYSTEM} }}$\n"
+                        f"$\\mathbf{{ P_{{ {row['P']:2g}\\% }} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n"
                     )
                 else:
                     label.append(
-                        f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+                        f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n"
                     )
             except ValueError:
                 if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
                     label.append(
-                        f"$\\mathbf{{ {row['P']} = {water_level:.2f}\\ м{config.ALTITUDE_SYSTEM} }}$\n"
+                        f"$\\mathbf{{ {row['P']} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n"
                     )
                 else:
                     label.append(
-                        f"${row['P']} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+                        f"${row['P']} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n"
                     )
 
             # Вывод линий сносок от уровней воды к таблице
@@ -3103,7 +3103,7 @@ class GraphProfile(Graph):
                 )
 
         if self.morfostvor.waterline and type(self.morfostvor.waterline) is not str:
-            label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м{config.ALTITUDE_SYSTEM}\n")
+            label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м {config.ALTITUDE_SYSTEM}\n")
 
             if self.morfostvor.date:
                 label.append(f"({self.morfostvor.date})\n")
@@ -3124,12 +3124,12 @@ class GraphProfile(Graph):
             self.morfostvor.design_water_level_index
         ]["H"]
 
-        label.append(f"\nРУВВ = {prob_el:.2f} м{config.ALTITUDE_SYSTEM}")
+        label.append(f"\nРУВВ = {prob_el:.2f} м {config.ALTITUDE_SYSTEM}")
         try:
             label.append(f"\n(принят по {prob_text})")
         except ValueError:
             label.append(
-                f"${self.morfostvor.probability[self.morfostvor.design_water_level_index][0]} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+                f"${self.morfostvor.probability[self.morfostvor.design_water_level_index][0]} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n"
             )
 
         # Вывод таблицы уровней с разными обеспеченностями (справа)

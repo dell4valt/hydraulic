@@ -144,7 +144,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         col_names=(
             "Обеспеченность P, %",
             "Расход Q, м³/сек",
-            f"Уровень H, м{config.ALTITUDE_SYSTEM}",
+            f"Уровень H, м {config.ALTITUDE_SYSTEM}",
             f"Средняя скорость Vср, м/сек",
             f"Площадь живого сечения F, м²",
         ),
@@ -171,7 +171,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         f"Топографические данные створа",
         col_names=(
             "ПК",
-            f"Отметка, м{config.ALTITUDE_SYSTEM}",
+            f"Отметка, м {config.ALTITUDE_SYSTEM}",
             "Участок",
             "Коэффициент шероховатости, n",
             "Уклон I, ‰",
@@ -236,7 +236,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Уклон i, ‰",
             "Коэффициент шероховатости n",
             "Q при РУВВ, м³/сек",
-            f"Hср при РУВВ, м{config.ALTITUDE_SYSTEM}",
+            f"Hср при РУВВ, м {config.ALTITUDE_SYSTEM}",
             "Vср при РУВВ, м/сек",
             "B при РУВВ, м",
             "F при РУВВ, м²",
@@ -286,7 +286,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         table_round,
         f"Параметры расчёта кривой расхода {morfostvor.strings['type']}",
         col_names=(
-            f"Отм. уровня H, м{config.ALTITUDE_SYSTEM}",
+            f"Отм. уровня H, м {config.ALTITUDE_SYSTEM}",
             "Площадь F, м²",
             "Ширина B, м",
             "Средняя глубина Hср, м",
