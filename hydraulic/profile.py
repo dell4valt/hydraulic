@@ -2418,7 +2418,7 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = 'РУВВ $F$'
+            label = '$F$ при РУВВ'
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
             __draw_sectors(self.morfostvor, 'area', y_mid, y_bot, y_top)
@@ -2434,7 +2434,7 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = 'РУВВ $Q$'
+            label = '$Q$ при РУВВ'
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
             __draw_sectors(self.morfostvor, 'consumption', y_mid, y_bot, y_top)
