@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 PROFILE_LEVELS_TABLE = True  # Отображение уровней воды различных обеспеченностей на графике профиля
-PROFILE_LEVELS_TABLE_LINES = False  # Линии сносок от урезов воды к значению в таблицу уровней
+PROFILE_LEVELS_TABLE_LINES = True  # Линии сносок от урезов воды к значению в таблицу уровней
 PROFILE_WATER_LEVEL_NOTE = False  # Отображение примечания о урезе воды
 PROFILE_LEVELS_TITLE = True  # Отображение подписи уровней воды на профилях
 PROFILE_SECTOR_LABEL = True  # Отображение названия, длины и разделителя по участкам
@@ -62,7 +62,7 @@ COLOR = {
     'sector_text': 'gray',  # Подписи названия и ширины участков на профиле
     'sector_line': 'gray',  # Линии разграничения участков
     'water_line': 'dodgerblue',  # Линия уреза воды
-    'water_reference_line': 'deepskyblue',  # Линий сноски уреза воды
+    'water_reference_line': 'navy',  # Линий сноски уреза воды
     'water_fill': 'deepskyblue',  # Заливка воды
     'water_level_text': 'navy',  # Подписи уровней воды
     'erosion_limit_line': 'red',  # Линия предельного размыва

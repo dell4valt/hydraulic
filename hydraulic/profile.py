@@ -2974,7 +2974,55 @@ class GraphProfile(Graph):
         """
         label = []
 
-        for index, row in levels.iterrows():
+        ylim = self.ax.get_ylim()
+        xlim = self.ax.get_xlim()
+        y_step = (ylim[1] - ylim[0]) / 100
+        x_step = (xlim[1] - xlim[0]) / 100
+        prev_y1 = None
+        prev_x0 = None
+
+        def insert_water_levels_label(self, x, y, padding):
+            try:
+                # Если обеспеченность записана цифрами
+                waterline_text = self.ax.text(
+                    x,
+                    y,
+                    f"$P_{{{row['P']:2g}\\%}} = {row['H']:.2f}$",
+                    color=config.COLOR["water_level_text"],
+                    fontsize=config.FONT_SIZE["water_level"],
+                    zorder=20
+                )
+                waterline_text.set_path_effects(
+                    [
+                        path_effects.Stroke(
+                            linewidth=2.5, foreground="white", alpha=0.55
+                        ),
+                        path_effects.Normal(),
+                    ]
+                )
+            except ValueError:
+                # Если обеспеченность записана строкой
+                waterline_text = self.ax.text(
+                    x,
+                    y,
+                    f"${row['P']} = {row['H']:.2f}$",
+                    color=config.COLOR["water_level_text"],
+                    fontsize=config.FONT_SIZE["water_level"],
+                    zorder=20
+                )
+
+                waterline_text.set_path_effects(
+                    [
+                        path_effects.Stroke(
+                            linewidth=2.5, foreground="white", alpha=0.55
+                        ),
+                        path_effects.Normal(),
+                    ]
+                )
+
+        # Сортируем по уровняем и проходим по каждому уровню
+        levelst_sorted = levels.sort_values(by="H", ascending=False)
+        for index, row in levelst_sorted.iterrows():
             # Отрисовка уреза
             water_level = row["H"]
 
@@ -2994,43 +3042,8 @@ class GraphProfile(Graph):
                 x = water.water_section_x[0] + 2 * padding
                 y = water_level + padding
 
-                try:
-                    # Если обеспеченность записана цифрами
-                    waterline_text = self.ax.text(
-                        x,
-                        y,
-                        f"$P_{{{row['P']:2g}\\%}} = {row['H']:.2f}$",
-                        color=config.COLOR["water_level_text"],
-                        fontsize=config.FONT_SIZE["water_level"],
-                        zorder=20
-                    )
-                    waterline_text.set_path_effects(
-                        [
-                            path_effects.Stroke(
-                                linewidth=3, foreground="white", alpha=0.55
-                            ),
-                            path_effects.Normal(),
-                        ]
-                    )
-                except ValueError:
-                    # Если обеспеченность записана строкой
-                    waterline_text = self.ax.text(
-                        x,
-                        y,
-                        f"${row['P']} = {row['H']:.2f}$",
-                        color=config.COLOR["water_level_text"],
-                        fontsize=config.FONT_SIZE["water_level"],
-                        zorder=20
-                    )
-
-                    waterline_text.set_path_effects(
-                        [
-                            path_effects.Stroke(
-                                linewidth=1.8, foreground="white", alpha=0.55
-                            ),
-                            path_effects.Normal(),
-                        ]
-                    )
+                if config.PROFILE_LEVELS_TABLE_LINES is False:
+                    insert_water_levels_label(self, x, y, padding)
 
             # Подпись уровня воды в таблице справа
             try:
@@ -3052,55 +3065,109 @@ class GraphProfile(Graph):
                         f"${row['P']} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n"
                     )
 
-            # Вывод линий сносок от уровней воды к таблице
             if config.PROFILE_LEVELS_TABLE_LINES:
                 water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
 
-                # Горизонтальные точки линий сносок
-                x_step = (water.water_section_x[-1] - water.water_section_x[0]) / len(
-                    self.morfostvor.probability
-                )
-                # Нижняя координата x
-                x0 = water.water_section_x[0] + (x_step * (index + 1) / 2)
-                x1 = x0 + (x0 / 8 * (index + 1))  # Верхняя координата x
-                x_lim = self.ax.get_xlim()  # Получаем границы графика
-                x3 = x_lim[1]  # Координата x границы справа
-                self.ax.set_xlim(x_lim)  # Возвращаем границы на исходные
+                # Устанавливаем координаты по умолчанию
+                x0 = water.water_section_x[0] + (x_step * (index + 2))
+                y0 = water_level
+                y1 = y0 + y_step * 30
 
-                # Вертикальные точки линий сносок
-                # 1% вертикальный от графика
-                y_step = (self.top_limit - self.bottom_limit) / 100
-                y0 = water_level  # Нижняя координата y (отметка уреза воды)
-                if index == 0:
-                    # Верхняя координата y для первой линии уреза
-                    y1 = self.top_limit - (y_step) - (y_step * 3 * (index))
-                else:
-                    # Верхняя координата y для последующих линий уреза
-                    y1 = self.top_limit - (y_step * 2.95 * (index))
+                # Проверяем коордианаты на пересечение
+                if prev_x0:
+                    x0 = prev_x0 + (x_step * 1)
+
+                if x0 > max(water.water_section_x):
+                    x0 = max(water.water_section_x) - x_step * 0.5
+
+                if x0 < min(water.water_section_x):
+                    x0 = min(water.water_section_x) + x_step * 0.5
+
+                x1 = x0
+                if prev_x0 and x1 < prev_x0:
+                    x1 = prev_x0 + x_step * 2
+                    print("prev_x0 and x1 < prev_x0")
+
+                x2 = x1 + x_step * 9
+
+                if prev_y1:
+                    y1 = prev_y1 - y_step * 4
 
                 # Устанавливаем параметры отображения линий сносок
                 color = config.COLOR["water_reference_line"]
-                linestyle = "--"
+                linestyle = "-"
                 linewidth = config.LINE_WIDTH["water_line"] / 1.75
-                alpha = 0.8
+                alpha = 0.6
 
-                # Линии сносок
+                # Рисуем линию аннотации
                 self.ax.plot(
-                    [x0, x1],
-                    [y0, y1],
+                    [x0, x1, x2],
+                    [y0, y1, y1],
                     color=color,
                     linestyle=linestyle,
                     linewidth=linewidth,
                     alpha=alpha,
+                    marker="o",
+                    markevery=[0],
+                    markersize=3,
+                    zorder=45,
                 )
-                self.ax.plot(
-                    [x1, x3],
-                    [y1, y1],
-                    color=color,
-                    linestyle=linestyle,
-                    linewidth=linewidth,
-                    alpha=alpha,
-                )
+                # Вставляем подписи урезов в аннотацию
+                insert_water_levels_label(self, x1, y1 + y_step * 0.9, 0)
+
+                # Устанавливаем предыдущие координаты для 
+                prev_y1 = y1
+                prev_x0 = x0
+
+            # Вывод линий сносок от уровней воды к таблице
+            # if config.PROFILE_LEVELS_TABLE_LINES:
+            #     water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
+
+            #     # Горизонтальные точки линий сносок
+            #     x_step = (water.water_section_x[-1] - water.water_section_x[0]) / len(
+            #         self.morfostvor.probability
+            #     )
+            #     # Нижняя координата x
+            #     x0 = water.water_section_x[0] + (x_step * (index + 1) / 2)
+            #     x1 = x0 + (x0 / 8 * (index + 1))  # Верхняя координата x
+            #     x_lim = self.ax.get_xlim()  # Получаем границы графика
+            #     x3 = x_lim[1]  # Координата x границы справа
+            #     self.ax.set_xlim(x_lim)  # Возвращаем границы на исходные
+
+            #     # Вертикальные точки линий сносок
+            #     # 1% вертикальный от графика
+            #     y_step = (self.top_limit - self.bottom_limit) / 100
+            #     y0 = water_level  # Нижняя координата y (отметка уреза воды)
+            #     if index == 0:
+            #         # Верхняя координата y для первой линии уреза
+            #         y1 = self.top_limit - (y_step) - (y_step * 3 * (index))
+            #     else:
+            #         # Верхняя координата y для последующих линий уреза
+            #         y1 = self.top_limit - (y_step * 2.95 * (index))
+
+            #     # Устанавливаем параметры отображения линий сносок
+            #     color = config.COLOR["water_reference_line"]
+            #     linestyle = "--"
+            #     linewidth = config.LINE_WIDTH["water_line"] / 1.75
+            #     alpha = 0.8
+
+            #     # Линии сносок
+            #     self.ax.plot(
+            #         [x0, x1],
+            #         [y0, y1],
+            #         color=color,
+            #         linestyle=linestyle,
+            #         linewidth=linewidth,
+            #         alpha=alpha,
+            #     )
+            #     self.ax.plot(
+            #         [x1, x3],
+            #         [y1, y1],
+            #         color=color,
+            #         linestyle=linestyle,
+            #         linewidth=linewidth,
+            #         alpha=alpha,
+            #     )
 
         if self.morfostvor.waterline and type(self.morfostvor.waterline) is not str:
             label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м {config.ALTITUDE_SYSTEM}\n")
