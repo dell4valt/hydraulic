@@ -2996,10 +2996,9 @@ class GraphProfile(Graph):
                     waterline_text = self.ax.text(
                         x,
                         y,
-                        f"▼$P_{{{row['P']:2g}\\%}} = {row['H']:.2f}$",
+                        f"$P_{{{row['P']:2g}\\%}} = {row['H']:.2f}$",
                         color=config.COLOR["water_level_text"],
                         fontsize=config.FONT_SIZE["water_level"],
-                        weight="bold",
                         zorder=20
                     )
                     waterline_text.set_path_effects(
@@ -3015,10 +3014,9 @@ class GraphProfile(Graph):
                     waterline_text = self.ax.text(
                         x,
                         y,
-                        f"{row['P']} = {row['H']:.2f}",
+                        f"${row['P']} = {row['H']:.2f}$",
                         color=config.COLOR["water_level_text"],
                         fontsize=config.FONT_SIZE["water_level"],
-                        weight="bold",
                         zorder=20
                     )
 
