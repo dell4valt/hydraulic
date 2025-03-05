@@ -6,6 +6,7 @@ import typing
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar, Dict, List
+import warnings
 
 import matplotlib
 import matplotlib.figure
@@ -28,6 +29,8 @@ from hydraulic.lib import (chunk_list, insert_summary_QV_tables, poly_area,
                            question_continue_app, get_pk, text_sanitize)
 from hydraulic.profile_report import generate_morfostvor_report, save_graphic
 
+# Отключаем все UserWarning (предупреждения от labellines)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 def floor_float(a, precision=0):
     return np.true_divide(np.floor(a * 10**precision), 10**precision)
