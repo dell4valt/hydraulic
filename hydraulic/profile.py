@@ -3078,17 +3078,25 @@ class GraphProfile(Graph):
                     x0 = prev_x0 + (x_step * 1)
 
                 if x0 > max(water.water_section_x):
-                    x0 = max(water.water_section_x) - x_step * 0.5
+                    x0 = max(water.water_section_x) - x_step
 
                 if x0 < min(water.water_section_x):
-                    x0 = min(water.water_section_x) + x_step * 0.5
+                    x0 = min(water.water_section_x) + x_step
 
                 x1 = x0
                 if prev_x0 and x1 < prev_x0:
                     x1 = prev_x0 + x_step * 2
                     print("prev_x0 and x1 < prev_x0")
 
-                x2 = x1 + x_step * 9
+                # Множитель для расчета длины выноски аннотации
+                if water_level < 100:
+                    wl_multiplier = 7.3
+                elif 100 <= water_level < 1000:
+                    wl_multiplier = 8.3
+                else:
+                    wl_multiplier = 10
+
+                x2 = x1 + x_step * wl_multiplier
 
                 if prev_y1:
                     y1 = prev_y1 - y_step * 4
