@@ -2739,12 +2739,13 @@ class GraphProfile(Graph):
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
+            rotation="horizontal"
         )
 
         # Настраиваем вывод значений оси x в виде пикетажа
         self.ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_picketage))
 
-        self.ax.yaxis.set_label_coords(-0.025, 1.08)
+        self.ax.yaxis.set_label_coords(-0.03, 1.03)
 
         # Устанавливает параметры вывода значений осей
         self.ax.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.10g"))
