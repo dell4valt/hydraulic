@@ -2386,7 +2386,7 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = 'РУВВ $H_{ср}$'
+            label = '$H_{ср}$ при РУВВ'
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
             __draw_sectors(self.morfostvor, 'depth', y_mid, y_bot, y_top)
@@ -2402,7 +2402,7 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = 'РУВВ $V_{ср}$'
+            label = '$V_{ср}$ при РУВВ'
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
             __draw_sectors(self.morfostvor, 'speed', y_mid, y_bot, y_top)
