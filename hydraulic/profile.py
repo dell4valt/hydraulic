@@ -25,7 +25,7 @@ import matplotlib.patheffects as pe
 import hydraulic.config as config
 from report.utils import get_xls_sheet_quantity
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables, poly_area,
-                           question_continue_app, get_pk)
+                           question_continue_app, get_pk, text_sanitize)
 from hydraulic.profile_report import generate_morfostvor_report, save_graphic
 
 
@@ -3031,14 +3031,25 @@ class GraphProfile(Graph):
                         ]
                     )
 
+            # Подпись уровня воды в таблице справа
             try:
-                label.append(
-                    f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
-                )
+                if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
+                    label.append(
+                        f"$\\mathbf{{ P_{{ {row['P']:2g}\\% }} = {water_level:.2f}\\ м{config.ALTITUDE_SYSTEM} }}$\n"
+                    )
+                else:
+                    label.append(
+                        f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+                    )
             except ValueError:
-                label.append(
-                    f"${row['P']} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
-                )
+                if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
+                    label.append(
+                        f"$\\mathbf{{ {row['P']} = {water_level:.2f}\\ м{config.ALTITUDE_SYSTEM} }}$\n"
+                    )
+                else:
+                    label.append(
+                        f"${row['P']} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+                    )
 
             # Вывод линий сносок от уровней воды к таблице
             if config.PROFILE_LEVELS_TABLE_LINES:
@@ -3094,11 +3105,31 @@ class GraphProfile(Graph):
             label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м{config.ALTITUDE_SYSTEM}\n")
 
             if self.morfostvor.date:
-                label.append(f"({self.morfostvor.date})")
+                label.append(f"({self.morfostvor.date})\n")
 
         if config.PROFILE_WATER_LEVEL_NOTE:
             if self.morfostvor.waterline == "-" or self.morfostvor.waterline == "":
                 label.append("\nПримечание: на\nмомент съёмки\nсток отсутствует")
+
+        # Вывод параметров РУВВ в таблицу справа
+        if isinstance(self.morfostvor.probability[self.morfostvor.design_water_level_index][0], (float, int)):
+            prob_text = rf" $P_{{{text_sanitize(
+                self.morfostvor.probability[self.morfostvor.design_water_level_index][0], suffix="\\%"
+            )}}}$"
+        else:
+            prob_text = rf"$ {self.morfostvor.probability[self.morfostvor.design_water_level_index][0]}$"
+
+        prob_el = self.morfostvor.levels_result.iloc[
+            self.morfostvor.design_water_level_index
+        ]["H"]
+
+        label.append(f"\nРУВВ = {prob_el:.2f} м{config.ALTITUDE_SYSTEM}")
+        try:
+            label.append(f"\n(принят по {prob_text})")
+        except ValueError:
+            label.append(
+                f"${self.morfostvor.probability[self.morfostvor.design_water_level_index][0]} = {water_level:.2f}$ м{config.ALTITUDE_SYSTEM}\n"
+            )
 
         # Вывод таблицы уровней с разными обеспеченностями (справа)
         self.ax.annotate(
