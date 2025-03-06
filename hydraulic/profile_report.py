@@ -15,6 +15,7 @@ import hydraulic.config as config
 
 from hydraulic.lib import rmdir, text_sanitize, get_pk
 from report.core import Report
+from hydraulic.graph import (GraphProfile, GraphQH, GraphQWVH, GraphFH, GraphQV, GraphQF, GraphQHV, GraphVH)
 
 
 def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):

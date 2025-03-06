@@ -365,3 +365,16 @@ def get_pk(distance: float, divider=100, decimal=False) -> str:
     if divider < 1000:
         return f"{int(first)}+{int(second):02d}{decimal}"
     return f"{first}+{second:03d}"
+
+
+def floor_float(a, precision=0):
+    return np.true_divide(np.floor(a * 10**precision), 10**precision)
+
+def closest_upper_multiple(n, k):
+    # Проверяем, что k больше нуля
+    if k <= 0:
+        raise ValueError("Второй аргумент (k) должен быть больше нуля.")
+
+    # Вычисляем ближайшее старшее кратное
+    result = np.ceil(n / k) * k
+    return result
