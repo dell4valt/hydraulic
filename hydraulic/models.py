@@ -166,18 +166,19 @@ class WaterSection:
     :param r_hydraulic: Гидравлический радиус
     :param start_point: Точка начала расчёта [index, y] (необязательный параметр)
     """
-    x: list
-    y: list
-    water_level: float
-    water_section_x: list = field(default_factory=list)
-    water_section_y: list = field(default_factory=list)
-    width: float = 0.0
-    area: float = 0.0
-    average_depth: float = 0.0
-    max_depth: float = 0.0
-    wet_perimeter: float = 0.0
-    r_hydraulic: float = 0.0
-    start_point: list = field(default_factory=list)
+    profile_x_coords: List[float] = field(default_factory=list)
+    profile_y_coords: List[float] = field(default_factory=list)
+    water_level: float = 0.0
+    overflow: bool = config.OVERFLOW
+    water_section_x: list = field(default_factory=list, init=False)
+    water_section_y: list = field(default_factory=list, init=False)
+    width: float = field(default=0.0, init=False)
+    area: float = field(default=0.0, init=False)
+    average_depth: float = field(default=0.0, init=False)
+    max_depth: float = field(default=0.0, init=False)
+    wet_perimeter: float = field(default=0.0, init=False)
+    r_hydraulic: float = field(default=0.0, init=False)
+    start_point: List[int] = field(default_factory=list)
 
     def __post_init__(self):
         # Определяем все водные сечения
@@ -207,7 +208,7 @@ class WaterSection:
             r_hydraulics.append(params['r_hydraulic'])
             combined_ws_x.extend(ws_x)
             combined_ws_y.extend(ws_y)
-        
+
         # Комбинируем результаты по всем сечениям
         self.width = sum(widths)
         self.area = sum(areas)
@@ -237,8 +238,8 @@ class WaterSection:
                     - seg_indices: индексы исходных точек,
                     - 0: служебное значение.
         """
-        x = self.x
-        y = self.y
+        x = self.profile_x_coords
+        y = self.profile_y_coords
         water_level = self.water_level
 
         if water_level < min(y):
@@ -332,8 +333,8 @@ class WaterSection:
         # Функция для линейной интерполяции x по дну, зная y
         def interpolate_x(y_target, idx1, idx2):
             """ Интерполирует x-координату для заданного уровня y по дну. """
-            x1, x2 = self.x[idx1], self.x[idx2]
-            y1, y2 = self.y[idx1], self.y[idx2]
+            x1, x2 = self.profile_x_coords[idx1], self.profile_x_coords[idx2]
+            y1, y2 = self.profile_y_coords[idx1], self.profile_y_coords[idx2]
             if y1 == y2:
                 return x1  # На случай горизонтального участка дна
             f = interpolate.interp1d([y1, y2], [x1, x2], fill_value="extrapolate")
@@ -344,25 +345,25 @@ class WaterSection:
         # срезания углов левой границы сегмента
         if seg_y[0] == water_level:
             first_index = seg_indices[0] if seg_indices[0] == 0 else seg_indices[0] - 1
-            if self.y[first_index] < water_level:  # Дно ниже уровня воды
-                x_interp = interpolate_x(self.y[first_index], first_index, first_index + 1)
+            if self.profile_y_coords[first_index] < water_level:  # Дно ниже уровня воды
+                x_interp = interpolate_x(self.profile_y_coords[first_index], first_index, first_index + 1)
 
                 # Вставляем точки чтобы избежать срезания углов
                 seg_x.insert(1, x_interp)  
-                seg_y.insert(1, self.y[first_index])
+                seg_y.insert(1, self.profile_y_coords[first_index])
                 seg_indices.insert(1, first_index)
 
         # Проверяем правую границу сегмента
         if seg_y[-1] == water_level:
-            last_index = seg_indices[-2] if seg_indices[-1] == self.x else seg_indices[-1]
-            if self.y[last_index] < water_level:  # Дно ниже уровня воды
-                x_interp = interpolate_x(self.y[last_index], last_index - 1, last_index)
+            last_index = seg_indices[-2] if seg_indices[-1] == self.profile_x_coords else seg_indices[-1]
+            if self.profile_y_coords[last_index] < water_level:  # Дно ниже уровня воды
+                x_interp = interpolate_x(self.profile_y_coords[last_index], last_index - 1, last_index)
                 # Проверяем не ровное ли дно на последних точках
-                if self.y[last_index] == self.y[last_index - 1]:
-                    x_interp = self.x[last_index]
+                if self.profile_y_coords[last_index] == self.profile_y_coords[last_index - 1]:
+                    x_interp = self.profile_x_coords[last_index]
                 # Вставляем точки чтобы избежать срезания углов
                 seg_x.insert(-1, x_interp)  
-                seg_y.insert(-1, self.y[last_index])
+                seg_y.insert(-1, self.profile_y_coords[last_index])
                 seg_indices.insert(-1, last_index)
 
         # Вычисление ширины сечения как разность между правой и левой границей
