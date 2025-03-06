@@ -3,19 +3,15 @@
 Hydraulic.Morfostvor.
 """
 
-import os
 import sys
 from pathlib import Path
 
 import numpy as np
-from docx import Document
 from pathvalidate import sanitize_filename
-
-import hydraulic.config as config
-
-from hydraulic.lib import rmdir, text_sanitize, get_pk
 from report.core import Report
-from hydraulic.graph import (GraphProfile, GraphQH, GraphQWVH, GraphFH, GraphQV, GraphQF, GraphQHV, GraphVH)
+
+from hydraulic import config
+from hydraulic.lib import get_pk, rmdir, text_sanitize
 
 
 def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
@@ -111,19 +107,19 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
 
     # Dictionary of curve configurations with their properties
     curves = [
-        {"config": "HYDRAULIC_CURVE", "fig": morfostvor.fig_QH.fig, "title": qh_title,
+        {"config": "HYDRAULIC_CURVE", "fig": morfostvor.fig_qh.fig, "title": qh_title,
          "message": "Вставляем график (кривая QH)"},
-        {"config": "QWVH_CURVE", "fig": morfostvor.fig_QWVH.fig, "title": qwvh_title,
+        {"config": "QWVH_CURVE", "fig": morfostvor.fig_qwvh.fig, "title": qwvh_title,
          "message": "Вставляем график (кривая QWVH)"},
-        {"config": "HYDRAULIC_AND_SPEED_CURVE", "fig": morfostvor.fig_QHV.fig, "title": qhv_title,
+        {"config": "HYDRAULIC_AND_SPEED_CURVE", "fig": morfostvor.fig_qhv.fig, "title": qhv_title,
          "message": "Вставляем график (кривая QHV)"},
-        {"config": "SPEED_CURVE", "fig": morfostvor.fig_QV.fig, "title": qv_title,
+        {"config": "SPEED_CURVE", "fig": morfostvor.fig_qv.fig, "title": qv_title,
          "message": "Вставляем график кривой скоростей QV"},
-        {"config": "SPEED_VH_CURVE", "fig": morfostvor.fig_VH.fig, "title": vh_title,
+        {"config": "SPEED_VH_CURVE", "fig": morfostvor.fig_vh.fig, "title": vh_title,
          "message": "Вставляем график кривой скоростей VH"},
-        {"config": "AREA_CURVE", "fig": morfostvor.fig_QF.fig, "title": qf_title,
+        {"config": "AREA_CURVE", "fig": morfostvor.fig_qf.fig, "title": qf_title,
          "message": "Вставляем график кривой площадей от расхода воды"},
-        {"config": "AREA_FH_CURVE", "fig": morfostvor.fig_FH.fig, "title": fh_title,
+        {"config": "AREA_FH_CURVE", "fig": morfostvor.fig_fh.fig, "title": fh_title,
          "message": "Вставляем график кривой площадей от уровня"}
     ]
 
@@ -146,8 +142,8 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Обеспеченность P, %",
             "Расход Q, м³/сек",
             f"Уровень H, м {config.ALTITUDE_SYSTEM}",
-            f"Средняя скорость Vср, м/сек",
-            f"Площадь живого сечения F, м²",
+            "Средняя скорость Vср, м/сек",
+            "Площадь живого сечения F, м²",
         ),
         col_widths=(6, 6, 6, 6, 6),
         col_format=(":g", ":g", ":.2f", ":.2f", ":.2f"),
@@ -169,7 +165,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x, decimal=True))
     topo_table = report.insert_df_to_table(
         topography_table,
-        f"Топографические данные створа",
+        "Топографические данные створа",
         col_names=(
             "ПК",
             f"Отметка, м {config.ALTITUDE_SYSTEM}",
@@ -180,7 +176,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         col_format=("", ":.2f", "", ":.3f", ":.2f"),
     )
 
-    # Объединение ячеек участков 
+    # Объединение ячеек участков
     for sector in morfostvor.sectors:
         if sector == morfostvor.sectors[-1]:
             report.merge_table_cells(
@@ -298,7 +294,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         col_widths=(5, 5, 5, 5, 5, 5, 5),
         col_format=(":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         footer_text=(
-            f"Расчётный шаг: {morfostvor.dH:g} см. "
+            f"Расчётный шаг: {morfostvor.dh:g} см. "
             f"В таблице приведён каждый {divider}-й результат расчёта."
         ),
     )

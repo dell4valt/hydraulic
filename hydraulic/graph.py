@@ -13,7 +13,7 @@ from matplotlib.patches import Rectangle
 
 # from hydraulic.profile import Morfostvor
 import hydraulic.config as config
-from hydraulic.lib import closest_upper_multiple, get_pk, text_sanitize
+from hydraulic.lib import closest_upper_multiple, get_pk, text_sanitize, chunk_list
 from hydraulic.models import WaterSection
 
 
@@ -141,18 +141,15 @@ class Graph:
     def clean(self):
         """Очистка осей графика и обнуление связанных переменных"""
         # Очищаем все оси
-        # plt.close(self.fig)
+        plt.close(self.fig)
 
-        for ax in vars(self):
-            if ax.startswith("ax"):
-                command = "self." + ax + ".cla()"
-                exec(command)
+        for attr in vars(self):
+            if attr.startswith("ax"):
+                getattr(self, attr).cla()
 
         # Очистка осей скоростей на совмещенном графике
-        try:
+        if hasattr(self, "ax_secondary"):
             self.ax_secondary.cla()
-        except:
-            pass
 
         # Обнуляем границы y
         self._y_limits = []
@@ -175,7 +172,7 @@ class GraphCurve(Graph):
         """
         try:
             if config.HYDRAULIC_CURVE_LEVELS:
-                for index, row in morfostvor.levels_result.iterrows():
+                for _, row in morfostvor.levels_result.iterrows():
                     x1, x2 = 0, row[x]
                     y1, y2 = row[y], row[y]
 
@@ -184,7 +181,7 @@ class GraphCurve(Graph):
                         water_level_text = ax.text(
                             0.002,
                             row[y],
-                            f"▼$P_{{{row['P']:.2g}\\%}} = {row[y]:.2f}$",
+                            f"$P_{{{row['P']:.2g}\\%}} = {row[y]:.2f}$",
                             color=config.COLOR["water_level_text"],
                             fontsize=config.FONT_SIZE["water_level"],
                             weight="bold",
@@ -203,7 +200,7 @@ class GraphCurve(Graph):
                         water_level_text = ax.text(
                             0.002,
                             row[y],
-                            f"▼${row['P']} = {row[y]:.2f}$",
+                            f"${row['P']} = {row[y]:.2f}$",
                             color=config.COLOR["water_level_text"],
                             fontsize=config.FONT_SIZE["water_level"],
                             weight="bold",
@@ -266,7 +263,6 @@ class GraphCurve(Graph):
             )
         # Подписи на линиях
         labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
-
 
     def draw_legend(self, ax: plt.subplot):
         # Отрисовка легенды
@@ -423,7 +419,7 @@ class GraphQWVH(GraphCurve):
         ax.spines["left"].set_clip_path(clip_rect)
 
         # Отрисовка линий
-        for index, row in morfostvor.levels_result.iterrows():
+        for _, row in morfostvor.levels_result.iterrows():
             if x == "V":
                 x_max = row[x]
 
@@ -465,7 +461,7 @@ class GraphQWVH(GraphCurve):
         step_x = (x_lim[-1] - x_lim[0]) / 10
         step_y = (y_lim[-1] - y_lim[0]) / 10
 
-        for index, row in morfostvor.levels_result.iterrows():
+        for _, row in morfostvor.levels_result.iterrows():
             x = step_x / 5
             y = row[y_col] + step_y / 20
 
@@ -533,7 +529,7 @@ class GraphQWVH(GraphCurve):
             - step_y * 10 * x_ax_v_offset
         )
 
-        for index, row in morfostvor.levels_result.iterrows():
+        for _, row in morfostvor.levels_result.iterrows():
             x = row[x_col]
             y = x_ax_position_on_y
 
@@ -682,7 +678,7 @@ class GraphQHV(GraphCurve):
             linestyle='-.'
         )
 
-        ax_secondary.set_ylim(df.loc[("Сумма"), yy].min(), df.loc[("Сумма"), yy].max()+0.5)
+        ax_secondary.set_ylim(df.loc[("Сумма"), yy].min(), df.loc[("Сумма"), yy].max() + 0.5)
 
         # Отрисовка кривых по участкам
         for sector in sectors:
@@ -969,11 +965,8 @@ class GraphProfile(Graph):
                     )
 
                 except ValueError:
-                    print(
-                        "\nОшибка в указании параметров участков (коэффициент шероховатости \
-                        или разделение на участки). Проверить данные."
-                    )
-                    sys.exit(1)
+                    raise("\nОшибка в указании параметров участков (коэффициент шероховатости \
+                        или разделение на участки). Проверить данные.")
 
                 # Разделители коэффициентов шероховатости
                 # Левая граница
@@ -1235,7 +1228,7 @@ class GraphProfile(Graph):
                 if config.SITUATION_COLORS:
                     self.ax_bottom.add_patch(
                         Rectangle(
-                            (x1, y_bot), (x2-x1), hs,
+                            (x1, y_bot), (x2 - x1), hs,
                             facecolor=sector.get_color(),
                             fill=True))
 
@@ -1892,7 +1885,7 @@ class GraphProfile(Graph):
                 # Вставляем подписи урезов в аннотацию
                 insert_water_levels_label(self, x1, y1 + y_step * 0.9, 0)
 
-                # Устанавливаем предыдущие координаты для 
+                # Устанавливаем предыдущие координаты для следующего цикла
                 prev_y1 = y1
                 prev_x0 = x0
 
@@ -1992,14 +1985,14 @@ class GraphProfile(Graph):
         """Функция отрисовки смоченного периметра на графике поперечного профиля"""
 
         # Проверяем задан ли расчётный шаг в исходных данных
-        if isinstance(self.morfostvor.dH, str) or self.morfostvor.dH == 0:
-            self.morfostvor.dH = 1
-            dH = self.morfostvor.dH
+        if isinstance(self.morfostvor.dh, str) or self.morfostvor.dh == 0:
+            self.morfostvor.dh = 1
+            dh = self.morfostvor.dh
         else:
-            dH = self.morfostvor.dH
+            dh = self.morfostvor.dh
 
         # Переводим сантиметры приращения в метры
-        dH = dH / 100
+        dh = dh / 100
 
         min_sector = self.morfostvor.get_min_sector()
 
@@ -2007,7 +2000,7 @@ class GraphProfile(Graph):
         calc_sectors = [min_sector[0]]
 
         # Уровень воды, с минимальным отступом
-        water_level = min(self.morfostvor.y) + dH
+        water_level = min(self.morfostvor.y) + dh
 
         # Цикл расчёта до максимального уровня воды
         while water_level < self.morfostvor.levels_result['H'].max():
@@ -2100,7 +2093,7 @@ class GraphProfile(Graph):
                             color="black",
                         )
 
-            water_level += dH
+            water_level += dh
 
     def _update_limit(self):
         # Шаг засечек по вертикали

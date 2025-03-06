@@ -147,7 +147,7 @@ class Morfostvor:
     ele_max: float = 0
     ele_min: float = 0
     date: str = ""
-    dH: int = 5
+    dh: int = 5
     waterline: float = 0
     erosion_limit: float = 0
     erosion_limit_coord: list = field(default_factory=list)
@@ -409,7 +409,7 @@ class Morfostvor:
         if not isinstance(self.waterline, str):
             self.waterline = round(self.waterline, 2)
 
-        self.dH = __raw_data[5][__description_col]  # Расчётный шаг по глубине
+        self.dh = __raw_data[5][__description_col]  # Расчётный шаг по глубине
         self.coords = __raw_data[6][__description_col]  # Координаты
 
         # Считываем отметку предела размыва (в скобках можно указать границы)
@@ -479,32 +479,32 @@ class Morfostvor:
         for sector in self.sectors:
             try:
                 if wl >= df.loc[sector.name].index.min() and wl <= df.loc[sector.name].index.max():
-                    fQ = interpolate.interp1d(
+                    fq = interpolate.interp1d(
                         df.loc[(sector.name), "Q"].index,
                         df.loc[(sector.name), "Q"].values,
                     )
-                    fV = interpolate.interp1d(
+                    fv = interpolate.interp1d(
                         df.loc[(sector.name), "V"].index,
                         df.loc[(sector.name), "V"].values,
                     )
-                    fH = interpolate.interp1d(
+                    fh = interpolate.interp1d(
                         df.loc[(sector.name), "Hср"].index,
                         df.loc[(sector.name), "Hср"].values,
                     )
-                    fB = interpolate.interp1d(
+                    fb = interpolate.interp1d(
                         df.loc[(sector.name), "B"].index,
                         df.loc[(sector.name), "B"].values,
                     )
-                    fF = interpolate.interp1d(
+                    ff = interpolate.interp1d(
                         df.loc[(sector.name), "F"].index,
                         df.loc[(sector.name), "F"].values,
                     )
 
-                    q = float(fQ(wl))
-                    h = float(fH(wl))
-                    v = float(fV(wl))
-                    b = float(fB(wl))
-                    f = float(fF(wl))
+                    q = float(fq(wl))
+                    h = float(fh(wl))
+                    v = float(fv(wl))
+                    b = float(fb(wl))
+                    f = float(ff(wl))
             except KeyError:
                 q, h, v, b, f = np.nan, np.nan, np.nan, np.nan, np.nan
 
@@ -533,17 +533,17 @@ class Morfostvor:
         # Подбираем параметры суммирующей кривой
         sum_text = 'Сумма'
 
-        fQ = interpolate.interp1d(df.loc[(sum_text), 'Q'].index, df.loc[(sum_text), 'Q'].values)
-        fV = interpolate.interp1d(df.loc[(sum_text), 'V'].index, df.loc[(sum_text), 'V'].values)
-        fH = interpolate.interp1d(df.loc[(sum_text), 'Hср'].index, df.loc[(sum_text), 'Hср'].values)
-        fB = interpolate.interp1d(df.loc[(sum_text), 'B'].index, df.loc[(sum_text), 'B'].values)
-        fF = interpolate.interp1d(df.loc[(sum_text), 'F'].index, df.loc[(sum_text), 'F'].values)
+        fq = interpolate.interp1d(df.loc[(sum_text), 'Q'].index, df.loc[(sum_text), 'Q'].values)
+        fv = interpolate.interp1d(df.loc[(sum_text), 'V'].index, df.loc[(sum_text), 'V'].values)
+        fh = interpolate.interp1d(df.loc[(sum_text), 'Hср'].index, df.loc[(sum_text), 'Hср'].values)
+        fb = interpolate.interp1d(df.loc[(sum_text), 'B'].index, df.loc[(sum_text), 'B'].values)
+        ff = interpolate.interp1d(df.loc[(sum_text), 'F'].index, df.loc[(sum_text), 'F'].values)
 
-        q = round(float(fQ(wl)), 3)
-        h = round(float(fH(wl)), 3)
-        v = round(float(fV(wl)), 3)
-        b = round(float(fB(wl)), 3)
-        f = round(float(fF(wl)), 3)
+        q = round(float(fq(wl)), 3)
+        h = round(float(fh(wl)), 3)
+        v = round(float(fv(wl)), 3)
+        b = round(float(fb(wl)), 3)
+        f = round(float(ff(wl)), 3)
 
         sum_row = {
             'name': "Все участки",
@@ -566,16 +566,16 @@ class Morfostvor:
         :return: [Номер по списку, [Участок]]
         """
 
-        id = 0
+        sector_id = 0
         i = 0
         min_sector = self.sectors[0]
 
         for sector in self.sectors:
             if min(sector.coord[1]) < min(min_sector.coord[1]):
                 min_sector = sector
-                id = i
+                sector_id = i
             i += 1
-        return (id, min_sector)
+        return (sector_id, min_sector)
 
     def get_q_max(self):
         """
@@ -585,10 +585,10 @@ class Morfostvor:
         """
         q_max = float(self.probability[0][1])
         obsp = self.probability[0][0]
-        for Q in self.probability:
-            if q_max <= Q[1]:
-                q_max = Q[1]
-                obsp = Q[0]
+        for q in self.probability:
+            if q_max <= q[1]:
+                q_max = q[1]
+                obsp = q[0]
 
         return (obsp, q_max)
 
@@ -598,14 +598,14 @@ class Morfostvor:
         consumption_check = self.get_q_max()[1] + (self.get_q_max()[1] * 0.20)
 
         # Проверяем задан ли расчётный шаг в исходных данных
-        if isinstance(self.dH, str) or self.dH == 0:
-            self.dH = 1
-            dH = self.dH
+        if isinstance(self.dh, str) or self.dh == 0:
+            self.dh = 1
+            dh = self.dh
         else:
-            dH = self.dH
+            dh = self.dh
 
         # Переводим сантиметры приращения в метры
-        dH = dH / 100
+        dh = dh / 100
 
         min_sector = self.get_min_sector()
 
@@ -613,7 +613,7 @@ class Morfostvor:
         calc_sectors = [min_sector[0]]
 
         # Уровень воды, с минимальным отступом
-        water_level = min(self.y) + dH
+        water_level = min(self.y) + dh
 
         # Обнулённые переменные
         consumption_summ = 0
@@ -767,7 +767,7 @@ class Morfostvor:
             )
             df = pd.concat([df, pd.DataFrame.from_records([r_sum])], ignore_index=True)
 
-            water_level += dH
+            water_level += dh
             n += 1
 
         # TODO: remake to use one dataframe
@@ -801,13 +801,13 @@ class Morfostvor:
 
         self.fig_profile = GraphProfile(self)
 
-        self.fig_QH = GraphQH(self)
-        self.fig_QHV = GraphQHV(self)
-        self.fig_QV = GraphQV(self)
-        self.fig_VH = GraphVH(self)
-        self.fig_QF = GraphQF(self)
-        self.fig_FH = GraphFH(self)
-        self.fig_QWVH = GraphQWVH(morfostvor=self)
+        self.fig_qh = GraphQH(self)
+        self.fig_qhv = GraphQHV(self)
+        self.fig_qv = GraphQV(self)
+        self.fig_vh = GraphVH(self)
+        self.fig_qf = GraphQF(self)
+        self.fig_fh = GraphFH(self)
+        self.fig_qwvh = GraphQWVH(self)
 
         return df
 
@@ -815,12 +815,12 @@ class Morfostvor:
         result = pd.DataFrame(columns=["P", "Q", "H", "F"])
 
         for prob in self.probability:
-            fQ = interpolate.interp1d(df["Q"], df.index)
-            fV = interpolate.interp1d(df["Q"], df["V"])
-            fF = interpolate.interp1d(df["Q"], df["F"])
-            h = float(fQ(prob[1]))
-            v = float(fV(prob[1]))
-            f = float(fF(prob[1]))
+            fq = interpolate.interp1d(df["Q"], df.index)
+            fv = interpolate.interp1d(df["Q"], df["V"])
+            ff = interpolate.interp1d(df["Q"], df["F"])
+            h = float(fq(prob[1]))
+            v = float(fv(prob[1]))
+            f = float(ff(prob[1]))
 
             # Удаляем столбцы полностью состоящие из NaN для избежания предупреждения
             # Pandas: FutureWarning concatenation with empty or all-NA entries is deprecated
