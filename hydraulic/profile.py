@@ -19,7 +19,7 @@ from hydraulic.lib import (chunk_list, insert_summary_QV_tables,
                            question_continue_app)
 from hydraulic.models import (ProfileSector, SituationBorder, SituationSector,
                               WaterSection)
-from hydraulic.profile_report import generate_morfostvor_report, save_graphic
+from hydraulic.report import generate_morfostvor_report, save_graphic
 
 # Отключаем все UserWarning (предупреждения от labellines)
 warnings.filterwarnings("ignore", category=UserWarning)

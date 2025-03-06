@@ -1848,7 +1848,6 @@ class GraphProfile(Graph):
                 x1 = x0
                 if prev_x0 and x1 < prev_x0:
                     x1 = prev_x0 + x_step * 2
-                    print("prev_x0 and x1 < prev_x0")
 
                 # Множитель для расчета длины выноски аннотации
                 if water_level < 100:
