@@ -920,7 +920,8 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         stvor.calculate()
         __compute_time = time.time() - __start_time
         __report_start_time = time.time()
-        generate_morfostvor_report(stvor, out_filename)
+        if config.SAVE_REPORT:
+            generate_morfostvor_report(stvor, out_filename)
         if config.PROFILE_SAVE_PICTURES or config.CURVE_SAVE_PICTURES:
             save_graphic(stvor, str(Path(out_filename).parents[0]))
 
@@ -943,14 +944,15 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         for i in range(page_quantity):
             stvors.append(single_page(in_filename, out_filename, i))
 
-        # Вставка сводных таблиц
-        __summary_start_time = time.time()
-        insert_summary_QV_tables(stvors, out_filename)
-        if config.DEBUG:
-            print(
-                f"\n--- Вставка сводных таблиц: "
-                f"{time.time() - __summary_start_time:.4f} секунд ---"
-            )
+        if config.SAVE_REPORT:
+            # Вставка сводных таблиц
+            __summary_start_time = time.time()
+            insert_summary_QV_tables(stvors, out_filename)
+            if config.DEBUG:
+                print(
+                    f"\n--- Вставка сводных таблиц: "
+                    f"{time.time() - __summary_start_time:.4f} секунд ---"
+                )
 
     # Расчет только одного листа xls файла
     elif isinstance(page, int):

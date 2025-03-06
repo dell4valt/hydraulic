@@ -50,6 +50,7 @@ PROFILE_SIZE = (16.5, 14)
 
 # Режим отладки (вывод информации о скорости выполнения модулей)
 DEBUG = True
+SAVE_REPORT = False
 
 COLOR = {
     'text': 'black',  # Основной для текста
