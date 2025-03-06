@@ -40,43 +40,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     temp_dir = Path(config.TEMP_DIR_NAME)
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    # Отрисовка смоченного периметра
-    if config.PROFILE_WET_PERIMETER:
-        morfostvor.fig_profile.draw_wet_perimeter()
 
-    # Отрисовка верхней границы сооружения
-    if morfostvor.top_limit:
-        morfostvor.fig_profile.draw_top_limit(
-            morfostvor.top_limit, text=morfostvor.top_limit_description
-        )
-
-    # Отрисовка границы предельного размыва профиля
-    if morfostvor.erosion_limit and len(morfostvor.erosion_limit_coord) == 2:
-        morfostvor.fig_profile.draw_erosion_limit(
-            morfostvor.erosion_limit,
-            morfostvor.erosion_limit_coord[0],
-            morfostvor.erosion_limit_coord[1])
-    elif morfostvor.erosion_limit and len(morfostvor.erosion_limit_coord) == 4:
-        morfostvor.fig_profile.draw_erosion_limit(
-            morfostvor.erosion_limit,
-            morfostvor.erosion_limit_coord[0],
-            morfostvor.erosion_limit_coord[1],
-            morfostvor.erosion_limit_coord[2],
-            morfostvor.erosion_limit_coord[3])
-    elif morfostvor.erosion_limit:
-        morfostvor.fig_profile.draw_erosion_limit(morfostvor.erosion_limit)
-
-    # Отрисовка расчетных уровней воды на графике профиля
-    morfostvor.fig_profile.draw_levels_on_profile(morfostvor.levels_result)
-    morfostvor.fig_profile._update_limit()
-
-    # TODO: сделать отрисовку линий урезов воды по каждому
-    # участку УВ из описания ситуации исходного файла
-    # Отрисовка урез воды на графике профиля
-    if morfostvor.waterline and type(morfostvor.waterline) != str:
-        morfostvor.fig_profile.draw_waterline(
-            round(morfostvor.waterline, 2), color="blue", linestyle="-"
-        )
 
     if config.GRAPHICS_TITLES_TEXT:
         profile_title = f"{morfostvor.fig_profile.morfostvor.title}"

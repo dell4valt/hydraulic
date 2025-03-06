@@ -809,6 +809,43 @@ class Morfostvor:
         self.fig_fh = GraphFH(self)
         self.fig_qwvh = GraphQWVH(self)
 
+        # Отрисовка смоченного периметра
+        if config.PROFILE_WET_PERIMETER:
+            self.fig_profile.draw_wet_perimeter()
+
+        # Отрисовка верхней границы сооружения
+        if self.top_limit:
+            self.fig_profile.draw_top_limit(
+                self.top_limit, text=self.top_limit_description
+            )
+
+        # Отрисовка границы предельного размыва профиля
+        if self.erosion_limit and len(self.erosion_limit_coord) == 2:
+            self.fig_profile.draw_erosion_limit(
+                self.erosion_limit,
+                self.erosion_limit_coord[0],
+                self.erosion_limit_coord[1])
+        elif self.erosion_limit and len(self.erosion_limit_coord) == 4:
+            self.fig_profile.draw_erosion_limit(
+                self.erosion_limit,
+                self.erosion_limit_coord[0],
+                self.erosion_limit_coord[1],
+                self.erosion_limit_coord[2],
+                self.erosion_limit_coord[3])
+        elif self.erosion_limit:
+            self.fig_profile.draw_erosion_limit(self.erosion_limit)
+
+        # Отрисовка расчетных уровней воды на графике профиля
+        self.fig_profile.draw_levels_on_profile(self.levels_result)
+        self.fig_profile._update_limit()
+
+        # TODO: сделать отрисовку линий урезов воды по каждому
+        # участку УВ из описания ситуации исходного файла
+        # Отрисовка урез воды на графике профиля
+        if self.waterline and type(self.waterline) != str:
+            self.fig_profile.draw_waterline(
+                round(self.waterline, 2), color="blue", linestyle="-"
+            )
         return df
 
     def get_prob_table(self, df: pd.DataFrame):
