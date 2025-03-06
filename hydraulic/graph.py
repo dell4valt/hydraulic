@@ -1688,24 +1688,22 @@ class GraphProfile(Graph):
         """
 
         def draw_line(self):
-            for boundary in water.boundary():
-                # Вводим служебные координаты
-                x1, x2 = boundary[0][0], boundary[0][1]  # Начало и конец x
-                y1, y2 = boundary[1][0], boundary[1][1]  # отметки уреза
-
-                # Рисуем урез воды
+            water = WaterSection(self.morfostvor.x, self.morfostvor.y, h)
+            for segment in water.segments:
                 self.ax.plot(
-                    [x1, x2],
-                    [y1, y2],
+                    [segment[0][0], segment[0][-1]],
+                    [segment[1][0], segment[1][-1]],
                     color=color,
                     linestyle=linestyle,
                     linewidth=linewidth,
+                    zorder=5
                 )
 
+                # Заливка урезов в русле
                 if config.PROFILE_WATER_FILL:
                     self.ax.fill(
-                        water.water_section_x,
-                        water.water_section_y,
+                        segment[0],
+                        segment[1],
                         facecolor=config.COLOR["water_fill"],
                         alpha=0.2,
                     )
@@ -2002,7 +2000,7 @@ class GraphProfile(Graph):
         water_level = min(self.morfostvor.y) + dh
 
         # Цикл расчёта до максимального уровня воды
-        while water_level < self.morfostvor.levels_result['H'].max():
+        while water_level < self.morfostvor.levels_result["H"].max():
             if config.OVERFLOW:
                 for i in calc_sectors:
                     sector = self.morfostvor.sectors[i]
@@ -2074,23 +2072,19 @@ class GraphProfile(Graph):
                         # Сектор воды и основные его параметры
                         water = WaterSection(x, y, water_level)
 
-                        # Отрисовка смоченного периметра на профиле
-                        self.ax.plot(
-                            water.water_section_x,
-                            water.water_section_y,
-                            ":",
-                            marker="o",
-                            linewidth=1,
-                            color="black",
-                            markersize=3,
-                        )
-                        self.ax.plot(
-                            [water.water_section_x[0], water.water_section_x[-1]],
-                            [water.water_section_y[0], water.water_section_y[-1]],
-                            ":",
-                            linewidth=1,
-                            color="black",
-                        )
+                        # Отрисовка смоченного периметра для каждого сегмента
+                        for segment in water.segments:
+                            self.ax.fill(
+                                segment[0],
+                                segment[1],
+                                facecolor="red",
+                                edgecolor="black",
+                                fill=False,
+                                linestyle=":",
+                                alpha=0.6,
+                                linewidth=2,
+                                zorder=10,
+                            )
 
             water_level += dh
 

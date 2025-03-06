@@ -150,25 +150,24 @@ class SituationBorder:
 
 @dataclass
 class WaterSection:
-    """Класс водного сечения
+    """
+    Класс водного сечения
 
-    :param x: Точки x всего профиля
-    :param y: Точки y всего профиля
+    :param x: Список x-координат всего профиля
+    :param y: Список y-координат всего профиля
     :param water_level: Уровень воды
-    :param water_section_x: Точки x водного сечения
-    :param water_section_y: Точки y водного сечения
+    :param water_section_x: Список x-координат водного сечения (будет заполнен)
+    :param water_section_y: Список y-координат водного сечения (будет заполнен)
     :param width: Ширина водного сечения
     :param area: Площадь водного сечения
     :param average_depth: Средняя глубина
     :param max_depth: Максимальная глубина
-    :param wet_perimeter: Смоченный периметр
+    :param wet_perimeter: Смочённый периметр
     :param r_hydraulic: Гидравлический радиус
-    :param start_point: Точка начала расчёта [point_index, y]
-
+    :param start_point: Точка начала расчёта [index, y] (необязательный параметр)
     """
-
-    x: float
-    y: float
+    x: list
+    y: list
     water_level: float
     water_section_x: list = field(default_factory=list)
     water_section_y: list = field(default_factory=list)
@@ -181,191 +180,217 @@ class WaterSection:
     start_point: list = field(default_factory=list)
 
     def __post_init__(self):
-        # start_point=[self.y.index(min(self.y)), min(self.y)]
-        boundary = self.boundary()
-        if len(boundary) > 1:
-            for water_boundary in boundary:
-                try:
-                    self._calculate_parameters(water_boundary)
-                except IndexError:
-                    print(
-                        "Ошибка в определении границ урезов! Программа будет завершена."
-                    )
-                    sys.exit(2)
+        # Определяем все водные сечения
+        self.segments = self.get_water_sections()
+        segments = self.segments
+        if not segments:
+            raise ValueError("Ошибка! Не удалось определить сечения.")
 
-            # Вычисления если урезов несколько
-            self.width = sum(self.width)
-            self.area = sum(self.area)
-            self.average_depth = np.average(self.average_depth)
-            self.max_depth = max(self.max_depth)
-            self.wet_perimeter = sum(self.wet_perimeter)
-            self.r_hydraulic = sum(self.r_hydraulic)
+        # Списки для хранения параметров по каждому сечению
+        widths = []
+        areas = []
+        avg_depths = []
+        max_depths = []
+        perimeters = []
+        r_hydraulics = []
+        combined_ws_x = []
+        combined_ws_y = []
 
-        else:
-            try:
-                self._calculate_parameters(boundary[0])
-            except IndexError:
-                print("Ошибка в определении границ урезов! Программа будет завершена.")
-                sys.exit(2)
+        # Вычисляем параметры для каждого сечения
+        for seg in segments:
+            params, ws_x, ws_y = self._calculate_parameters(seg)
+            widths.append(params['width'])
+            areas.append(params['area'])
+            avg_depths.append(params['average_depth'])
+            max_depths.append(params['max_depth'])
+            perimeters.append(params['wet_perimeter'])
+            r_hydraulics.append(params['r_hydraulic'])
+            combined_ws_x.extend(ws_x)
+            combined_ws_y.extend(ws_y)
+        
+        # Комбинируем результаты по всем сечениям
+        self.width = sum(widths)
+        self.area = sum(areas)
+        self.average_depth = np.average(avg_depths) if avg_depths else 0
+        self.max_depth = max(max_depths) if max_depths else 0
+        self.wet_perimeter = sum(perimeters)
+        self.r_hydraulic = sum(r_hydraulics)
+        self.water_section_x = combined_ws_x
+        self.water_section_y = combined_ws_y
 
-    def boundary(self):
+    def get_water_sections(self):
+        """Определяет все непрерывные водные сечения в профиле.
+        Алгоритм:
+          1. Если water_level ниже минимального y – завершаем работу.
+          2. Проходим по всем точкам профиля с фиксацией состояния "в сечении"/"не в сечении":
+             - При переходе из надводного (y > water_level) в подводное (y <= water_level)
+               интерполируем точку пересечения – это левая граница сечения.
+             - При переходе из подводного в надводное интерполируем правую границу,
+               собираем все точки сечения и сохраняем найденное сечение.
+          3. Если профиль заканчивается под водой, завершаем последнее сечение.
+
+        Returns:
+          list: Список сечений, где каждое сечение представлено списком:
+                [seg_x, seg_y, seg_indices, 0]
+                    - seg_x: список x-координат (включая интерполированные границы),
+                    - seg_y: список y-координат (границы – water_level, внутренние – реальные),
+                    - seg_indices: индексы исходных точек,
+                    - 0: служебное значение.
+        """
         x = self.x
         y = self.y
-        water_level = self.water_level  # Отметка уреза воды
-        water_boundary_x, water_boundary_y, water_boundary_points = [], [], []
-        result = []
-        start_point = self.start_point
-
-        if not start_point:
-            start_point = [y.index(min(y)), min(y)]
-
-        # Проверка на ошибку расположения уреза под поверхностью дна
-        if water_level < min(y):
-            print(
-                "Ошибка! Уровень воды ниже низшей точки дна. Программа будет завершена с ошибкой."
-            )
-            sys.exit(1)
-        else:
-            # Цикл влево от стартовой точки
-            for i in range(start_point[0], -1, -1):
-                # Если индекс минимальной отметки совпадает с левой правой участка
-                if start_point[0] == 0 and y[start_point[0]] <= water_level:
-                    water_boundary_x.append(x[0])
-                    water_boundary_y.append(water_level)
-                    water_boundary_points.append(0)
-                    break
-
-                # Условие пересечения уреза с дном
-                if y[i - 1] >= water_level and y[i] <= water_level:
-                    x1, x2 = x[i - 1], x[i]
-                    y1, y2 = y[i - 1], y[i]
-
-                    # Нахождение координаты x уреза между точками дна
-                    f = interpolate.interp1d([y1, y2], [x1, x2])
-                    # Находим координату x, зная y (точка пересечения уреза с дном)
-                    water_boundary_x.append(float(f(water_level)))
-                    water_boundary_y.append(water_level)
-                    # Присоединяем номер точки дна с границей воды
-                    water_boundary_points.append(i - 1)
-                    break  # Прерываем поиск если нашли пересечение
-
-                # Условие отсутствия пересечения с дном и дохождения до начала участка
-                elif i - 1 == 0 and y[i - 1] <= water_level:
-                    water_boundary_x.append(x[i - 1])
-                    water_boundary_y.append(water_level)
-                    water_boundary_points.append(i - 1)
-                    break  # Прерываем поиск если нашли пересечение
-
-            # Цикл вправо от стартовой точки
-            for i in range(start_point[0], len(y) - 1):
-                # Условие пересечения уреза с дном
-                if y[i] <= water_level and y[i + 1] >= water_level:
-                    x1, x2 = x[i], x[i + 1]
-                    y1, y2 = y[i], y[i + 1]
-
-                    # Нахождение координаты x уреза между точками дна
-                    f = interpolate.interp1d([y1, y2], [x1, x2])
-                    # Находим координату x, зная y (точка пересечения уреза с дном)
-                    water_boundary_x.append(float(f(water_level)))
-                    water_boundary_y.append(water_level)
-                    # Присоединяем номер точки дна с границей воды
-                    water_boundary_points.append(i)
-                    break  # Прерываем поиск если нашли пересечение
-
-                elif i + 1 == len(y) - 1 and y[len(y) - 1] <= water_level:
-                    water_boundary_x.append(x[len(x) - 1])
-                    water_boundary_y.append(water_level)
-                    water_boundary_points.append(i + 1)
-                    break  # Прерываем поиск если нашли пересечение
-
-            # Если индекс минимальной отметки совпадает с правой границей участка
-            if start_point[0] == len(y) - 1 and y[start_point[0]] <= water_level:
-                water_boundary_x.append(x[len(y) - 1])
-                water_boundary_y.append(water_level)
-                water_boundary_points.append(len(y) - 1)
-
-            result.append(
-                [water_boundary_x, water_boundary_y, water_boundary_points, 0]
-            )
-        return result
-
-    # Функция выполняющая основные вычисления по данному водному сечению
-    def _calculate_parameters(self, water_boundary):
-        sum_sqr = 0
         water_level = self.water_level
-        x = self.x
-        y = self.y
-        depth = []
 
-        # Обрабатываем урезы по две точки (со второй до третьей пропускам)
-        # Вводим служебные координаты (первая и последняя точки)
-        x1, x2 = water_boundary[0][0], water_boundary[0][1]
-        y1, y2 = water_boundary[1][0], water_boundary[1][1]
+        if water_level < min(y):
+            print("Ошибка! Уровень воды ниже низшей точки дна. Программа будет завершена с ошибкой.")
+            sys.exit(1)
 
-        # Точки смоченного периметра (номера точек под урезом)
-        water_section_x = x[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
-        water_section_y = y[water_boundary[2][0] + 1: water_boundary[2][1] + 1]
+        segments = []
+        in_segment = False
+        segment_start_index = None
+        segment_start_x = None
 
-        water_section_x.insert(0, x1)
-        water_section_x.insert(len(water_section_x), x2)
+        n = len(y)
 
-        water_section_y.insert(0, y1)
-        water_section_y.insert(len(water_section_y), y2)
+        # Если первая точка уже под водой, начинаем сечение с начала
+        if y[0] <= water_level:
+            in_segment = True
+            segment_start_index = 0
+            segment_start_x = x[0]
 
-        # Если первая точка УВ выше первой точки дна, вставляем точку дна на второе место
-        # TODO: Костыль для определения полигона водной поверхности для расчёта с переливом
-        #  и одновременным заполнением, нужно продумать как исправить
-        if config.OVERFLOW:  # исходные данные точек x и y по всему профилю
-            if water_level > y[water_boundary[2][0]]:
-                water_section_x.insert(1, x[0])
-                water_section_y.insert(1, y[0])
-        else:  # исходные данные точек x и y по участкам
-            if water_level > y[0]:
-                water_section_x.insert(1, x[0])
-                water_section_y.insert(1, y[0])
+        for i in range(n - 1):
+            # Переход из надводного в подводное – начало сечения
+            if not in_segment and y[i] > water_level and y[i+1] <= water_level:
+                f = interpolate.interp1d([y[i], y[i+1]], [x[i], x[i+1]])
+                segment_start_x = float(f(water_level))
+                segment_start_index = i
+                in_segment = True
 
-        # Если последняя точка УВ выше последней точки дна, вставляем точку на предпоследнее место
-        if water_boundary[3] > 1 and water_level > y[-1]:
-            water_section_x.insert(len(water_section_x) - 1, x[-1])
-            water_section_y.insert(len(water_section_y) - 1, y[-1])
+            # Переход из подводного в надводное – конец сечения
+            elif in_segment and y[i] <= water_level and y[i+1] > water_level:
+                f = interpolate.interp1d([y[i], y[i+1]], [x[i], x[i+1]])
+                segment_end_x = float(f(water_level))
+                segment_end_index = i + 1
 
-        # Координаты x и y смоченного периметра
-        self.water_section_x = water_section_x
-        self.water_section_y = water_section_y
+                # Собираем точки сечения: начинаем с левой границы
+                seg_x = [segment_start_x]
+                seg_y = [water_level]
+                seg_indices = [segment_start_index]
+                # Добавляем все точки между началом и концом, которые находятся под или на water_level
+                for j in range(segment_start_index + 1, i + 1):
+                    if y[j] <= water_level:
+                        seg_x.append(x[j])
+                        seg_y.append(y[j])
+                        seg_indices.append(j)
+                # Добавляем правую границу
+                seg_x.append(segment_end_x)
+                seg_y.append(water_level)
+                seg_indices.append(segment_end_index)
 
-        # Определяем ширину водной поверхности
-        self.width = x2 - x1
+                segments.append([seg_x, seg_y, seg_indices])
+                in_segment = False
 
-        # Площадь воды
-        self.area = poly_area(water_section_x, water_section_y)
+        # Если профиль заканчивается под водой, завершаем последнее сечение
+        if in_segment:
+            if y[-1] <= water_level:
+                segment_end_x = x[-1]
+                segment_end_index = n - 1
+            else:
+                f = interpolate.interp1d([y[-2], y[-1]], [x[-2], x[-1]])
+                segment_end_x = float(f(water_level))
+                segment_end_index = n - 2
 
-        # Глубины
-        for i in range(len(water_section_y)):
-            depth.append(water_level - water_section_y[i])
+            seg_x = [segment_start_x]
+            seg_y = [water_level]
+            seg_indices = [segment_start_index]
+            for j in range(segment_start_index + 1, n):
+                if y[j] <= water_level:
+                    seg_x.append(x[j])
+                    seg_y.append(y[j])
+                    seg_indices.append(j)
+            seg_x.append(segment_end_x)
+            seg_y.append(water_level)
+            seg_indices.append(segment_end_index)
+            segments.append([seg_x, seg_y, seg_indices])
+        return segments
 
-        # Средняя глубина
-        if self.area > 0 and self.width > 0:
-            self.average_depth = self.area / self.width
-        else:
-            self.average_depth = 0
+    def _calculate_parameters(self, water_boundary):
+        """
+        Вычисляет параметры водного сечения для одного сегмента.
 
-        if self.average_depth == 0:  # Костыль
-            self.average_depth = 0.00001
+        Args:
+            water_boundary: список вида [seg_x, seg_y, seg_indices]
 
-        # Максимальная глубина
-        self.max_depth = max(depth)
+        Returns:
+            list: список вида [width, area, average_depth, max_depth, wet_perimeter, r_hydraulic]
+            list: список x-координат водного сечения (с границами)
+            list: список y-координат водного сечения (с границами)
+        """
+        seg_x, seg_y, seg_indices = water_boundary
+        water_level = self.water_level
 
-        # Смоченный периметр
-        for i in range(len(water_section_x) - 1):
-            sum_sqr += (water_section_x[i + 1] - water_section_x[i]) ** 2
-        self.w_perimeter = np.sqrt(sum_sqr)
+        # Функция для линейной интерполяции x по дну, зная y
+        def interpolate_x(y_target, idx1, idx2):
+            """ Интерполирует x-координату для заданного уровня y по дну. """
+            x1, x2 = self.x[idx1], self.x[idx2]
+            y1, y2 = self.y[idx1], self.y[idx2]
+            if y1 == y2:
+                return x1  # На случай горизонтального участка дна
+            f = interpolate.interp1d([y1, y2], [x1, x2], fill_value="extrapolate")
+            return float(f(y_target))
 
-        # Гидравлический радиус
-        if self.area > 0 and self.w_perimeter > 0:
-            self.r_hydraulic = self.area / self.w_perimeter
-        else:
-            self.r_hydraulic = 0
+        # Проверяем что левая граница находится на уровне воды
+        # и при необходимости добавляем точку чтобы избежать
+        # срезания углов левой границы сегмента
+        if seg_y[0] == water_level:
+            first_index = seg_indices[0] if seg_indices[0] == 0 else seg_indices[0] - 1
+            if self.y[first_index] < water_level:  # Дно ниже уровня воды
+                x_interp = interpolate_x(self.y[first_index], first_index, first_index + 1)
 
-        if self.r_hydraulic == 0:  # Костыль
-            self.r_hydraulic = 0.00001
+                # Вставляем точки чтобы избежать срезания углов
+                seg_x.insert(1, x_interp)  
+                seg_y.insert(1, self.y[first_index])
+                seg_indices.insert(1, first_index)
 
+        # Проверяем правую границу сегмента
+        if seg_y[-1] == water_level:
+            last_index = seg_indices[-2] if seg_indices[-1] == self.x else seg_indices[-1]
+            if self.y[last_index] < water_level:  # Дно ниже уровня воды
+                x_interp = interpolate_x(self.y[last_index], last_index - 1, last_index)
+                # Проверяем не ровное ли дно на последних точках
+                if self.y[last_index] == self.y[last_index - 1]:
+                    x_interp = self.x[last_index]
+                # Вставляем точки чтобы избежать срезания углов
+                seg_x.insert(-1, x_interp)  
+                seg_y.insert(-1, self.y[last_index])
+                seg_indices.insert(-1, last_index)
+
+        # Вычисление ширины сечения как разность между правой и левой границей
+        width = seg_x[-1] - seg_x[0]
+        # Площадь сечения
+        area = poly_area(seg_x, seg_y)
+        # Вычисляем глубины в каждой точке сечения (разница между water_level и y)
+        depths = [water_level - val for val in seg_y]
+        average_depth = area / width if area > 0 and width > 0 else 0
+        if average_depth == 0:
+            average_depth = 0.00001
+        max_depth = max(depths) if depths else 0
+
+        # Вычисляем смочённый периметр как сумму расстояний между соседними точками
+        sum_sqr = 0
+        for i in range(len(seg_x) - 1):
+            sum_sqr += (seg_x[i+1] - seg_x[i]) ** 2
+        wet_perimeter = np.sqrt(sum_sqr)
+        r_hydraulic = area / wet_perimeter if area > 0 and wet_perimeter > 0 else 0
+        if r_hydraulic == 0:
+            r_hydraulic = 0.00001
+
+        params = {
+            'width': width,
+            'area': area,
+            'average_depth': average_depth,
+            'max_depth': max_depth,
+            'wet_perimeter': wet_perimeter,
+            'r_hydraulic': r_hydraulic
+        }
+        return params, seg_x, seg_y
