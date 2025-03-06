@@ -2046,22 +2046,19 @@ class GraphProfile(Graph):
                         water = WaterSection(x, y, water_level, start_point=[0, y[0]])
 
                     # Отрисовка смоченного периметра на профиле на профиле
-                    self.ax.plot(
-                        water.water_section_x,
-                        water.water_section_y,
-                        ":",
-                        marker="o",
-                        linewidth=1,
-                        color="black",
-                        markersize=3,
-                    )
-                    self.ax.plot(
-                        [water.water_section_x[0], water.water_section_x[-1]],
-                        [water.water_section_y[0], water.water_section_y[-1]],
-                        ":",
-                        linewidth=1,
-                        color="black",
-                    )
+                    for segment in water.segments:
+                        self.ax.fill(
+                            segment[0],
+                            segment[1],
+                            facecolor="red",
+                            edgecolor="black",
+                            fill=False,
+                            linestyle=":",
+                            alpha=0.6,
+                            linewidth=2,
+                            zorder=10,
+                        )
+
             else:
                 # Отрисовка с заполнением по участкам
                 for sector in self.morfostvor.sectors:

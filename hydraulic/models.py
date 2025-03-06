@@ -243,8 +243,7 @@ class WaterSection:
         water_level = self.water_level
 
         if water_level < min(y):
-            print("Ошибка! Уровень воды ниже низшей точки дна. Программа будет завершена с ошибкой.")
-            sys.exit(1)
+            raise ValueError("Ошибка! Уровень воды ниже низшей точки дна.")
 
         segments = []
         in_segment = False
