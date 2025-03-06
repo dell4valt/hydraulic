@@ -1494,7 +1494,7 @@ class GraphProfile(Graph):
         self.ax_top.set_xticks([])
         self.ax_top.set_yticks([])
 
-        def format_picketage(x, pos):
+        def format_picket(x, pos):
             """Функция для форматирования значений оси x в пикетаж."""
             return get_pk(x)
 
@@ -1508,7 +1508,7 @@ class GraphProfile(Graph):
         )
 
         # Настраиваем вывод значений оси x в виде пикетажа
-        self.ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_picketage))
+        self.ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_picket))
 
         self.ax.yaxis.set_label_coords(-0.03, 1.03)
 
@@ -1783,8 +1783,8 @@ class GraphProfile(Graph):
                 )
 
         # Сортируем по уровняем и проходим по каждому уровню
-        levelst_sorted = levels.sort_values(by="H", ascending=False)
-        for index, row in levelst_sorted.iterrows():
+        levels_sorted = levels.sort_values(by="H", ascending=False)
+        for index, row in levels_sorted.iterrows():
             # Отрисовка уреза
             water_level = row["H"]
 
@@ -1835,7 +1835,7 @@ class GraphProfile(Graph):
                 y0 = water_level
                 y1 = y0 + y_step * 30
 
-                # Проверяем коордианаты на пересечение
+                # Проверяем координаты на пересечение
                 if prev_x0:
                     x0 = prev_x0 + (x_step * 1)
 
