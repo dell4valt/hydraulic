@@ -1713,12 +1713,12 @@ class GraphProfile(Graph):
             calc_sectors = [min_sector[0]]
 
             for i in calc_sectors:
-                waters = get_water_sections(self.morfostvor, h, config.OVERFLOW)
+                waters, sectors = get_water_sections(self.morfostvor, h, config.OVERFLOW)
                 for water in waters:
                     draw_line(self, water)
 
         else:
-            waters = get_water_sections(self.morfostvor, h, config.OVERFLOW)
+            waters, sectors = get_water_sections(self.morfostvor, h, config.OVERFLOW)
             for water in waters:
                 draw_line(self, water)
 
@@ -1991,9 +1991,8 @@ class GraphProfile(Graph):
         # Переводим сантиметры приращения в метры
         dh = dh / 100
 
-        min_sector = self.morfostvor.get_min_sector()
-
         # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
+        min_sector = self.morfostvor.get_min_sector()
         calc_sectors = [min_sector[0]]
 
         # Уровень воды, с минимальным отступом
@@ -2016,13 +2015,13 @@ class GraphProfile(Graph):
         while water_level <= self.morfostvor.levels_result["H"].max() + dh * 3:
             if config.OVERFLOW:
                 for i in calc_sectors:
-                    waters = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
+                    waters, sectors = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
                     for water in waters:
                         # Отрисовка смоченного периметра на профиле на профиле
                         for segment in water.segments:
                             segment_fill(self.ax, segment)
             else:
-                waters = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
+                waters, sectors = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
                 for water in waters:
                     # Отрисовка смоченного периметра для каждого сегмента
                     for segment in water.segments:

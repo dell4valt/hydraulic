@@ -16,7 +16,7 @@ from hydraulic import config
 from hydraulic.graph import (GraphFH, GraphProfile, GraphQF, GraphQH, GraphQHV,
                              GraphQV, GraphQWVH, GraphVH)
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables,
-                           question_continue_app)
+                           question_continue_app, get_water_sections)
 from hydraulic.models import (ProfileSector, SituationBorder, SituationSector,
                               WaterSection)
 from hydraulic.report import generate_morfostvor_report, save_graphic
@@ -671,19 +671,19 @@ class Morfostvor:
                     # либо расчёт выполняется с одновременным заполнением
                     # начинаем заполнять с точки с минимальной отметкой
                     if sector.id == min_sector[1].id:
-                        water = WaterSection(x, y, water_level)
+                        water = WaterSection(x, y, water_level, start_point=sector.coord[0][sector.coord[1].index(min(sector.coord[1]))])
 
                     # Расчетный участок находится слева от начального
                     # начинаем заполнять с крайней правой точки
                     elif sector.id < min_sector[1].id:
                         water = WaterSection(
-                            x, y, water_level, start_point=[len(y) - 1, y[-1]]
+                            x, y, water_level, start_point=self.x[sector.end_point]
                         )
 
                     # Расчетный участок находится справа от начального
                     # начинаем заполнять с крайней левой точки
                     elif sector.id > min_sector[1].id:
-                        water = WaterSection(x, y, water_level, start_point=[0, y[0]])
+                        water = WaterSection(x, y, water_level, start_point=self.x[sector.start_point])
 
                     # Расчёт параметров для воды
                     calc = Calculation(

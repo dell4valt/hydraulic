@@ -388,7 +388,8 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
     # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
     calc_sectors = [min_sector[0]]
 
-    results = []
+    result_sections = []
+    result_sectors = []
 
     if overflow:
         for i in calc_sectors:
@@ -433,7 +434,8 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
             # начинаем заполнять с крайней левой точки
             elif sector.id > min_sector[1].id:
                 water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.start_point])
-            results.append(water)
+            result_sections.append(water)
+            result_sectors.append(sector)
     else:
         # Отрисовка с заполнением по участкам
         for sector in morfostvor.sectors:
@@ -443,6 +445,9 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
             if min(y) < water_level:
                 # Сектор воды и основные его параметры
                 water = WaterSection(x, y, water_level)
-                results.append(water)
+                result_sections.append(water)
+                result_sectors.append(sector)
 
-    return results
+
+
+    return result_sections, result_sectors
