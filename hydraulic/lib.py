@@ -379,6 +379,36 @@ def closest_upper_multiple(n, k):
     result = np.ceil(n / k) * k
     return result
 
+def split_list_by_min_value(values: list) -> list:
+    """
+    Splits a list by the minimum value found in the list, ensuring that neither
+    of the resulting lists is empty.
+
+    Args:
+        values (list): The list to be split.
+
+    Returns:
+        list: A list of two non-empty lists.
+
+    Raises:
+        ValueError: If the input list has less than 2 elements.
+    """
+    if len(values) < 2:
+        raise ValueError("Input list must have at least 2 elements to split without empty lists")
+
+    min_val = min(values)
+    min_index = values.index(min_val)
+
+    # Если минимальный элемент находится в начале списка,
+    # сдвигаем разделение на следующий индекс
+    if min_index == 0:
+        min_index = 1
+    # Если минимальный элемент находится в конце списка,
+    # сдвигаем разделение так, чтобы последний элемент оказался во второй части
+    elif min_index == len(values) - 1:
+        min_index = len(values) - 1
+
+    return [values[:min_index], values[min_index:]]
 
 def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
     from hydraulic.models import WaterSection
@@ -398,9 +428,9 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
             y = sector.coord[1]
 
             # Максимальная отметка слева
-            previous_min_ele = max(chunk_list(y, 2)[0])
+            previous_min_ele = max(split_list_by_min_value(y)[0])
             # Максимальная отметка справа
-            next_min_ele = max(chunk_list(y, 2)[1])
+            next_min_ele = max(split_list_by_min_value(y)[1])
 
             # Проверка на перелив через границы участка
             if (
