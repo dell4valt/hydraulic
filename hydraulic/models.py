@@ -217,12 +217,12 @@ class WaterSection:
             combined_ws_y.extend(ws_y)
 
         # Комбинируем результаты по всем сечениям
-        self.width = sum(widths)
-        self.area = sum(areas)
-        self.average_depth = np.average(avg_depths) if avg_depths else 0
-        self.max_depth = max(max_depths) if max_depths else 0
-        self.wet_perimeter = sum(perimeters)
-        self.r_hydraulic = sum(r_hydraulics)
+        self.width = float(round(sum(widths), 3))
+        self.area = float(round(sum(areas), 3))
+        self.average_depth = float(round(np.average(avg_depths), 3)) if avg_depths else 0
+        self.max_depth = float(round(max(max_depths), 3)) if max_depths else 0
+        self.wet_perimeter = float(round(sum(perimeters), 3))
+        self.r_hydraulic = float(round(sum(r_hydraulics), 3))
         self.water_section_x = combined_ws_x
         self.water_section_y = combined_ws_y
 
