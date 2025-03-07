@@ -15,7 +15,7 @@ from matplotlib.patches import Rectangle
 import hydraulic.config as config
 from hydraulic.lib import closest_upper_multiple, get_pk, text_sanitize, chunk_list
 from hydraulic.models import WaterSection
-
+from hydraulic.lib import get_water_sections
 
 @dataclass
 class Graph:
@@ -1687,8 +1687,7 @@ class GraphProfile(Graph):
         :return: урез на графике профиля (ax_profile).
         """
 
-        def draw_line(self):
-            water = WaterSection(self.morfostvor.x, self.morfostvor.y, h)
+        def draw_line(self, water):
             for segment in water.segments:
                 self.ax.plot(
                     [segment[0][0], segment[0][-1]],
@@ -1709,18 +1708,19 @@ class GraphProfile(Graph):
                     )
 
         if config.OVERFLOW:
-            water = WaterSection(self.morfostvor.x, self.morfostvor.y, h)
-            draw_line(self)
+            min_sector = self.morfostvor.get_min_sector()
+            # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
+            calc_sectors = [min_sector[0]]
+
+            for i in calc_sectors:
+                waters = get_water_sections(self.morfostvor, h, config.OVERFLOW)
+                for water in waters:
+                    draw_line(self, water)
 
         else:
-            # Рисуем урезы на каждом участке
-            for sector in self.morfostvor.sectors:
-                x = sector.coord[0]
-                y = sector.coord[1]
-
-                if h >= min(y):
-                    water = WaterSection(x, y, h)
-                    draw_line(self)
+            waters = get_water_sections(self.morfostvor, h, config.OVERFLOW)
+            for water in waters:
+                draw_line(self, water)
 
         self._update_limit()
         self.set_style()
