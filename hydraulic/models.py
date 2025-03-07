@@ -170,6 +170,8 @@ class WaterSection:
     profile_y_coords: List[float] = field(default_factory=list)
     water_level: float = 0.0
     overflow: bool = config.OVERFLOW
+    start_point: float = np.nan
+
     water_section_x: list = field(default_factory=list, init=False)
     water_section_y: list = field(default_factory=list, init=False)
     width: float = field(default=0.0, init=False)
@@ -178,14 +180,19 @@ class WaterSection:
     max_depth: float = field(default=0.0, init=False)
     wet_perimeter: float = field(default=0.0, init=False)
     r_hydraulic: float = field(default=0.0, init=False)
-    start_point: List[int] = field(default_factory=list)
 
     def __post_init__(self):
         # Определяем все водные сечения
         self.segments = self.get_water_sections()
-        segments = self.segments
-        if not segments:
+        if not self.segments:
             raise ValueError("Ошибка! Не удалось определить сечения.")
+
+        # Если задан start_point, выбираем только сегмент, содержащий его
+        if self.start_point is not np.nan:
+            self.segments = [seg for seg in self.segments if self.start_point in seg[0]]
+
+            if not self.segments:
+                raise ValueError("Ошибка! Заданная стартовая точка не попадает ни в один сегмент.")
 
         # Списки для хранения параметров по каждому сечению
         widths = []
@@ -198,7 +205,7 @@ class WaterSection:
         combined_ws_y = []
 
         # Вычисляем параметры для каждого сечения
-        for seg in segments:
+        for seg in self.segments:
             params, ws_x, ws_y = self._calculate_parameters(seg)
             widths.append(params['width'])
             areas.append(params['area'])
