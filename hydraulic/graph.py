@@ -2012,7 +2012,7 @@ class GraphProfile(Graph):
             )
 
         # Цикл расчёта до максимального уровня воды
-        while water_level <= self.morfostvor.levels_result["H"].max() + dh * 3:
+        while water_level <= self.morfostvor.levels_result["H"].max() + dh * config.PROFILE_WET_PERIMETER_NUM:
             if config.OVERFLOW:
                 for i in calc_sectors:
                     waters, sectors = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)

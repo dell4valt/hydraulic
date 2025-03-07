@@ -9,6 +9,7 @@ PROFILE_SECTOR_FILL = False  # Заливка участков профиля н
 PROFILE_SECTOR_BOTTOM_LINE = False  # Цвет линии дна по участкам
 PROFILE_WATER_FILL = True  # Заливка урезов
 PROFILE_WET_PERIMETER = True  # Отрисовка смоченного периметра (для отладки)
+PROFILE_WET_PERIMETER_NUM = 35  # Количество отрисованных периметров свыше урезов
 PROFILE_EROSION_LIMIT = True  # Отрисовка отметки предельного размыва
 PROFILE_EROSION_LIMIT_FULL = False  # Линия предельного размыва во всю длину профиля (если false то только по участкам русла и протоки)
 PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающее сооружения
@@ -40,7 +41,7 @@ GRAPHICS_DIR_NAME = 'Графика'  # Название папки экспор
 CALC_TYPE = 1  # Выбор типа варианта расчёта
 
 # Расчёт с переливом через бровку (True) или с заполнением всех секторов (False)
-OVERFLOW = False
+OVERFLOW = True
 
 # Разрешение экспортируемых графиков
 FIG_DPI = 200
