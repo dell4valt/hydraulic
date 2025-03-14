@@ -607,10 +607,6 @@ class Morfostvor:
         # Переводим сантиметры приращения в метры
         dh = dh / 100
 
-        min_sector = self.get_min_sector()
-
-        # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
-        calc_sectors = [min_sector[0]]
 
         # Уровень воды, с минимальным отступом
         water_level = min(self.y) + dh
@@ -642,121 +638,12 @@ class Morfostvor:
             area_list = list()
 
             if config.OVERFLOW:
-                for i in calc_sectors:
-                    sector = self.sectors[i]
-                    x = sector.coord[0]
-                    y = sector.coord[1]
-
-                    # Максимальная отметка слева
-                    previous_min_ele = max(chunk_list(y, 2)[0])
-                    # Максимальная отметка справа
-                    next_min_ele = max(chunk_list(y, 2)[1])
-
-                    # Проверка на перелив через границы участка
-                    if (
-                        (water_level >= previous_min_ele)
-                        and (i - 1 not in calc_sectors)
-                        and (i - 1 >= 0)
-                    ):
-                        calc_sectors.append(i - 1)
-                    if (
-                        (water_level >= next_min_ele)
-                        and (i + 1 not in calc_sectors)
-                        and (i + 1 <= len(self.sectors) - 1)
-                    ):
-                        calc_sectors.append(i + 1)
-
-                    # Сектор воды и основные его параметры
-                    # Расчетный участок является участком с минимальными отметками
-                    # либо расчёт выполняется с одновременным заполнением
-                    # начинаем заполнять с точки с минимальной отметкой
-                    if sector.id == min_sector[1].id:
-                        water = WaterSection(x, y, water_level, start_point=sector.coord[0][sector.coord[1].index(min(sector.coord[1]))])
-
-                    # Расчетный участок находится слева от начального
-                    # начинаем заполнять с крайней правой точки
-                    elif sector.id < min_sector[1].id:
-                        water = WaterSection(
-                            x, y, water_level, start_point=self.x[sector.end_point]
-                        )
-
-                    # Расчетный участок находится справа от начального
-                    # начинаем заполнять с крайней левой точки
-                    elif sector.id > min_sector[1].id:
-                        water = WaterSection(x, y, water_level, start_point=self.x[sector.start_point])
-
-                    # Расчёт параметров для воды
-                    calc = Calculation(
-                        h=water.average_depth,
-                        n=sector.roughness,
-                        i=sector.slope,
-                        a=water.area,
-                    )
-
-                    wc_list.append(calc.q)
-
-                    r = dict(
-                        zip(
-                            col,
-                            [
-                                sector.name,
-                                round(water_level, 2),
-                                water.area,
-                                water.width,
-                                water.average_depth,
-                                water.max_depth,
-                                calc.v,
-                                calc.q,
-                                calc.shezi,
-                            ],
-                        )
-                    )
-
-                    # Добавляем в список с результирующими значениями значения по секторам
-                    # для последующего суммирования/вычисления средних значений
-                    df = df._append(r, ignore_index=True)
+                # Расчёт по переполнению
+                df = self._calc_overflow(water_level, col, df, wc_list)
 
             else:
                 # Расчёт с заполнением по участкам
-                for sector in self.sectors:
-                    x = sector.coord[0]
-                    y = sector.coord[1]
-
-                    if min(y) < water_level:
-                        # Сектор воды и основные его параметры
-                        water = WaterSection(x, y, water_level)
-
-                        # Расчёт параметров для воды
-                        calc = Calculation(
-                            h=water.average_depth,
-                            n=sector.roughness,
-                            i=sector.slope,
-                            a=water.area,
-                        )
-
-                        wc_list.append(calc.q)
-
-                        # Добавляем в список с значения по секторам
-                        r = dict(
-                            zip(
-                                col,
-                                [
-                                    sector.name,
-                                    round(water_level, 2),
-                                    water.area,
-                                    water.width,
-                                    water.average_depth,
-                                    water.max_depth,
-                                    calc.v,
-                                    calc.q,
-                                    calc.shezi,
-                                ],
-                            )
-                        )
-
-                        # Добавляем в список с результирующими значениями значения по секторам
-                        # для последующего суммирования/вычисления средних значений
-                        df = pd.concat([df, pd.DataFrame.from_records([r])], ignore_index=True)
+                df = self._calc_by_sectors(water_level, col, df, wc_list)
 
             consumption_summ += sum(wc_list)
             area_summ += sum(area_list)
@@ -846,6 +733,129 @@ class Morfostvor:
             self.fig_profile.draw_waterline(
                 round(self.waterline, 2), color="blue", linestyle="-"
             )
+        return df
+
+    def _calc_by_sectors(self, water_level, col, df, wc_list):
+        for sector in self.sectors:
+            x = sector.coord[0]
+            y = sector.coord[1]
+
+            if min(y) < water_level:
+                        # Сектор воды и основные его параметры
+                water = WaterSection(x, y, water_level)
+
+                        # Расчёт параметров для воды
+                calc = Calculation(
+                            h=water.average_depth,
+                            n=sector.roughness,
+                            i=sector.slope,
+                            a=water.area,
+                        )
+
+                wc_list.append(calc.q)
+
+                        # Добавляем в список с значения по секторам
+                r = dict(
+                            zip(
+                                col,
+                                [
+                                    sector.name,
+                                    round(water_level, 2),
+                                    water.area,
+                                    water.width,
+                                    water.average_depth,
+                                    water.max_depth,
+                                    calc.v,
+                                    calc.q,
+                                    calc.shezi,
+                                ],
+                            )
+                        )
+
+                        # Добавляем в список с результирующими значениями значения по секторам
+                        # для последующего суммирования/вычисления средних значений
+                df = pd.concat([df, pd.DataFrame.from_records([r])], ignore_index=True)
+        return df
+
+    def _calc_overflow(self, water_level, col, df, wc_list):
+        min_sector = self.get_min_sector()
+
+        # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
+        calc_sectors = [min_sector[0]]
+
+        for i in calc_sectors:
+            sector = self.sectors[i]
+            x = sector.coord[0]
+            y = sector.coord[1]
+
+                    # Максимальная отметка слева
+            previous_min_ele = max(chunk_list(y, 2)[0])
+                    # Максимальная отметка справа
+            next_min_ele = max(chunk_list(y, 2)[1])
+
+                    # Проверка на перелив через границы участка
+            if (
+                        (water_level >= previous_min_ele)
+                        and (i - 1 not in calc_sectors)
+                        and (i - 1 >= 0)
+                    ):
+                calc_sectors.append(i - 1)
+            if (
+                        (water_level >= next_min_ele)
+                        and (i + 1 not in calc_sectors)
+                        and (i + 1 <= len(self.sectors) - 1)
+                    ):
+                calc_sectors.append(i + 1)
+
+                    # Сектор воды и основные его параметры
+                    # Расчетный участок является участком с минимальными отметками
+                    # либо расчёт выполняется с одновременным заполнением
+                    # начинаем заполнять с точки с минимальной отметкой
+            if sector.id == min_sector[1].id:
+                water = WaterSection(x, y, water_level, start_point=sector.coord[0][sector.coord[1].index(min(sector.coord[1]))])
+
+                    # Расчетный участок находится слева от начального
+                    # начинаем заполнять с крайней правой точки
+            elif sector.id < min_sector[1].id:
+                water = WaterSection(
+                            x, y, water_level, start_point=self.x[sector.end_point]
+                        )
+
+                    # Расчетный участок находится справа от начального
+                    # начинаем заполнять с крайней левой точки
+            elif sector.id > min_sector[1].id:
+                water = WaterSection(x, y, water_level, start_point=self.x[sector.start_point])
+
+                    # Расчёт параметров для воды
+            calc = Calculation(
+                        h=water.average_depth,
+                        n=sector.roughness,
+                        i=sector.slope,
+                        a=water.area,
+                    )
+
+            wc_list.append(calc.q)
+
+            r = dict(
+                        zip(
+                            col,
+                            [
+                                sector.name,
+                                round(water_level, 2),
+                                water.area,
+                                water.width,
+                                water.average_depth,
+                                water.max_depth,
+                                calc.v,
+                                calc.q,
+                                calc.shezi,
+                            ],
+                        )
+                    )
+
+                    # Добавляем в список с результирующими значениями значения по секторам
+                    # для последующего суммирования/вычисления средних значений
+            df = df._append(r, ignore_index=True)
         return df
 
     def get_prob_table(self, df: pd.DataFrame):
