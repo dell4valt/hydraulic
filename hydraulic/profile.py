@@ -69,10 +69,7 @@ class Calculation:
             # Расчёт скорости воды для грязекаменных селей селей
             self.v = 3.75 * self.h ** 0.50 * (self.i / 1000) ** 0.17
         else:
-            print(
-                "Ошибка выбора формулы расчёта скорости потока. Программа будет завершена."
-            )
-            sys.exit(1)
+            raise ValueError("Ошибка выбора формулы расчёта скорости потока.")
         # Расчёт расхода воды
         self.q = self.a * self.v
 
@@ -778,6 +775,7 @@ class Morfostvor:
         return df
 
     def _calc_overflow(self, water_level, col, df, wc_list):
+        # Сектор с минимальной отметкой
         min_sector = self.get_min_sector()
 
         # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
@@ -886,7 +884,7 @@ class Morfostvor:
 
     def get_topography_table(self):
         # Создаем базовый словарь с координатами
-        topography_data = {
+        data = {
             "x": self.x,
             "h": self.y,
         }
@@ -909,12 +907,12 @@ class Morfostvor:
                 slope.append(sector.slope)
 
         # Добавляем данные в основной словарь
-        topography_data['sectors'] = sectors
-        topography_data['roughness'] = roughness
-        topography_data['slope'] = slope
+        data['sectors'] = sectors
+        data['roughness'] = roughness
+        data['slope'] = slope
 
         # Создаем DataFrame и возвращаем его
-        return pd.DataFrame(topography_data)
+        return pd.DataFrame(data)
 
 
 def xls_calculate_hydraulic(in_filename, out_filename, page=None):
