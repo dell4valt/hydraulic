@@ -1837,6 +1837,9 @@ class GraphProfile(Graph):
                 x0 = water.water_section_x[0] + (x_step * (index + 2))
                 y0 = water_level
                 y1 = y0 + y_step * 30
+                # Проверяем чтобы отметки урезов не выходили за пределы графика
+                if y1 > max(self.ax.get_ylim()):
+                    y1 = max(self.ax.get_ylim())
 
                 # Проверяем координаты на пересечение
                 if prev_x0:
