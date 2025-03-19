@@ -16,7 +16,7 @@ from hydraulic import config
 from hydraulic.graph import (GraphFH, GraphProfile, GraphQF, GraphQH, GraphQHV,
                              GraphQV, GraphQWVH, GraphVH)
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables,
-                           question_continue_app, get_water_sections)
+                           question_continue_app, split_list_by_min_value)
 from hydraulic.models import (ProfileSector, SituationBorder, SituationSector,
                               WaterSection)
 from hydraulic.report import generate_morfostvor_report, save_graphic
@@ -604,7 +604,6 @@ class Morfostvor:
         # Переводим сантиметры приращения в метры
         dh = dh / 100
 
-
         # Уровень воды, с минимальным отступом
         water_level = min(self.y) + dh
 
@@ -786,10 +785,10 @@ class Morfostvor:
             x = sector.coord[0]
             y = sector.coord[1]
 
-                    # Максимальная отметка слева
-            previous_min_ele = max(chunk_list(y, 2)[0])
-                    # Максимальная отметка справа
-            next_min_ele = max(chunk_list(y, 2)[1])
+            # Максимальная отметка слева
+            previous_min_ele = max(split_list_by_min_value(y)[0])
+            # Максимальная отметка справа
+            next_min_ele = max(split_list_by_min_value(y)[1])
 
                     # Проверка на перелив через границы участка
             if (
