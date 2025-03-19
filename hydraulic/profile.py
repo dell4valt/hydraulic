@@ -737,10 +737,10 @@ class Morfostvor:
             y = sector.coord[1]
 
             if min(y) < water_level:
-                        # Сектор воды и основные его параметры
+                # Сектор воды и основные его параметры
                 water = WaterSection(x, y, water_level)
 
-                        # Расчёт параметров для воды
+                # Расчёт параметров для воды
                 calc = Calculation(
                             h=water.average_depth,
                             n=sector.roughness,
@@ -750,7 +750,7 @@ class Morfostvor:
 
                 wc_list.append(calc.q)
 
-                        # Добавляем в список с значения по секторам
+                # Добавляем в список с значения по секторам
                 r = dict(
                             zip(
                                 col,
@@ -768,8 +768,8 @@ class Morfostvor:
                             )
                         )
 
-                        # Добавляем в список с результирующими значениями значения по секторам
-                        # для последующего суммирования/вычисления средних значений
+                # Добавляем в список с результирующими значениями значения по секторам
+                # для последующего суммирования/вычисления средних значений
                 df = pd.concat([df, pd.DataFrame.from_records([r])], ignore_index=True)
         return df
 
@@ -790,46 +790,55 @@ class Morfostvor:
             # Максимальная отметка справа
             next_min_ele = max(split_list_by_min_value(y)[1])
 
-                    # Проверка на перелив через границы участка
+            # Проверка на перелив через границы участка
             if (
-                        (water_level >= previous_min_ele)
-                        and (i - 1 not in calc_sectors)
-                        and (i - 1 >= 0)
-                    ):
+                (water_level >= previous_min_ele)
+                and (i - 1 not in calc_sectors)
+                and (i - 1 >= 0)
+            ):
                 calc_sectors.append(i - 1)
             if (
-                        (water_level >= next_min_ele)
-                        and (i + 1 not in calc_sectors)
-                        and (i + 1 <= len(self.sectors) - 1)
-                    ):
+                (water_level >= next_min_ele)
+                and (i + 1 not in calc_sectors)
+                and (i + 1 <= len(self.sectors) - 1)
+            ):
                 calc_sectors.append(i + 1)
 
-                    # Сектор воды и основные его параметры
-                    # Расчетный участок является участком с минимальными отметками
-                    # либо расчёт выполняется с одновременным заполнением
-                    # начинаем заполнять с точки с минимальной отметкой
+            # Сектор воды и основные его параметры
+            # Расчетный участок является участком с минимальными отметками
+            # либо расчёт выполняется с одновременным заполнением
+            # начинаем заполнять с точки с минимальной отметкой
             if sector.id == min_sector[1].id:
-                water = WaterSection(x, y, water_level, start_point=sector.coord[0][sector.coord[1].index(min(sector.coord[1]))])
+                water = WaterSection(
+                    x,
+                    y,
+                    water_level,
+                    start_point=sector.coord[0][
+                        sector.coord[1].index(min(sector.coord[1]))
+                    ],
+                )
 
-                    # Расчетный участок находится слева от начального
-                    # начинаем заполнять с крайней правой точки
+            # Расчетный участок находится слева от начального
+            # начинаем заполнять с крайней правой точки
             elif sector.id < min_sector[1].id:
                 water = WaterSection(
-                            x, y, water_level, start_point=self.x[sector.end_point]
-                        )
+                    x, y, water_level, start_point=self.x[sector.end_point]
+                )
 
-                    # Расчетный участок находится справа от начального
-                    # начинаем заполнять с крайней левой точки
+            # Расчетный участок находится справа от начального
+            # начинаем заполнять с крайней левой точки
             elif sector.id > min_sector[1].id:
-                water = WaterSection(x, y, water_level, start_point=self.x[sector.start_point])
+                water = WaterSection(
+                    x, y, water_level, start_point=self.x[sector.start_point]
+                )
 
-                    # Расчёт параметров для воды
+            # Расчёт параметров для воды
             calc = Calculation(
-                        h=water.average_depth,
-                        n=sector.roughness,
-                        i=sector.slope,
-                        a=water.area,
-                    )
+                h=water.average_depth,
+                n=sector.roughness,
+                i=sector.slope,
+                a=water.area,
+            )
 
             wc_list.append(calc.q)
 
@@ -850,8 +859,8 @@ class Morfostvor:
                         )
                     )
 
-                    # Добавляем в список с результирующими значениями значения по секторам
-                    # для последующего суммирования/вычисления средних значений
+            # Добавляем в список с результирующими значениями значения по секторам
+            # для последующего суммирования/вычисления средних значений
             df = df._append(r, ignore_index=True)
         return df
 
