@@ -779,26 +779,25 @@ class Morfostvor:
 
         # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
         calc_sectors = [min_sector[0]]
-
         for i in calc_sectors:
             sector = self.sectors[i]
             x = sector.coord[0]
             y = sector.coord[1]
 
             # Максимальная отметка слева
-            previous_min_ele = max(split_list_by_min_value(y)[0])
+            left_max_ele = max(split_list_by_min_value(y)[0])
             # Максимальная отметка справа
-            next_min_ele = max(split_list_by_min_value(y)[1])
+            right_max_ele = max(split_list_by_min_value(y)[1])
 
             # Проверка на перелив через границы участка
             if (
-                (water_level >= previous_min_ele)
+                (water_level >= left_max_ele)
                 and (i - 1 not in calc_sectors)
                 and (i - 1 >= 0)
             ):
                 calc_sectors.append(i - 1)
             if (
-                (water_level >= next_min_ele)
+                (water_level >= right_max_ele)
                 and (i + 1 not in calc_sectors)
                 and (i + 1 <= len(self.sectors) - 1)
             ):
@@ -843,21 +842,21 @@ class Morfostvor:
             wc_list.append(calc.q)
 
             r = dict(
-                        zip(
-                            col,
-                            [
-                                sector.name,
-                                round(water_level, 2),
-                                water.area,
-                                water.width,
-                                water.average_depth,
-                                water.max_depth,
-                                calc.v,
-                                calc.q,
-                                calc.shezi,
-                            ],
-                        )
-                    )
+                zip(
+                    col,
+                    [
+                        sector.name,
+                        round(water_level, 2),
+                        water.area,
+                        water.width,
+                        water.average_depth,
+                        water.max_depth,
+                        calc.v,
+                        calc.q,
+                        calc.shezi,
+                    ],
+                )
+            )
 
             # Добавляем в список с результирующими значениями значения по секторам
             # для последующего суммирования/вычисления средних значений

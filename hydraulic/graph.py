@@ -262,7 +262,10 @@ class GraphCurve(Graph):
                 color=self.sector_colors[sector],
             )
         # Подписи на линиях
-        labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
+        try:
+            labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
+        except:
+            print("Внимание! Подписи на линиях не возможны!")
 
     def draw_legend(self, ax: plt.subplot):
         # Отрисовка легенды
