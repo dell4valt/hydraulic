@@ -350,8 +350,9 @@ class WaterSection:
         # и при необходимости добавляем точку чтобы избежать
         # срезания углов левой границы сегмента
         if seg_y[0] == water_level:
-            first_index = seg_indices[0] if seg_indices[0] == 0 else seg_indices[0] - 1
-            if self.profile_y_coords[first_index] < water_level:  # Дно ниже уровня воды
+            first_index = seg_indices[0]
+
+            if self.profile_y_coords[first_index] < water_level and water_level <= max(seg_y):  # Дно ниже уровня воды
                 x_interp = interpolate_x(self.profile_y_coords[first_index], first_index, first_index + 1)
 
                 # Вставляем точки чтобы избежать срезания углов
