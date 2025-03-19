@@ -1831,12 +1831,22 @@ class GraphProfile(Graph):
                     )
 
             if config.PROFILE_LEVELS_TABLE_LINES:
-                water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
+                # Определяем параметры минимального сектора
+                # для корректного размещения выносок подписей уровней воды
+                min_sector = self.morfostvor.get_min_sector()[1]
+                min_sec_x = min_sector.coord[0]
+                min_sec_y = min_sector.coord[1]
+                min_sec_start_point = min_sector.coord[0][
+                    min_sector.coord[1].index(min(min_sector.coord[1]))
+                ]
+                # Сечечение воды для корректного размещения выносок подписей уровней воды
+                __water = WaterSection(min_sec_x, min_sec_y, water_level, True, min_sec_start_point)
 
                 # Устанавливаем координаты по умолчанию
-                x0 = water.water_section_x[0] + (x_step * (index + 2))
                 y0 = water_level
                 y1 = y0 + y_step * 30
+                x0 = __water.water_section_x[0] + (x_step * (index + 2))
+
                 # Проверяем чтобы отметки урезов не выходили за пределы графика
                 if y1 > max(self.ax.get_ylim()):
                     y1 = max(self.ax.get_ylim())
@@ -1845,11 +1855,13 @@ class GraphProfile(Graph):
                 if prev_x0:
                     x0 = prev_x0 + (x_step * 1)
 
-                if x0 > max(water.water_section_x):
-                    x0 = max(water.water_section_x) - x_step
+                # если координата x0 выходит за пределы сечения воды справа
+                if x0 > max(__water.water_section_x):
+                    x0 = max(__water.water_section_x) - x_step
 
-                if x0 < min(water.water_section_x):
-                    x0 = min(water.water_section_x) + x_step
+                # если координата x0 выходит за пределы сечения воды слева
+                if x0 < min(__water.water_section_x):
+                    x0 = min(__water.water_section_x) + x_step
 
                 x1 = x0
                 if prev_x0 and x1 < prev_x0:
