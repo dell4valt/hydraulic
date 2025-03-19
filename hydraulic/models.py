@@ -356,7 +356,7 @@ class WaterSection:
                 x_interp = interpolate_x(self.profile_y_coords[first_index], first_index, first_index + 1)
 
                 # Вставляем точки чтобы избежать срезания углов
-                seg_x.insert(1, x_interp)  
+                seg_x.insert(1, x_interp)
                 seg_y.insert(1, self.profile_y_coords[first_index])
                 seg_indices.insert(1, first_index)
 
@@ -369,7 +369,7 @@ class WaterSection:
                 if self.profile_y_coords[last_index] == self.profile_y_coords[last_index - 1]:
                     x_interp = self.profile_x_coords[last_index]
                 # Вставляем точки чтобы избежать срезания углов
-                seg_x.insert(-1, x_interp)  
+                seg_x.insert(-1, x_interp)
                 seg_y.insert(-1, self.profile_y_coords[last_index])
                 seg_indices.insert(-1, last_index)
 

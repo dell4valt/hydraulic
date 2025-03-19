@@ -415,57 +415,72 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
     # Участок с минимальной отметкой дна
     min_sector = morfostvor.get_min_sector()
 
-    # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
-    calc_sectors = [min_sector[0]]
-
     result_sections = []
     result_sectors = []
 
     if overflow:
-        for i in calc_sectors:
+        # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
+        calc_sectors = [min_sector[0]]
+
+        # Копируем список, чтобы избежать модификации во время итерации
+        sectors_to_process = calc_sectors.copy()
+
+        while sectors_to_process:
+            i = sectors_to_process.pop(0)
+
+            if i < 0 or i >= len(morfostvor.sectors):
+                continue
+
             sector = morfostvor.sectors[i]
             x = sector.coord[0]
             y = sector.coord[1]
 
-            # Максимальная отметка слева
-            previous_min_ele = max(split_list_by_min_value(y)[0])
-            # Максимальная отметка справа
-            next_min_ele = max(split_list_by_min_value(y)[1])
+            try:
+                # Максимальная отметка слева и справа
+                previous_min_ele = max(split_list_by_min_value(y)[0])
+                next_min_ele = max(split_list_by_min_value(y)[1])
 
-            # Проверка на перелив через границы участка
-            if (
-                (water_level >= previous_min_ele)
-                and (i - 1 not in calc_sectors)
-                and (i - 1 >= 0)
-            ):
-                calc_sectors.append(i - 1)
-            if (
-                (water_level >= next_min_ele)
-                and (i + 1 not in calc_sectors)
-                and (i + 1 <= len(morfostvor.sectors) - 1)
-            ):
-                calc_sectors.append(i + 1)
+                # Проверка на перелив левой границы участка
+                if (water_level >= previous_min_ele and
+                    (i - 1) not in calc_sectors and
+                    (i - 1) >= 0
+                ):
+                    # Проверка что вода дошла до левой границы участка
+                    water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point])
+                    if water.water_section_x[0] == x[0]:
+                        calc_sectors.append(i - 1)
+                        sectors_to_process.append(i - 1)
+                # Проверка на перелив правой границы участка
+                if (water_level >= next_min_ele and
+                    (i + 1) not in calc_sectors and
+                    (i + 1) < len(morfostvor.sectors)):
+                    calc_sectors.append(i + 1)
+                    sectors_to_process.append(i + 1)
+            except (ValueError, IndexError) as e:
+                # Обработка ошибки, если список слишком короткий для разделения
+                print(f"Ошибка при обработке сектора {i}: {e}")
+                continue
 
-            # Сектор воды и основные его параметры
+            # Создаем водный сектор в зависимости от его положения
+            water = None
+
             # Расчетный участок является участком с минимальными отметками
-            # либо расчёт выполняется с одновременным заполнением
-            # начинаем заполнять с точки с минимальной отметкой
             if sector.id == min_sector[1].id:
-                water = WaterSection(x, y, water_level, start_point=sector.coord[0][sector.coord[1].index(min(sector.coord[1]))])
-
+                min_y_index = sector.coord[1].index(min(sector.coord[1]))
+                water = WaterSection(x, y, water_level,
+                                     start_point=sector.coord[0][min_y_index])
             # Расчетный участок находится слева от начального
-            # начинаем заполнять с крайней правой точки
             elif sector.id < min_sector[1].id:
-                water = WaterSection(
-                    x, y, water_level, start_point=morfostvor.x[sector.end_point]
-                )
-
+                water = WaterSection(x, y, water_level,
+                                    start_point=morfostvor.x[sector.end_point])
             # Расчетный участок находится справа от начального
-            # начинаем заполнять с крайней левой точки
             elif sector.id > min_sector[1].id:
-                water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.start_point])
-            result_sections.append(water)
-            result_sectors.append(sector)
+                water = WaterSection(x, y, water_level,
+                                    start_point=morfostvor.x[sector.start_point])
+
+            if water is not None:
+                result_sections.append(water)
+                result_sectors.append(sector)
     else:
         # Отрисовка с заполнением по участкам
         for sector in morfostvor.sectors:
@@ -477,7 +492,5 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                 water = WaterSection(x, y, water_level)
                 result_sections.append(water)
                 result_sectors.append(sector)
-
-
 
     return result_sections, result_sectors

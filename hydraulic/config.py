@@ -2,14 +2,14 @@
 
 PROFILE_LEVELS_TABLE = True  # Отображение уровней воды различных обеспеченностей на графике профиля
 PROFILE_LEVELS_TABLE_LINES = True  # Линии сносок от урезов воды к значению в таблицу уровней
-PROFILE_WATER_LEVEL_NOTE = False  # Отображение примечания о урезе воды
+PROFILE_WATER_LEVEL_NOTE = True  # Отображение примечания о урезе воды
 PROFILE_LEVELS_TITLE = True  # Отображение подписи уровней воды на профилях
 PROFILE_SECTOR_LABEL = True  # Отображение названия, длины и разделителя по участкам
 PROFILE_SECTOR_FILL = False  # Заливка участков профиля на графике
 PROFILE_SECTOR_BOTTOM_LINE = False  # Цвет линии дна по участкам
 PROFILE_WATER_FILL = True  # Заливка урезов
-PROFILE_WET_PERIMETER = True  # Отрисовка смоченного периметра (для отладки)
-PROFILE_WET_PERIMETER_NUM = 35  # Количество отрисованных периметров свыше урезов
+PROFILE_WET_PERIMETER = False  # Отрисовка смоченного периметра (для отладки)
+PROFILE_WET_PERIMETER_NUM = 25  # Количество отрисованных периметров свыше урезов
 PROFILE_EROSION_LIMIT = True  # Отрисовка отметки предельного размыва
 PROFILE_EROSION_LIMIT_FULL = False  # Линия предельного размыва во всю длину профиля (если false то только по участкам русла и протоки)
 PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающее сооружения
@@ -41,10 +41,10 @@ GRAPHICS_DIR_NAME = 'Графика'  # Название папки экспор
 CALC_TYPE = 1  # Выбор типа варианта расчёта
 
 # Расчёт с переливом через бровку (True) или с заполнением всех секторов (False)
-OVERFLOW = True
+OVERFLOW = False
 
 # Разрешение экспортируемых графиков
-FIG_DPI = 200
+FIG_DPI = 300
 
 # Размер профиля для вставки в отчет: (16.5, 14); для А3 (28, 14)
 PROFILE_SIZE = (16.5, 14)
@@ -108,7 +108,7 @@ LINE_WIDTH = {
 TRANSPARENCY = {
     'profile_footer_divider': .5,  # Линия разделителя подвала
     'profile_footer_divider_situation': 1,  # Линия разделителя подвала
-    
+
 }
 
 PADDING = {
