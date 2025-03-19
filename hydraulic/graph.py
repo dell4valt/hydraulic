@@ -579,14 +579,16 @@ class GraphQWVH(GraphCurve):
     def _plot_graph(
         self, ax, df, x_col, y_col, sector_name="сумма", label="", color="b", **kwargs
     ):
-        """Функция для отрисовки линий графиков."""
-        ax.plot(
-            df.loc[(sector_name), x_col],
-            df.loc[(sector_name), y_col],
-            label=rf"${label}$",
-            color=color,
-            **kwargs,
-        )
+        try:
+            ax.plot(
+                df.loc[(sector_name), x_col],
+                df.loc[(sector_name), y_col],
+                label=rf"${label}$",
+                color=color,
+                **kwargs,
+            )
+        except KeyError:
+            print(f"Нет данных по участку: {sector_name}")
 
     # Функция для стилизации графиков
     @staticmethod
