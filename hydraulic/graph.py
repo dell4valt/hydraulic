@@ -15,7 +15,7 @@ from matplotlib.patches import Rectangle
 import hydraulic.config as config
 from hydraulic.lib import closest_upper_multiple, get_pk, text_sanitize, chunk_list
 from hydraulic.models import WaterSection
-
+from hydraulic.lib import get_water_sections
 
 @dataclass
 class Graph:
@@ -262,7 +262,10 @@ class GraphCurve(Graph):
                 color=self.sector_colors[sector],
             )
         # Подписи на линиях
-        labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
+        try:
+            labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
+        except:
+            print("Внимание! Подписи на линиях не возможны!")
 
     def draw_legend(self, ax: plt.subplot):
         # Отрисовка легенды
@@ -579,14 +582,16 @@ class GraphQWVH(GraphCurve):
     def _plot_graph(
         self, ax, df, x_col, y_col, sector_name="сумма", label="", color="b", **kwargs
     ):
-        """Функция для отрисовки линий графиков."""
-        ax.plot(
-            df.loc[(sector_name), x_col],
-            df.loc[(sector_name), y_col],
-            label=rf"${label}$",
-            color=color,
-            **kwargs,
-        )
+        try:
+            ax.plot(
+                df.loc[(sector_name), x_col],
+                df.loc[(sector_name), y_col],
+                label=rf"${label}$",
+                color=color,
+                **kwargs,
+            )
+        except KeyError:
+            print(f"Нет данных по участку: {sector_name}")
 
     # Функция для стилизации графиков
     @staticmethod
@@ -871,9 +876,6 @@ class GraphProfile(Graph):
 
     def __post_init__(self):
         self.clean()
-
-        # Настройка параметров графиков и их инициализация
-        self.fig.subplots_adjust(bottom=0.08, left=0.08, right=0.9)
 
         # Добавляем в список границ максимальную и минимальную отметки
         self._y_limits.append(max(self.morfostvor.y))
@@ -1537,7 +1539,7 @@ class GraphProfile(Graph):
         self.ax.set_axisbelow(True)
 
         # Установка параметров полей графика
-        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.89, top=0.9)
+        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.88, top=0.9)
 
     def draw_profile_point_lines(self):
         """
@@ -1687,8 +1689,7 @@ class GraphProfile(Graph):
         :return: урез на графике профиля (ax_profile).
         """
 
-        def draw_line(self):
-            water = WaterSection(self.morfostvor.x, self.morfostvor.y, h)
+        def draw_line(self, water):
             for segment in water.segments:
                 self.ax.plot(
                     [segment[0][0], segment[0][-1]],
@@ -1709,18 +1710,19 @@ class GraphProfile(Graph):
                     )
 
         if config.OVERFLOW:
-            water = WaterSection(self.morfostvor.x, self.morfostvor.y, h)
-            draw_line(self)
+            min_sector = self.morfostvor.get_min_sector()
+            # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
+            calc_sectors = [min_sector[0]]
+
+            for i in calc_sectors:
+                waters, sectors = get_water_sections(self.morfostvor, h, config.OVERFLOW)
+                for water in waters:
+                    draw_line(self, water)
 
         else:
-            # Рисуем урезы на каждом участке
-            for sector in self.morfostvor.sectors:
-                x = sector.coord[0]
-                y = sector.coord[1]
-
-                if h >= min(y):
-                    water = WaterSection(x, y, h)
-                    draw_line(self)
+            waters, sectors = get_water_sections(self.morfostvor, h, config.OVERFLOW)
+            for water in waters:
+                draw_line(self, water)
 
         self._update_limit()
         self.set_style()
@@ -1826,22 +1828,37 @@ class GraphProfile(Graph):
                     )
 
             if config.PROFILE_LEVELS_TABLE_LINES:
-                water = WaterSection(self.morfostvor.x, self.morfostvor.y, water_level)
+                # Определяем параметры минимального сектора
+                # для корректного размещения выносок подписей уровней воды
+                min_sector = self.morfostvor.get_min_sector()[1]
+                min_sec_x = min_sector.coord[0]
+                min_sec_y = min_sector.coord[1]
+                min_sec_start_point = min_sector.coord[0][
+                    min_sector.coord[1].index(min(min_sector.coord[1]))
+                ]
+                # Сечечение воды для корректного размещения выносок подписей уровней воды
+                __water = WaterSection(min_sec_x, min_sec_y, water_level, True, min_sec_start_point)
 
                 # Устанавливаем координаты по умолчанию
-                x0 = water.water_section_x[0] + (x_step * (index + 2))
                 y0 = water_level
                 y1 = y0 + y_step * 30
+                x0 = __water.water_section_x[0] + (x_step * (index + 2))
+
+                # Проверяем чтобы отметки урезов не выходили за пределы графика
+                if y1 > max(self.ax.get_ylim()):
+                    y1 = max(self.ax.get_ylim())
 
                 # Проверяем координаты на пересечение
                 if prev_x0:
                     x0 = prev_x0 + (x_step * 1)
 
-                if x0 > max(water.water_section_x):
-                    x0 = max(water.water_section_x) - x_step
+                # если координата x0 выходит за пределы сечения воды справа
+                if x0 > max(__water.water_section_x):
+                    x0 = max(__water.water_section_x) - x_step
 
-                if x0 < min(water.water_section_x):
-                    x0 = min(water.water_section_x) + x_step
+                # если координата x0 выходит за пределы сечения воды слева
+                if x0 < min(__water.water_section_x):
+                    x0 = min(__water.water_section_x) + x_step
 
                 x1 = x0
                 if prev_x0 and x1 < prev_x0:
@@ -1991,97 +2008,41 @@ class GraphProfile(Graph):
         # Переводим сантиметры приращения в метры
         dh = dh / 100
 
-        min_sector = self.morfostvor.get_min_sector()
-
         # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
+        min_sector = self.morfostvor.get_min_sector()
         calc_sectors = [min_sector[0]]
 
         # Уровень воды, с минимальным отступом
         water_level = min(self.morfostvor.y) + dh
 
+        def segment_fill(ax, segment):
+            ax.fill(
+                segment[0],
+                segment[1],
+                facecolor="red",
+                edgecolor="black",
+                fill=False,
+                linestyle=":",
+                alpha=0.6,
+                linewidth=2,
+                zorder=10,
+            )
+
         # Цикл расчёта до максимального уровня воды
-        while water_level < self.morfostvor.levels_result["H"].max():
+        while water_level <= self.morfostvor.levels_result["H"].max() + dh * config.PROFILE_WET_PERIMETER_NUM:
             if config.OVERFLOW:
                 for i in calc_sectors:
-                    sector = self.morfostvor.sectors[i]
-                    x = sector.coord[0]
-                    y = sector.coord[1]
-
-                    # Максимальная отметка слева
-                    previous_min_ele = max(chunk_list(y, 2)[0])
-                    # Максимальная отметка справа
-                    next_min_ele = max(chunk_list(y, 2)[1])
-
-                    # Проверка на перелив через границы участка
-                    if (
-                        (water_level >= previous_min_ele)
-                        and (i - 1 not in calc_sectors)
-                        and (i - 1 >= 0)
-                    ):
-                        calc_sectors.append(i - 1)
-                    if (
-                        (water_level >= next_min_ele)
-                        and (i + 1 not in calc_sectors)
-                        and (i + 1 <= len(self.morfostvor.sectors) - 1)
-                    ):
-                        calc_sectors.append(i + 1)
-
-                    # Сектор воды и основные его параметры
-                    # Расчетный участок является участком с минимальными отметками
-                    # либо расчёт выполняется с одновременным заполнением
-                    # начинаем заполнять с точки с минимальной отметкой
-                    if sector.id == min_sector[1].id:
-                        water = WaterSection(x, y, water_level)
-
-                    # Расчетный участок находится слева от начального
-                    # начинаем заполнять с крайней правой точки
-                    elif sector.id < min_sector[1].id:
-                        water = WaterSection(
-                            x, y, water_level, start_point=[len(y) - 1, y[-1]]
-                        )
-
-                    # Расчетный участок находится справа от начального
-                    # начинаем заполнять с крайней левой точки
-                    elif sector.id > min_sector[1].id:
-                        water = WaterSection(x, y, water_level, start_point=[0, y[0]])
-
-                    # Отрисовка смоченного периметра на профиле на профиле
-                    for segment in water.segments:
-                        self.ax.fill(
-                            segment[0],
-                            segment[1],
-                            facecolor="red",
-                            edgecolor="black",
-                            fill=False,
-                            linestyle=":",
-                            alpha=0.6,
-                            linewidth=2,
-                            zorder=10,
-                        )
-
-            else:
-                # Отрисовка с заполнением по участкам
-                for sector in self.morfostvor.sectors:
-                    x = sector.coord[0]
-                    y = sector.coord[1]
-
-                    if min(y) < water_level:
-                        # Сектор воды и основные его параметры
-                        water = WaterSection(x, y, water_level)
-
-                        # Отрисовка смоченного периметра для каждого сегмента
+                    waters, sectors = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
+                    for water in waters:
+                        # Отрисовка смоченного периметра на профиле на профиле
                         for segment in water.segments:
-                            self.ax.fill(
-                                segment[0],
-                                segment[1],
-                                facecolor="red",
-                                edgecolor="black",
-                                fill=False,
-                                linestyle=":",
-                                alpha=0.6,
-                                linewidth=2,
-                                zorder=10,
-                            )
+                            segment_fill(self.ax, segment)
+            else:
+                waters, sectors = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
+                for water in waters:
+                    # Отрисовка смоченного периметра для каждого сегмента
+                    for segment in water.segments:
+                        segment_fill(self.ax, segment)
 
             water_level += dh
 

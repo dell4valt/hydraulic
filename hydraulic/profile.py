@@ -16,7 +16,7 @@ from hydraulic import config
 from hydraulic.graph import (GraphFH, GraphProfile, GraphQF, GraphQH, GraphQHV,
                              GraphQV, GraphQWVH, GraphVH)
 from hydraulic.lib import (chunk_list, insert_summary_QV_tables,
-                           question_continue_app)
+                           question_continue_app, split_list_by_min_value)
 from hydraulic.models import (ProfileSector, SituationBorder, SituationSector,
                               WaterSection)
 from hydraulic.report import generate_morfostvor_report, save_graphic
@@ -43,6 +43,8 @@ class Calculation:
     i: float  # Уклон
     h: float  # Средняя глубина
     a: float  # Площадь водного сечений
+    p: float  # Смоченный периметр
+    r: float  # Гидравлический радиус
     v: float = 0  # Скорость
     q: float = 0  # Расход
     _g: float = 9.80665  # Ускорение свободного падения
@@ -50,13 +52,8 @@ class Calculation:
     type__: str = "Не определен"
 
     def __post_init__(self):
-        # В зависимости от глубины считаем по разным формулам
-        # до 3-х метров по Павловскому, свыше 3-х метров по
-        # Павловскому-Железнякову
-        if self.h >= 0 and self.h <= 3:
-            self.__shezi_pavlovskij()
-        else:
-            self.__shezi_pavlovskij_zheleznjakov()
+        # Определение коэффициента Шези
+        self.shezi = self._get_shezi(config.SHEZI_TYPE, config.SHEZI_TYPE_DEFAULTS)
 
         # Тип расчёта, обычная вода или селевой поток
         if config.CALC_TYPE == 1:
@@ -69,12 +66,31 @@ class Calculation:
             # Расчёт скорости воды для грязекаменных селей селей
             self.v = 3.75 * self.h ** 0.50 * (self.i / 1000) ** 0.17
         else:
-            print(
-                "Ошибка выбора формулы расчёта скорости потока. Программа будет завершена."
-            )
-            sys.exit(1)
+            raise ValueError("Ошибка выбора формулы расчёта скорости потока.")
         # Расчёт расхода воды
         self.q = self.a * self.v
+
+    def _get_shezi(self, equation_type, equation_types_available):
+        if equation_type not in equation_types_available:
+            raise ValueError(f"Ошибка выбора формулы расчёта коэффициента Шези. Указана: {equation_type}, доступные формулы: {equation_types_available}.")
+
+        if equation_type == "Манинга":
+            return self.__shezi_manning()
+        elif equation_type == "Железнякова":
+            return self.__shezi_zheleznjakov()
+        elif equation_type == "Павловского":
+            return self.__shezi_pavlovskij()
+        elif equation_type == "Павловского-Железнякова":
+            return self.__shezi_pavlovskij_zheleznjakov()
+        elif equation_type == "Гидрорасчеты":
+            if self.h >= 0 and self.h <= 3:
+                return self.__shezi_pavlovskij()
+            else:
+                return self.__shezi_pavlovskij_zheleznjakov()
+        elif equation_type == "Агроскина":
+            return self.__shezi_agroskina()
+        else:
+            raise ValueError(f"Ошибка выбора формулы расчёта коэффициента Шези. Указана: {equation_type}, доступные формулы: {equation_types_available}.")
 
     # Коэффициент Шези по формуле Н. Н. Павловского, степенной коэффициент по формуле Железнякова
     def __shezi_pavlovskij_zheleznjakov(self):
@@ -97,14 +113,16 @@ class Calculation:
             )
         )
 
-        self.shezi = (1 / self.n) * self.h ** y
+        shezi = (1 / self.n) * self.h ** y
         self.type__ = "Коэффициент Шези определён по формуле Павловского, \
                        показатель степени определён по формуле Железнякова"
+        return shezi
 
     # Коэффициент шези по формуле Маннинга
     def __shezi_manning(self):
-        self.shezi = (1 / self.n) * self.h ** (1 / 6)
+        shezi = (1 / self.n) * self.h ** (1 / 6)
         self.type__ = "Коэффициент Шези определён по формуле Маннинга"
+        return shezi
 
     # Коэффициент Шези по формуле Павловского
     # для глубин 0.1 < h < 3 (Гидрорасчёты считают по этой формуле)
@@ -114,14 +132,16 @@ class Calculation:
             - 0.13
             - 0.75 * np.sqrt(self.h) * (np.sqrt(self.n) - 0.10)
         )
-        self.shezi = (1 / self.n) * self.h ** y
+        shezi = (1 / self.n) * self.h ** y
         self.type__ = (
             "Коэффициент шези определён по формуле Павловского для глубин 0.1 < h < 3 м"
         )
 
+        return shezi
+
     # Коэффициент шези по формуле Железнякова
     def __shezi_zheleznjakov(self):
-        self.shezi = 1 / 2 * (
+        shezi = 1 / 2 * (
             (1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.h))
         ) + np.sqrt(
             (1 / 4)
@@ -130,7 +150,12 @@ class Calculation:
             * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.h)))
         )
         self.type__ = "Коэффициент шези определён по формуле Железнякова"
+        return shezi
 
+    def __shezi_agroskina(self):
+        shezi = (1 / self.n) + 17.72 * np.log(self.r)
+        self.type__ = "Коэффициент шези определён по формуле И.И. Агроскина"
+        return shezi
 
 @dataclass
 class Morfostvor:
@@ -607,11 +632,6 @@ class Morfostvor:
         # Переводим сантиметры приращения в метры
         dh = dh / 100
 
-        min_sector = self.get_min_sector()
-
-        # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
-        calc_sectors = [min_sector[0]]
-
         # Уровень воды, с минимальным отступом
         water_level = min(self.y) + dh
 
@@ -642,121 +662,12 @@ class Morfostvor:
             area_list = list()
 
             if config.OVERFLOW:
-                for i in calc_sectors:
-                    sector = self.sectors[i]
-                    x = sector.coord[0]
-                    y = sector.coord[1]
-
-                    # Максимальная отметка слева
-                    previous_min_ele = max(chunk_list(y, 2)[0])
-                    # Максимальная отметка справа
-                    next_min_ele = max(chunk_list(y, 2)[1])
-
-                    # Проверка на перелив через границы участка
-                    if (
-                        (water_level >= previous_min_ele)
-                        and (i - 1 not in calc_sectors)
-                        and (i - 1 >= 0)
-                    ):
-                        calc_sectors.append(i - 1)
-                    if (
-                        (water_level >= next_min_ele)
-                        and (i + 1 not in calc_sectors)
-                        and (i + 1 <= len(self.sectors) - 1)
-                    ):
-                        calc_sectors.append(i + 1)
-
-                    # Сектор воды и основные его параметры
-                    # Расчетный участок является участком с минимальными отметками
-                    # либо расчёт выполняется с одновременным заполнением
-                    # начинаем заполнять с точки с минимальной отметкой
-                    if sector.id == min_sector[1].id:
-                        water = WaterSection(x, y, water_level)
-
-                    # Расчетный участок находится слева от начального
-                    # начинаем заполнять с крайней правой точки
-                    elif sector.id < min_sector[1].id:
-                        water = WaterSection(
-                            x, y, water_level, start_point=[len(y) - 1, y[-1]]
-                        )
-
-                    # Расчетный участок находится справа от начального
-                    # начинаем заполнять с крайней левой точки
-                    elif sector.id > min_sector[1].id:
-                        water = WaterSection(x, y, water_level, start_point=[0, y[0]])
-
-                    # Расчёт параметров для воды
-                    calc = Calculation(
-                        h=water.average_depth,
-                        n=sector.roughness,
-                        i=sector.slope,
-                        a=water.area,
-                    )
-
-                    wc_list.append(calc.q)
-
-                    r = dict(
-                        zip(
-                            col,
-                            [
-                                sector.name,
-                                round(water_level, 2),
-                                water.area,
-                                water.width,
-                                water.average_depth,
-                                water.max_depth,
-                                calc.v,
-                                calc.q,
-                                calc.shezi,
-                            ],
-                        )
-                    )
-
-                    # Добавляем в список с результирующими значениями значения по секторам
-                    # для последующего суммирования/вычисления средних значений
-                    df = df._append(r, ignore_index=True)
+                # Расчёт по переполнению
+                df = self._calc_overflow(water_level, col, df, wc_list)
 
             else:
                 # Расчёт с заполнением по участкам
-                for sector in self.sectors:
-                    x = sector.coord[0]
-                    y = sector.coord[1]
-
-                    if min(y) < water_level:
-                        # Сектор воды и основные его параметры
-                        water = WaterSection(x, y, water_level)
-
-                        # Расчёт параметров для воды
-                        calc = Calculation(
-                            h=water.average_depth,
-                            n=sector.roughness,
-                            i=sector.slope,
-                            a=water.area,
-                        )
-
-                        wc_list.append(calc.q)
-
-                        # Добавляем в список с значения по секторам
-                        r = dict(
-                            zip(
-                                col,
-                                [
-                                    sector.name,
-                                    round(water_level, 2),
-                                    water.area,
-                                    water.width,
-                                    water.average_depth,
-                                    water.max_depth,
-                                    calc.v,
-                                    calc.q,
-                                    calc.shezi,
-                                ],
-                            )
-                        )
-
-                        # Добавляем в список с результирующими значениями значения по секторам
-                        # для последующего суммирования/вычисления средних значений
-                        df = pd.concat([df, pd.DataFrame.from_records([r])], ignore_index=True)
+                df = self._calc_by_sectors(water_level, col, df, wc_list)
 
             consumption_summ += sum(wc_list)
             area_summ += sum(area_list)
@@ -848,6 +759,142 @@ class Morfostvor:
             )
         return df
 
+    def _calc_by_sectors(self, water_level, col, df, wc_list):
+        for sector in self.sectors:
+            x = sector.coord[0]
+            y = sector.coord[1]
+
+            if min(y) < water_level:
+                # Сектор воды и основные его параметры
+                water = WaterSection(x, y, water_level)
+
+                # Расчёт параметров для воды
+                calc = Calculation(
+                            h=water.average_depth,
+                            n=sector.roughness,
+                            i=sector.slope,
+                            a=water.area,
+                            p=water.wet_perimeter,
+                            r=water.r_hydraulic,
+                        )
+
+                wc_list.append(calc.q)
+
+                # Добавляем в список с значения по секторам
+                r = dict(
+                            zip(
+                                col,
+                                [
+                                    sector.name,
+                                    round(water_level, 2),
+                                    water.area,
+                                    water.width,
+                                    water.average_depth,
+                                    water.max_depth,
+                                    calc.v,
+                                    calc.q,
+                                    calc.shezi,
+                                ],
+                            )
+                        )
+
+                # Добавляем в список с результирующими значениями значения по секторам
+                # для последующего суммирования/вычисления средних значений
+                df = pd.concat([df, pd.DataFrame.from_records([r])], ignore_index=True)
+        return df
+
+    def _calc_overflow(self, water_level, col, df, wc_list):
+        # Сектор с минимальной отметкой
+        min_sector = self.get_min_sector()
+
+        # Исходные сектора для расчёта (сектор, содержащий минимальную отметку)
+        calc_sectors = [min_sector[0]]
+        for i in calc_sectors:
+            sector = self.sectors[i]
+            x = sector.coord[0]
+            y = sector.coord[1]
+
+            # Максимальная отметка слева
+            left_max_ele = max(split_list_by_min_value(y)[0])
+            # Максимальная отметка справа
+            right_max_ele = max(split_list_by_min_value(y)[1])
+
+            # Проверка на перелив через границы участка
+            if (
+                (water_level >= left_max_ele)
+                and (i - 1 not in calc_sectors)
+                and (i - 1 >= 0)
+            ):
+                calc_sectors.append(i - 1)
+            if (
+                (water_level >= right_max_ele)
+                and (i + 1 not in calc_sectors)
+                and (i + 1 <= len(self.sectors) - 1)
+            ):
+                calc_sectors.append(i + 1)
+
+            # Сектор воды и основные его параметры
+            # Расчетный участок является участком с минимальными отметками
+            # либо расчёт выполняется с одновременным заполнением
+            # начинаем заполнять с точки с минимальной отметкой
+            if sector.id == min_sector[1].id:
+                water = WaterSection(
+                    x,
+                    y,
+                    water_level,
+                    start_point=sector.coord[0][
+                        sector.coord[1].index(min(sector.coord[1]))
+                    ],
+                )
+
+            # Расчетный участок находится слева от начального
+            # начинаем заполнять с крайней правой точки
+            elif sector.id < min_sector[1].id:
+                water = WaterSection(
+                    x, y, water_level, start_point=self.x[sector.end_point]
+                )
+
+            # Расчетный участок находится справа от начального
+            # начинаем заполнять с крайней левой точки
+            elif sector.id > min_sector[1].id:
+                water = WaterSection(
+                    x, y, water_level, start_point=self.x[sector.start_point]
+                )
+
+            # Расчёт параметров для воды
+            calc = Calculation(
+                h=water.average_depth,
+                n=sector.roughness,
+                i=sector.slope,
+                a=water.area,
+                p=water.wet_perimeter,
+                r=water.r_hydraulic,
+            )
+
+            wc_list.append(calc.q)
+
+            r = dict(
+                zip(
+                    col,
+                    [
+                        sector.name,
+                        round(water_level, 2),
+                        water.area,
+                        water.width,
+                        water.average_depth,
+                        water.max_depth,
+                        calc.v,
+                        calc.q,
+                        calc.shezi,
+                    ],
+                )
+            )
+
+            # Добавляем в список с результирующими значениями значения по секторам
+            # для последующего суммирования/вычисления средних значений
+            df = df._append(r, ignore_index=True)
+        return df
+
     def get_prob_table(self, df: pd.DataFrame):
         result = pd.DataFrame(columns=["P", "Q", "H", "F"])
 
@@ -876,7 +923,7 @@ class Morfostvor:
 
     def get_topography_table(self):
         # Создаем базовый словарь с координатами
-        topography_data = {
+        data = {
             "x": self.x,
             "h": self.y,
         }
@@ -899,12 +946,12 @@ class Morfostvor:
                 slope.append(sector.slope)
 
         # Добавляем данные в основной словарь
-        topography_data['sectors'] = sectors
-        topography_data['roughness'] = roughness
-        topography_data['slope'] = slope
+        data['sectors'] = sectors
+        data['roughness'] = roughness
+        data['slope'] = slope
 
         # Создаем DataFrame и возвращаем его
-        return pd.DataFrame(topography_data)
+        return pd.DataFrame(data)
 
 
 def xls_calculate_hydraulic(in_filename, out_filename, page=None):
