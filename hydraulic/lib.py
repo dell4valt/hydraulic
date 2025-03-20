@@ -446,7 +446,11 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                     (i - 1) >= 0
                 ):
                     # Проверка что вода дошла до левой границы участка
-                    water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point] - 1)
+                    # костыль через try, чтобы избежать ошибки определения границы
+                    try:
+                        water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point])
+                    except ValueError:
+                        water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point] - 1)
                     if water.water_section_x[0] == x[0]:
                         calc_sectors.append(i - 1)
                         sectors_to_process.append(i - 1)
