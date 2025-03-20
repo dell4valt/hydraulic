@@ -877,9 +877,6 @@ class GraphProfile(Graph):
     def __post_init__(self):
         self.clean()
 
-        # Настройка параметров графиков и их инициализация
-        self.fig.subplots_adjust(bottom=0.08, left=0.08, right=0.9)
-
         # Добавляем в список границ максимальную и минимальную отметки
         self._y_limits.append(max(self.morfostvor.y))
         self._y_limits.append(min(self.morfostvor.y))
@@ -1542,7 +1539,7 @@ class GraphProfile(Graph):
         self.ax.set_axisbelow(True)
 
         # Установка параметров полей графика
-        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.89, top=0.9)
+        self.fig.subplots_adjust(left=0.065, bottom=0.02, right=0.88, top=0.9)
 
     def draw_profile_point_lines(self):
         """
