@@ -43,6 +43,8 @@ class Calculation:
     i: float  # Уклон
     h: float  # Средняя глубина
     a: float  # Площадь водного сечений
+    p: float  # Смоченный периметр
+    r: float  # Гидравлический радиус
     v: float = 0  # Скорость
     q: float = 0  # Расход
     _g: float = 9.80665  # Ускорение свободного падения
@@ -50,13 +52,8 @@ class Calculation:
     type__: str = "Не определен"
 
     def __post_init__(self):
-        # В зависимости от глубины считаем по разным формулам
-        # до 3-х метров по Павловскому, свыше 3-х метров по
-        # Павловскому-Железнякову
-        if self.h >= 0 and self.h <= 3:
-            self.__shezi_pavlovskij()
-        else:
-            self.__shezi_pavlovskij_zheleznjakov()
+        # Определение коэффициента Шези
+        self.shezi = self._get_shezi(config.SHEZI_TYPE, config.SHEZI_TYPE_DEFAULTS)
 
         # Тип расчёта, обычная вода или селевой поток
         if config.CALC_TYPE == 1:
@@ -72,6 +69,28 @@ class Calculation:
             raise ValueError("Ошибка выбора формулы расчёта скорости потока.")
         # Расчёт расхода воды
         self.q = self.a * self.v
+
+    def _get_shezi(self, equation_type, equation_types_available):
+        if equation_type not in equation_types_available:
+            raise ValueError(f"Ошибка выбора формулы расчёта коэффициента Шези. Указана: {equation_type}, доступные формулы: {equation_types_available}.")
+
+        if equation_type == "Манинга":
+            return self.__shezi_manning()
+        elif equation_type == "Железнякова":
+            return self.__shezi_zheleznjakov()
+        elif equation_type == "Павловского":
+            return self.__shezi_pavlovskij()
+        elif equation_type == "Павловского-Железнякова":
+            return self.__shezi_pavlovskij_zheleznjakov()
+        elif equation_type == "Гидрорасчеты":
+            if self.h >= 0 and self.h <= 3:
+                return self.__shezi_pavlovskij()
+            else:
+                return self.__shezi_pavlovskij_zheleznjakov()
+        elif equation_type == "Агроскина":
+            return self.__shezi_agroskina()
+        else:
+            raise ValueError(f"Ошибка выбора формулы расчёта коэффициента Шези. Указана: {equation_type}, доступные формулы: {equation_types_available}.")
 
     # Коэффициент Шези по формуле Н. Н. Павловского, степенной коэффициент по формуле Железнякова
     def __shezi_pavlovskij_zheleznjakov(self):
@@ -94,14 +113,16 @@ class Calculation:
             )
         )
 
-        self.shezi = (1 / self.n) * self.h ** y
+        shezi = (1 / self.n) * self.h ** y
         self.type__ = "Коэффициент Шези определён по формуле Павловского, \
                        показатель степени определён по формуле Железнякова"
+        return shezi
 
     # Коэффициент шези по формуле Маннинга
     def __shezi_manning(self):
-        self.shezi = (1 / self.n) * self.h ** (1 / 6)
+        shezi = (1 / self.n) * self.h ** (1 / 6)
         self.type__ = "Коэффициент Шези определён по формуле Маннинга"
+        return shezi
 
     # Коэффициент Шези по формуле Павловского
     # для глубин 0.1 < h < 3 (Гидрорасчёты считают по этой формуле)
@@ -111,14 +132,16 @@ class Calculation:
             - 0.13
             - 0.75 * np.sqrt(self.h) * (np.sqrt(self.n) - 0.10)
         )
-        self.shezi = (1 / self.n) * self.h ** y
+        shezi = (1 / self.n) * self.h ** y
         self.type__ = (
             "Коэффициент шези определён по формуле Павловского для глубин 0.1 < h < 3 м"
         )
 
+        return shezi
+
     # Коэффициент шези по формуле Железнякова
     def __shezi_zheleznjakov(self):
-        self.shezi = 1 / 2 * (
+        shezi = 1 / 2 * (
             (1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.h))
         ) + np.sqrt(
             (1 / 4)
@@ -127,7 +150,12 @@ class Calculation:
             * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.h)))
         )
         self.type__ = "Коэффициент шези определён по формуле Железнякова"
+        return shezi
 
+    def __shezi_agroskina(self):
+        shezi = (1 / self.n) + 17.72 * np.log(self.r)
+        self.type__ = "Коэффициент шези определён по формуле И.И. Агроскина"
+        return shezi
 
 @dataclass
 class Morfostvor:
@@ -746,6 +774,8 @@ class Morfostvor:
                             n=sector.roughness,
                             i=sector.slope,
                             a=water.area,
+                            p=water.wet_perimeter,
+                            r=water.r_hydraulic,
                         )
 
                 wc_list.append(calc.q)
@@ -837,6 +867,8 @@ class Morfostvor:
                 n=sector.roughness,
                 i=sector.slope,
                 a=water.area,
+                p=water.wet_perimeter,
+                r=water.r_hydraulic,
             )
 
             wc_list.append(calc.q)
