@@ -1917,7 +1917,7 @@ class GraphProfile(Graph):
 
         if config.PROFILE_WATER_LEVEL_NOTE:
             if self.morfostvor.waterline == "-" or self.morfostvor.waterline == "":
-                label.append("\nПримечание: на\nмомент съёмки\nсток отсутствует")
+                label.append("\nПримечание: на\nмомент съёмки\nсток отсутствует\n")
 
         # Вывод параметров РУВВ в таблицу справа
         if isinstance(self.morfostvor.probability[self.morfostvor.design_water_level_index][0], (float, int)):
