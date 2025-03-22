@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 from pathvalidate import sanitize_filename
-from report.core import Report
+from report.core import Report, set_table_font_size
 
 from hydraulic import config
 from hydraulic.lib import get_pk, rmdir, text_sanitize
@@ -137,6 +137,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Коэффициент шероховатости, n",
             "Уклон I, ‰",
         ),
+        col_widths=(3, 3, 5, 5, 5),
         col_format=("", ":.2f", "", ":.3f", ":.2f"),
     )
 
@@ -188,7 +189,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
                 f"{sector.slope:.2f}",
             )
 
-    report.insert_df_to_table(
+    sectors_table = report.insert_df_to_table(
         df_sectors,
         f"Расчётные участки и их параметры",
         col_names=(
@@ -241,7 +242,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     # Записываем только чётные элементы таблицы
     table_round = table_round[table_round.index % divider == 0]
 
-    report.insert_df_to_table(
+    parameters = report.insert_df_to_table(
         table_round,
         f"Параметры расчёта кривой расхода {morfostvor.strings['type']}",
         col_names=(
@@ -256,14 +257,15 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Расход Q, м³/сек",
             "Коэффициент Шези",
         ),
-        col_widths=(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-        col_format=(":.2f", ":.3f", ":.3f", ":.3f",  ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
+        col_widths=(5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
+        col_format=(":.2f", ":.3f", ":.3f", ":.3f",  ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         footer_text=(
             f"Расчётный шаг: {morfostvor.dh:g} см. "
             f"В таблице приведён каждый {divider}-й результат расчёта."
         ),
     )
 
+    set_table_font_size(parameters, 8)
     print("успешно!")
 
     try:
