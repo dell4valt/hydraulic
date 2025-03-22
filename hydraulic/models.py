@@ -385,10 +385,8 @@ class WaterSection:
         max_depth = max(depths) if depths else 0
 
         # Вычисляем смочённый периметр как сумму расстояний между соседними точками
-        sum_sqr = 0
-        for i in range(len(seg_x) - 1):
-            sum_sqr += (seg_x[i+1] - seg_x[i]) ** 2
-        wet_perimeter = np.sqrt(sum_sqr)
+        wet_perimeter = calculate_line_length(seg_x, seg_y)
+
         r_hydraulic = area / wet_perimeter if area > 0 and wet_perimeter > 0 else 0
         if r_hydraulic == 0:
             r_hydraulic = 0.00001

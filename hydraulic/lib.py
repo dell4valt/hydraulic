@@ -370,6 +370,7 @@ def get_pk(distance: float, divider=100, decimal=False) -> str:
 def floor_float(a, precision=0):
     return np.true_divide(np.floor(a * 10**precision), 10**precision)
 
+
 def closest_upper_multiple(n, k):
     # Проверяем, что k больше нуля
     if k <= 0:
@@ -378,6 +379,7 @@ def closest_upper_multiple(n, k):
     # Вычисляем ближайшее старшее кратное
     result = np.ceil(n / k) * k
     return result
+
 
 def split_list_by_min_value(values: list) -> list:
     """
@@ -409,6 +411,7 @@ def split_list_by_min_value(values: list) -> list:
         min_index = len(values) - 1
 
     return [values[:min_index], values[min_index:]]
+
 
 def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
     from hydraulic.models import WaterSection
@@ -498,3 +501,19 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                 result_sectors.append(sector)
 
     return result_sections, result_sectors
+
+
+def calculate_line_length(x_coords, y_coords):
+    # Проверяем, что списки координат имеют одинаковую длину и минимум 2 точки
+    if len(x_coords) != len(y_coords) or len(x_coords) < 2:
+        return 0.0
+
+    total_length = 0.0
+    # Проходим по всем точкам, кроме последней
+    for i in range(len(x_coords) - 1):
+        # Вычисляем расстояние между текущей и следующей точкой
+        dx = x_coords[i+1] - x_coords[i]
+        dy = y_coords[i+1] - y_coords[i]
+        total_length += (dx**2 + dy**2) ** 0.5
+
+    return total_length
