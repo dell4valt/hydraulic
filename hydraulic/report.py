@@ -140,7 +140,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         col_format=("", ":.2f", "", ":.3f", ":.2f"),
     )
 
-    # Объединение ячеек участков
+    # Объединение ячеек участков топографии
     for sector in morfostvor.sectors:
         if sector == morfostvor.sectors[-1]:
             report.merge_table_cells(
@@ -216,8 +216,6 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
 
     table = morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
     table_round = table.round(3)  # Округляем
-    # Убираем столбец с коэффициентами Шези
-    table_round = table_round.drop(columns=["Shezi"])
 
     if config.DOC_TABLE_SHORT:
         # Количество строк в таблице
@@ -250,13 +248,16 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             f"Отм. уровня H, м {config.ALTITUDE_SYSTEM}",
             "Площадь F, м²",
             "Ширина B, м",
+            "Смоченный периметр P, м",
             "Средняя глубина Hср, м",
             "Макс. глубина Hмакс, м",
+            "Гидравлический радиус R",
             "Средняя скорость Vср, м/сек",
             "Расход Q, м³/сек",
+            "Коэффициент Шези",
         ),
-        col_widths=(5, 5, 5, 5, 5, 5, 5),
-        col_format=(":.2f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
+        col_widths=(5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
+        col_format=(":.2f", ":.3f", ":.3f", ":.3f",  ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
         footer_text=(
             f"Расчётный шаг: {morfostvor.dh:g} см. "
             f"В таблице приведён каждый {divider}-й результат расчёта."

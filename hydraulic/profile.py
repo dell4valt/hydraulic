@@ -650,14 +650,14 @@ class Morfostvor:
         area_summ = 0
         n = 0
 
-        col = ["Участок", "УВ", "F", "B", "Hср", "Hмакс", "V", "Q", "Shezi"]
+        col = ["Участок", "УВ", "F", "B", "W", "Hср", "Hмакс", "R", "V", "Q", "Shezi"]
         df = pd.DataFrame(columns=col, dtype=float)
         # Первый расчётный элемент суммирующей кривой со всеми нулями
         df = pd.concat(
             [
                 df,
                 pd.DataFrame.from_records(
-                    [dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0]))]
+                    [dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0]))]
                 ),
             ],
             ignore_index=True,
@@ -684,7 +684,7 @@ class Morfostvor:
 
             # Пустые значения для суммирующей кривой
             r_sum = dict(
-                zip(col, ["Сумма", round(water_level, 2), 0, 0, 0, 0, 0, 0, 0])
+                zip(col, ["Сумма", round(water_level, 2), 0, 0, 0, 0, 0, 0, 0, 0, 0])
             )
             df = pd.concat([df, pd.DataFrame.from_records([r_sum])], ignore_index=True)
 
@@ -711,6 +711,8 @@ class Morfostvor:
         df.loc[(water_levels, "Сумма"), "Shezi"] = df.groupby(level=0)[
             "Shezi"
         ].transform("sum") / (df.groupby(level=0)["Shezi"].transform("count") - 1)
+        df.loc[(water_levels, "Сумма"), "R"] = df.groupby(level=0)["R"].transform("sum")
+        df.loc[(water_levels, "Сумма"), "W"] = df.groupby(level=0)["W"].transform("sum")
         df = df.fillna(0)
 
         # Интерполируем значения гидравлической кривой
@@ -799,8 +801,10 @@ class Morfostvor:
                                     round(water_level, 2),
                                     water.area,
                                     water.width,
+                                    water.wet_perimeter,
                                     water.average_depth,
                                     water.max_depth,
+                                    water.r_hydraulic,
                                     calc.v,
                                     calc.q,
                                     calc.shezi,
@@ -891,8 +895,10 @@ class Morfostvor:
                         round(water_level, 2),
                         water.area,
                         water.width,
+                        water.wet_perimeter,
                         water.average_depth,
                         water.max_depth,
+                        water.r_hydraulic,
                         calc.v,
                         calc.q,
                         calc.shezi,

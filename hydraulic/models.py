@@ -5,7 +5,7 @@ import numpy as np
 from scipy import interpolate
 
 from hydraulic import config
-from hydraulic.lib import poly_area
+from hydraulic.lib import poly_area, calculate_line_length
 
 
 @dataclass
