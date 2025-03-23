@@ -40,8 +40,6 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     temp_dir = Path(config.TEMP_DIR_NAME)
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-
-
     if config.GRAPHICS_TITLES_TEXT:
         profile_title = f"{morfostvor.fig_profile.morfostvor.title}"
         qh_title = f"{morfostvor.fig_QH._ax_title_text}"
@@ -71,20 +69,48 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
 
     # Dictionary of curve configurations with their properties
     curves = [
-        {"config": "HYDRAULIC_CURVE", "fig": morfostvor.fig_qh.fig, "title": qh_title,
-         "message": "Вставляем график (кривая QH)"},
-        {"config": "QWVH_CURVE", "fig": morfostvor.fig_qwvh.fig, "title": qwvh_title,
-         "message": "Вставляем график (кривая QWVH)"},
-        {"config": "HYDRAULIC_AND_SPEED_CURVE", "fig": morfostvor.fig_qhv.fig, "title": qhv_title,
-         "message": "Вставляем график (кривая QHV)"},
-        {"config": "SPEED_CURVE", "fig": morfostvor.fig_qv.fig, "title": qv_title,
-         "message": "Вставляем график кривой скоростей QV"},
-        {"config": "SPEED_VH_CURVE", "fig": morfostvor.fig_vh.fig, "title": vh_title,
-         "message": "Вставляем график кривой скоростей VH"},
-        {"config": "AREA_CURVE", "fig": morfostvor.fig_qf.fig, "title": qf_title,
-         "message": "Вставляем график кривой площадей от расхода воды"},
-        {"config": "AREA_FH_CURVE", "fig": morfostvor.fig_fh.fig, "title": fh_title,
-         "message": "Вставляем график кривой площадей от уровня"}
+        {
+            "config": "HYDRAULIC_CURVE",
+            "fig": morfostvor.fig_qh.fig,
+            "title": qh_title,
+            "message": "Вставляем график (кривая QH)",
+        },
+        {
+            "config": "QWVH_CURVE",
+            "fig": morfostvor.fig_qwvh.fig,
+            "title": qwvh_title,
+            "message": "Вставляем график (кривая QWVH)",
+        },
+        {
+            "config": "HYDRAULIC_AND_SPEED_CURVE",
+            "fig": morfostvor.fig_qhv.fig,
+            "title": qhv_title,
+            "message": "Вставляем график (кривая QHV)",
+        },
+        {
+            "config": "SPEED_CURVE",
+            "fig": morfostvor.fig_qv.fig,
+            "title": qv_title,
+            "message": "Вставляем график кривой скоростей QV",
+        },
+        {
+            "config": "SPEED_VH_CURVE",
+            "fig": morfostvor.fig_vh.fig,
+            "title": vh_title,
+            "message": "Вставляем график кривой скоростей VH",
+        },
+        {
+            "config": "AREA_CURVE",
+            "fig": morfostvor.fig_qf.fig,
+            "title": qf_title,
+            "message": "Вставляем график кривой площадей от расхода воды",
+        },
+        {
+            "config": "AREA_FH_CURVE",
+            "fig": morfostvor.fig_fh.fig,
+            "title": fh_title,
+            "message": "Вставляем график кривой площадей от уровня",
+        },
     ]
 
     # Insert all configured curves
@@ -117,8 +143,8 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     # Вывод таблицы участков
     print("    — Записываем таблицу участков ... ", end="")
     # Заменяем пустые значения на прочерк и добавляем номер участка
-    df_sectors = morfostvor.sectors_result.replace(np.nan, '-')
-    df_sectors.insert(loc=0, column='N', value=df_sectors.index + 1)
+    df_sectors = morfostvor.sectors_result.replace(np.nan, "-")
+    df_sectors.insert(loc=0, column="N", value=df_sectors.index + 1)
 
     prob_text = text_sanitize(
         morfostvor.probability[morfostvor.design_water_level_index][0],
@@ -126,7 +152,9 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     )
 
     topography_table = morfostvor.get_topography_table()
-    topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x, decimal=True))
+    topography_table["x"] = topography_table["x"].apply(
+        lambda x: get_pk(x, decimal=True)
+    )
     topo_table = report.insert_df_to_table(
         topography_table,
         "Топографические данные створа",
@@ -215,7 +243,9 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     # Вывод таблицы гидравлической кривой
     print("    — Записываем таблицу кривой расхода воды ... ", end="")
 
-    table = morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
+    table = (
+        morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
+    )
     table_round = table.round(3)  # Округляем
 
     if config.DOC_TABLE_SHORT:
@@ -258,7 +288,18 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Коэффициент Шези",
         ),
         col_widths=(5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-        col_format=(":.2f", ":.3f", ":.3f", ":.3f",  ":.3f", ":.3f", ":.3f", ":.3f", ":.3f", ":.3f"),
+        col_format=(
+            ":.2f",
+            ":.3f",
+            ":.3f",
+            ":.3f",
+            ":.3f",
+            ":.3f",
+            ":.3f",
+            ":.3f",
+            ":.3f",
+            ":.3f",
+        ),
         footer_text=(
             f"Расчётный шаг: {morfostvor.dh:g} см. "
             f"В таблице приведён каждый {divider}-й результат расчёта."
@@ -293,9 +334,7 @@ def save_graphic(morfostvor, path):
     profile_name = sanitize_filename(morfostvor.title)
 
     # Создаем папку для сохранения отдельных изображений
-    picture_dir = Path(
-        str(Path(path)) + "/" + config.GRAPHICS_DIR_NAME
-    )
+    picture_dir = Path(str(Path(path)) + "/" + config.GRAPHICS_DIR_NAME)
     picture_dir.mkdir(parents=True, exist_ok=True)
 
     # Сохраняем картинки в отдельные файлы в папку graphics

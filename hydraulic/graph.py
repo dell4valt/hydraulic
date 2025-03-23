@@ -17,6 +17,7 @@ from hydraulic.lib import closest_upper_multiple, get_pk, text_sanitize, chunk_l
 from hydraulic.models import WaterSection
 from hydraulic.lib import get_water_sections
 
+
 @dataclass
 class Graph:
     _fig_size = (16.5, 9)
@@ -76,7 +77,7 @@ class Graph:
             direction="out",
             width=2,
             length=5,
-            pad=config.PADDING['ax_tick_labels'],
+            pad=config.PADDING["ax_tick_labels"],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_major"],
         )
@@ -86,7 +87,7 @@ class Graph:
             direction="out",
             width=1.5,
             length=3.5,
-            pad=config.PADDING['ax_tick_labels'],
+            pad=config.PADDING["ax_tick_labels"],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_minor"],
         )
@@ -97,7 +98,7 @@ class Graph:
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
-            weight="normal"
+            weight="normal",
         )
         ax.xaxis.set_label_coords(0.5, -0.06)
         ax.set_ylabel(
@@ -105,7 +106,7 @@ class Graph:
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
-            weight="normal"
+            weight="normal",
         )
         ax.yaxis.set_label_coords(-0.065, 0.5)
 
@@ -133,7 +134,7 @@ class Graph:
 
         # Скрыть сетку
         if config.CURVE_HIDE_GRID:
-            ax.grid(visible=False, which='Both')
+            ax.grid(visible=False, which="Both")
 
         # Установка параметров полей графика
         self.fig.subplots_adjust(left=0.08, bottom=0.08, right=0.93, top=0.9)
@@ -158,9 +159,7 @@ class Graph:
 
 @dataclass
 class GraphCurve(Graph):
-    def draw_water_levels(
-        self, morfostvor, ax: plt.subplot, x="Q", y="H", y_min=0
-    ):
+    def draw_water_levels(self, morfostvor, ax: plt.subplot, x="Q", y="H", y_min=0):
         """Функция выводит на график ax отметку и линии пересечения
            x и y.
 
@@ -302,7 +301,7 @@ class GraphQWVH(GraphCurve):
         graph_specs = [
             (self.ax1, "Q", "red", r"$Q=f(H), м³/сек$"),
             (self.ax2, "F", "green", r"$F=f(H), м²$"),
-            (self.ax3, "V", "blue", r"$V=f(H), м/сек$")
+            (self.ax3, "V", "blue", r"$V=f(H), м/сек$"),
         ]
 
         for i, (ax, x, color, label) in enumerate(graph_specs):
@@ -322,8 +321,21 @@ class GraphQWVH(GraphCurve):
             secondary_label = f"{x}_{{ср. русл.}}"
 
         # Отрисовка линий
-        self._plot_graph(ax, df, x, "УВ", "сумма", main_label, color, zorder=10, alpha=0.5)
-        self._plot_graph(ax, df, x, "УВ", "русло", secondary_label, color, linestyle="--", linewidth=1, zorder=11)
+        self._plot_graph(
+            ax, df, x, "УВ", "сумма", main_label, color, zorder=10, alpha=0.5
+        )
+        self._plot_graph(
+            ax,
+            df,
+            x,
+            "УВ",
+            "русло",
+            secondary_label,
+            color,
+            linestyle="--",
+            linewidth=1,
+            zorder=11,
+        )
 
         # Отрисовка линий пересечений и подписей
         self._draw_water_levels_x(self.morfostvor, ax, x, "H", color, offset)
@@ -644,9 +656,9 @@ class GraphQHV(GraphCurve):
     _y2_label_text = "V, м/с"
     _ax_title_text = "Гидравлическая кривая Q=f(H) с наложением Q=f(V)"
 
-    def draw_curve(self, morfostvor,
-                   ax: plt.subplot, ax_secondary,
-                   x="Q", y="УВ", yy="V"):
+    def draw_curve(
+        self, morfostvor, ax: plt.subplot, ax_secondary, x="Q", y="УВ", yy="V"
+    ):
         """Отрисовка кривой на графике по заданным из морфоствора параметрам.
 
         Args:
@@ -680,10 +692,12 @@ class GraphQHV(GraphCurve):
             label="Сумма",
             linewidth=3,
             color="navy",
-            linestyle='-.'
+            linestyle="-.",
         )
 
-        ax_secondary.set_ylim(df.loc[("Сумма"), yy].min(), df.loc[("Сумма"), yy].max() + 0.5)
+        ax_secondary.set_ylim(
+            df.loc[("Сумма"), yy].min(), df.loc[("Сумма"), yy].max() + 0.5
+        )
 
         # Отрисовка кривых по участкам
         for sector in sectors:
@@ -696,8 +710,12 @@ class GraphQHV(GraphCurve):
             )
 
         # Отрисовка легенды
-        ax.legend(loc="lower right", fontsize=config.FONT_SIZE["legend"],
-                  title="Q = f(H)", title_fontsize=14)
+        ax.legend(
+            loc="lower right",
+            fontsize=config.FONT_SIZE["legend"],
+            title="Q = f(H)",
+            title_fontsize=14,
+        )
         ax_secondary.legend(
             fontsize=config.FONT_SIZE["legend"], title="Q = f(V)", title_fontsize=14
         )
@@ -717,7 +735,7 @@ class GraphQHV(GraphCurve):
             direction="out",
             width=2,
             length=5,
-            pad=config.PADDING['ax_tick_labels'],
+            pad=config.PADDING["ax_tick_labels"],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_major"],
         )
@@ -727,7 +745,7 @@ class GraphQHV(GraphCurve):
             direction="out",
             width=1.5,
             length=3.5,
-            pad=config.PADDING['ax_tick_labels'],
+            pad=config.PADDING["ax_tick_labels"],
             labelcolor=config.COLOR["ax_value_text"],
             labelsize=config.FONT_SIZE["ax_minor"],
         )
@@ -742,7 +760,9 @@ class GraphQHV(GraphCurve):
         ax_secondary.yaxis.set_label_coords(1.05, 0.5)
 
         # Устанавливает параметры вывода значений осей
-        ax_secondary.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter("%.10g"))
+        ax_secondary.yaxis.set_major_formatter(
+            matplotlib.ticker.FormatStrFormatter("%.10g")
+        )
 
         # Устанавливаем отступы в графиках
         ax_secondary.margins(0.025)
@@ -901,7 +921,7 @@ class GraphProfile(Graph):
                 color=config.COLOR["profile_bottom"],
                 linewidth=config.LINE_WIDTH["profile_bottom"],
                 linestyle="solid",
-                zorder=10
+                zorder=10,
             )
 
     def draw_profile_footer(self):
@@ -932,14 +952,19 @@ class GraphProfile(Graph):
                 (y_bot, y_bot),
                 color=config.COLOR["border"],
                 linewidth=config.LINE_WIDTH["profile_bottom"],
-                linestyle="solid")
+                linestyle="solid",
+            )
 
         def __draw_label(x2, y_mid, label):
             self.ax_bottom_overlay.text(
-                x2, y_mid, "   " + label,
+                x2,
+                y_mid,
+                "   " + label,
                 color=config.COLOR["bottom_text_secondary"],
                 fontsize=config.FONT_SIZE["bottom_description"],
-                horizontalalignment='left', verticalalignment='center')
+                horizontalalignment="left",
+                verticalalignment="center",
+            )
 
         def __draw_sectors(
             morfostvor, parameter, y_mid, y_bot, y_top, float_precision=2
@@ -967,8 +992,10 @@ class GraphProfile(Graph):
                     )
 
                 except ValueError:
-                    raise("\nОшибка в указании параметров участков (коэффициент шероховатости \
-                        или разделение на участки). Проверить данные.")
+                    raise (
+                        "\nОшибка в указании параметров участков (коэффициент шероховатости \
+                        или разделение на участки). Проверить данные."
+                    )
 
                 # Разделители коэффициентов шероховатости
                 # Левая граница
@@ -998,16 +1025,12 @@ class GraphProfile(Graph):
             y_top = self._footer_y
 
             # Технический разделитель (для увеличения размера границ)
-            self.ax_bottom_overlay.plot(
-                (x1, x2), (y_top, y_top), alpha=0, color="red"
-            )
+            self.ax_bottom_overlay.plot((x1, x2), (y_top, y_top), alpha=0, color="red")
 
-            self.ax_bottom.plot(
-                (x1, x1), (0, y_top), alpha=0, color="red"
-            )
+            self.ax_bottom.plot((x1, x1), (0, y_top), alpha=0, color="red")
 
         def draw_pk():
-            """  Отрисовывает нижнюю границу для ПК в подвале,
+            """Отрисовывает нижнюю границу для ПК в подвале,
             сами значения ПК отрисовываются отдельно
             """
             y_bot = self._footer_y
@@ -1017,7 +1040,7 @@ class GraphProfile(Graph):
             x2 = self.morfostvor.x[-1]
 
             # Подпись ячейки
-            label = 'Пикеты'
+            label = "Пикеты"
             __draw_label(x2, y_mid, label)
 
             self.ax_bottom_overlay.plot(
@@ -1040,7 +1063,7 @@ class GraphProfile(Graph):
             divider_length = 1
 
             # Подпись ячейки
-            label = 'Отм. земли'
+            label = "Отм. земли"
             __draw_label(x2, y_mid, label)
             __draw_borders(x1, x2, y_top, y_bot)
 
@@ -1093,7 +1116,7 @@ class GraphProfile(Graph):
             x2 = self.morfostvor.x[-1]
 
             # Подпись ячейки
-            label = 'Расстояние'
+            label = "Расстояние"
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
 
@@ -1137,10 +1160,12 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = 'Коэфф. n'
+            label = "Коэфф. n"
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
-            __draw_sectors(self.morfostvor, 'roughness', y_mid, y_bot, y_top, float_precision=3)
+            __draw_sectors(
+                self.morfostvor, "roughness", y_mid, y_bot, y_top, float_precision=3
+            )
             self.footers_num += 1
 
         def draw_depth():
@@ -1153,10 +1178,10 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = '$H_{ср}$ при РУВВ'
+            label = "$H_{ср}$ при РУВВ"
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
-            __draw_sectors(self.morfostvor, 'depth', y_mid, y_bot, y_top)
+            __draw_sectors(self.morfostvor, "depth", y_mid, y_bot, y_top)
             self.footers_num += 1
 
         def draw_speed():
@@ -1169,10 +1194,10 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = '$V_{ср}$ при РУВВ'
+            label = "$V_{ср}$ при РУВВ"
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
-            __draw_sectors(self.morfostvor, 'speed', y_mid, y_bot, y_top)
+            __draw_sectors(self.morfostvor, "speed", y_mid, y_bot, y_top)
             self.footers_num += 1
 
         def draw_area():
@@ -1185,10 +1210,10 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = '$F$ при РУВВ'
+            label = "$F$ при РУВВ"
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
-            __draw_sectors(self.morfostvor, 'area', y_mid, y_bot, y_top)
+            __draw_sectors(self.morfostvor, "area", y_mid, y_bot, y_top)
             self.footers_num += 1
 
         def draw_consumption():
@@ -1201,10 +1226,10 @@ class GraphProfile(Graph):
             x1 = self.morfostvor.x[0]
             x2 = self.morfostvor.x[-1]
 
-            label = '$Q$ при РУВВ'
+            label = "$Q$ при РУВВ"
             __draw_borders(x1, x2, y_top, y_bot)
             __draw_label(x2, y_mid, label)
-            __draw_sectors(self.morfostvor, 'consumption', y_mid, y_bot, y_top)
+            __draw_sectors(self.morfostvor, "consumption", y_mid, y_bot, y_top)
             self.footers_num += 1
 
         def draw_situation():
@@ -1217,7 +1242,7 @@ class GraphProfile(Graph):
             x2 = self.morfostvor.x[-1]
 
             # Подпись ряда
-            label = 'Ситуация'
+            label = "Ситуация"
             __draw_label(x2, y_mid, label)
             __draw_borders(x1, x2, y_top, y_bot)
 
@@ -1230,15 +1255,19 @@ class GraphProfile(Graph):
                 if config.SITUATION_COLORS:
                     self.ax_bottom.add_patch(
                         Rectangle(
-                            (x1, y_bot), (x2 - x1), hs,
+                            (x1, y_bot),
+                            (x2 - x1),
+                            hs,
                             facecolor=sector.get_color(),
-                            fill=True))
+                            fill=True,
+                        )
+                    )
 
                 # Определение толщины и типа вертикальных линий
                 if sector.type == "УВ":
-                    linestyle = 'solid'
+                    linestyle = "solid"
                 else:
-                    linestyle = '--'
+                    linestyle = "--"
 
                 linewidth = config.LINE_WIDTH["profile_footer_divider"]
                 alpha = config.TRANSPARENCY["profile_footer_divider_situation"]
@@ -1248,11 +1277,11 @@ class GraphProfile(Graph):
                     x_mid,
                     y_mid,
                     f"{sector.type}",
-                    style='italic',
+                    style="italic",
                     color=config.COLOR["bottom_text"],
                     fontsize=config.FONT_SIZE["bottom_medium"],
                     verticalalignment="center",
-                    horizontalalignment="center"
+                    horizontalalignment="center",
                 )
 
                 # Левая граница
@@ -1295,15 +1324,22 @@ class GraphProfile(Graph):
 
                 # Маркеры
                 self.ax_bottom.plot(
-                    xb, yb, linestyle=linestyle, linewidth=linewidth,
-                    marker=linesymbol, color=(.0, .0, 0, 0), ms=8,
-                    mfc=(.0, .0, 0, 1), mec=(0, 0, 0, 1), clip_on=True)
+                    xb,
+                    yb,
+                    linestyle=linestyle,
+                    linewidth=linewidth,
+                    marker=linesymbol,
+                    color=(0.0, 0.0, 0, 0),
+                    ms=8,
+                    mfc=(0.0, 0.0, 0, 1),
+                    mec=(0, 0, 0, 1),
+                    clip_on=True,
+                )
 
                 # Линия
                 self.ax_bottom.plot(
-                    (xb1, xb1), (y_bot, y_top),
-                    ls='solid', lw=2,
-                    color=(.0, .0, 0, 1))
+                    (xb1, xb1), (y_bot, y_top), ls="solid", lw=2, color=(0.0, 0.0, 0, 1)
+                )
             self.footers_num += 1
 
         draw_situation()
@@ -1425,7 +1461,8 @@ class GraphProfile(Graph):
                     linewidth=config.LINE_WIDTH["profile_bottom"],
                     linestyle="solid",
                     color=sector.color,
-                    zorder=15)
+                    zorder=15,
+                )
 
     def set_style(self):
         # Устанавливаем заголовки графиков
@@ -1473,7 +1510,7 @@ class GraphProfile(Graph):
             direction="out",
             width=2,
             length=5,
-            pad=config.PADDING['ax_profile_tick_labels'],
+            pad=config.PADDING["ax_profile_tick_labels"],
             labelcolor=config.COLOR["ax_label_text"],
             labelsize=config.FONT_SIZE["ax_major"],
         )
@@ -1483,7 +1520,7 @@ class GraphProfile(Graph):
             direction="out",
             width=1.5,
             length=3,
-            pad=config.PADDING['ax_profile_tick_labels'],
+            pad=config.PADDING["ax_profile_tick_labels"],
             labelcolor=config.COLOR["ax_label_text"],
             labelsize=config.FONT_SIZE["ax_minor"],
         )
@@ -1506,11 +1543,13 @@ class GraphProfile(Graph):
             color=config.COLOR["ax_label_text"],
             fontsize=config.FONT_SIZE["ax_label"],
             fontstyle="italic",
-            rotation="horizontal"
+            rotation="horizontal",
         )
 
         # Настраиваем вывод значений оси x в виде пикетажа
-        self.ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(format_picket))
+        self.ax.xaxis.set_major_formatter(
+            matplotlib.ticker.FuncFormatter(format_picket)
+        )
 
         self.ax.yaxis.set_label_coords(-0.03, 1.03)
 
@@ -1553,11 +1592,12 @@ class GraphProfile(Graph):
                 color=config.COLOR["profile_point_line"],
                 linewidth=config.LINE_WIDTH["profile_point_line"],
                 linestyle="solid",
-                zorder=1
+                zorder=1,
             )
 
-    def draw_erosion_limit(self, h, x1=None, x2=None,
-                           x3=None, x4=None, text="▼$H_{{разм.}} = {h:.2f}$"):
+    def draw_erosion_limit(
+        self, h, x1=None, x2=None, x3=None, x4=None, text="▼$H_{{разм.}} = {h:.2f}$"
+    ):
         """Функция отрисовки линии предельного профиля размыва.
 
         Arguments:
@@ -1600,7 +1640,7 @@ class GraphProfile(Graph):
                 color=config.COLOR["erosion_limit_text"],
                 fontsize=config.FONT_SIZE["erosion_limit"],
                 weight="bold",
-                zorder=20
+                zorder=20,
             )
             # Обводка текста
             erosion_limit_text.set_path_effects(
@@ -1657,12 +1697,13 @@ class GraphProfile(Graph):
             cent_x,
             h + (y_step * 0.2),
             f"{self.morfostvor.top_limit_description}\nH = {h:.2f}",
-            color=config.COLOR['top_limit_text'],
-            fontsize=config.FONT_SIZE['top_limit'],
-            weight='bold',
-            horizontalalignment='center',
-            verticalalignment='center',
-            zorder=20)
+            color=config.COLOR["top_limit_text"],
+            fontsize=config.FONT_SIZE["top_limit"],
+            weight="bold",
+            horizontalalignment="center",
+            verticalalignment="center",
+            zorder=20,
+        )
 
         self.ax.plot(
             [x1, x2],
@@ -1697,7 +1738,7 @@ class GraphProfile(Graph):
                     color=color,
                     linestyle=linestyle,
                     linewidth=linewidth,
-                    zorder=5
+                    zorder=5,
                 )
 
                 # Заливка урезов в русле
@@ -1715,7 +1756,9 @@ class GraphProfile(Graph):
             calc_sectors = [min_sector[0]]
 
             for i in calc_sectors:
-                waters, sectors = get_water_sections(self.morfostvor, h, config.OVERFLOW)
+                waters, sectors = get_water_sections(
+                    self.morfostvor, h, config.OVERFLOW
+                )
                 for water in waters:
                     draw_line(self, water)
 
@@ -1752,7 +1795,7 @@ class GraphProfile(Graph):
                     f"$P_{{{row['P']:2g}\\%}} = {row['H']:.2f}$",
                     color=config.COLOR["water_level_text"],
                     fontsize=config.FONT_SIZE["water_level"],
-                    zorder=20
+                    zorder=20,
                 )
                 waterline_text.set_path_effects(
                     [
@@ -1770,7 +1813,7 @@ class GraphProfile(Graph):
                     f"${row['P']} = {row['H']:.2f}$",
                     color=config.COLOR["water_level_text"],
                     fontsize=config.FONT_SIZE["water_level"],
-                    zorder=20
+                    zorder=20,
                 )
 
                 waterline_text.set_path_effects(
@@ -1809,7 +1852,12 @@ class GraphProfile(Graph):
 
             # Подпись уровня воды в таблице справа
             try:
-                if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
+                if (
+                    self.morfostvor.levels_result["H"][
+                        self.morfostvor.design_water_level_index
+                    ]
+                    == water_level
+                ):
                     label.append(
                         f"$\\mathbf{{ P_{{ {row['P']:2g}\\% }} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n"
                     )
@@ -1818,7 +1866,12 @@ class GraphProfile(Graph):
                         f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n"
                     )
             except ValueError:
-                if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
+                if (
+                    self.morfostvor.levels_result["H"][
+                        self.morfostvor.design_water_level_index
+                    ]
+                    == water_level
+                ):
                     label.append(
                         f"$\\mathbf{{ {row['P']} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n"
                     )
@@ -1838,7 +1891,9 @@ class GraphProfile(Graph):
                     min_sector.coord[1].index(min(min_sector.coord[1]))
                 ]
                 # Сечечение воды для корректного размещения выносок подписей уровней воды
-                __water = WaterSection(min_sec_x, min_sec_y, water_level, True, min_sec_start_point)
+                __water = WaterSection(
+                    min_sec_x, min_sec_y, water_level, True, min_sec_start_point
+                )
 
                 # Устанавливаем координаты по умолчанию
                 y0 = water_level
@@ -1862,7 +1917,9 @@ class GraphProfile(Graph):
                     x0 = max(__water.water_section_x) - x_step
 
                 # контрольная проверка
-                if x0 < min(__water.water_section_x) or x0 > max(__water.water_section_x):
+                if x0 < min(__water.water_section_x) or x0 > max(
+                    __water.water_section_x
+                ):
                     x0 = min(__water.water_section_x)
 
                 x1 = x0
@@ -1908,9 +1965,10 @@ class GraphProfile(Graph):
                 prev_y1 = y1
                 prev_x0 = x0
 
-
         if self.morfostvor.waterline and type(self.morfostvor.waterline) is not str:
-            label.append(f"\nУВ = {self.morfostvor.waterline:.2f} м {config.ALTITUDE_SYSTEM}\n")
+            label.append(
+                f"\nУВ = {self.morfostvor.waterline:.2f} м {config.ALTITUDE_SYSTEM}\n"
+            )
 
             if self.morfostvor.date:
                 label.append(f"({self.morfostvor.date})\n")
@@ -1920,7 +1978,10 @@ class GraphProfile(Graph):
                 label.append("\nПримечание: на\nмомент съёмки\nсток отсутствует\n")
 
         # Вывод параметров РУВВ в таблицу справа
-        if isinstance(self.morfostvor.probability[self.morfostvor.design_water_level_index][0], (float, int)):
+        if isinstance(
+            self.morfostvor.probability[self.morfostvor.design_water_level_index][0],
+            (float, int),
+        ):
             prob_text = rf" $P_{{{text_sanitize(
                 self.morfostvor.probability[self.morfostvor.design_water_level_index][0], suffix="\\%"
             )}}}$"
@@ -1985,16 +2046,24 @@ class GraphProfile(Graph):
             )
 
         # Цикл расчёта до максимального уровня воды
-        while water_level <= self.morfostvor.levels_result["H"].max() + dh * config.PROFILE_WET_PERIMETER_NUM:
+        while (
+            water_level
+            <= self.morfostvor.levels_result["H"].max()
+            + dh * config.PROFILE_WET_PERIMETER_NUM
+        ):
             if config.OVERFLOW:
                 for i in calc_sectors:
-                    waters, sectors = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
+                    waters, sectors = get_water_sections(
+                        self.morfostvor, water_level, config.OVERFLOW
+                    )
                     for water in waters:
                         # Отрисовка смоченного периметра на профиле на профиле
                         for segment in water.segments:
                             segment_fill(self.ax, segment)
             else:
-                waters, sectors = get_water_sections(self.morfostvor, water_level, config.OVERFLOW)
+                waters, sectors = get_water_sections(
+                    self.morfostvor, water_level, config.OVERFLOW
+                )
                 for water in waters:
                     # Отрисовка смоченного периметра для каждого сегмента
                     for segment in water.segments:
@@ -2023,8 +2092,8 @@ class GraphProfile(Graph):
                 self.bottom_limit -= y_step
 
         # Верхняя граница
-        if self.morfostvor.levels_result['H'].max() > max_y:
-            max_y = self.morfostvor.levels_result['H'].max()
+        if self.morfostvor.levels_result["H"].max() > max_y:
+            max_y = self.morfostvor.levels_result["H"].max()
 
         if y_step > 0.5:
             self.top_limit = round(np.floor(max_y) + y_step, 3)

@@ -7,12 +7,12 @@ from report.core import Report
 
 def question_continue_app():
     while True:
-        answer = input('Продолжить расчет? (да/нет)')
-        if answer.lower() in ['да', 'д', 'yes', 'y', 'ага']:
-            print('Хорошо. Продолжаем расчет.\n')
+        answer = input("Продолжить расчет? (да/нет)")
+        if answer.lower() in ["да", "д", "yes", "y", "ага"]:
+            print("Хорошо. Продолжаем расчет.\n")
             break
-        elif answer.lower() in ['no', 'нет', 'n', 'н']:
-            print('Программа будет завершена.\n')
+        elif answer.lower() in ["no", "нет", "n", "н"]:
+            print("Программа будет завершена.\n")
             sys.exit()
         else:
             continue
@@ -40,15 +40,18 @@ def chunk_list(seq, num):
     last = 0.0
 
     while last < len(seq):
-        out.append(seq[int(last): int(last + avg)])
+        out.append(seq[int(last) : int(last + avg)])
         last += avg
 
     return out
 
 
 def insert_summary_QV_tables(stvors, out_filename):
-    print("Формируем и вставляем сводные таблицы уровней, "
-          "скоростей и таблиц параметров при РУВВ... ", end="")
+    print(
+        "Формируем и вставляем сводные таблицы уровней, "
+        "скоростей и таблиц параметров при РУВВ... ",
+        end="",
+    )
     # Подготовка данных для записи результирующей таблицы
     levels_table = []
     speed_table = []
@@ -139,18 +142,18 @@ def insert_summary_QV_tables(stvors, out_filename):
         style="Т-название",
     )
     ruvv_table = report.doc.add_table(1, 12, style="Table Grid")
-    ruvv_table.cell(0, 0).text = '№'
-    ruvv_table.cell(0, 1).text = '№ про-филя'
-    ruvv_table.cell(0, 2).text = 'Описание'
-    ruvv_table.cell(0, 3).text = 'Обеспе-ченность РУВВ'
-    ruvv_table.cell(0, 4).text = 'Участок'
-    ruvv_table.cell(0, 5).text = 'Уклон i, ‰'
-    ruvv_table.cell(0, 6).text = 'Коэффициент шероховатости n'
-    ruvv_table.cell(0, 7).text = 'Q при РУВВ, м³/сек'
-    ruvv_table.cell(0, 8).text = 'Hср при РУВВ, м БС'
-    ruvv_table.cell(0, 9).text = 'Vср при РУВВ, м/сек'
-    ruvv_table.cell(0, 10).text = 'B при РУВВ, м'
-    ruvv_table.cell(0, 11).text = 'F при РУВВ, м²'
+    ruvv_table.cell(0, 0).text = "№"
+    ruvv_table.cell(0, 1).text = "№ про-филя"
+    ruvv_table.cell(0, 2).text = "Описание"
+    ruvv_table.cell(0, 3).text = "Обеспе-ченность РУВВ"
+    ruvv_table.cell(0, 4).text = "Участок"
+    ruvv_table.cell(0, 5).text = "Уклон i, ‰"
+    ruvv_table.cell(0, 6).text = "Коэффициент шероховатости n"
+    ruvv_table.cell(0, 7).text = "Q при РУВВ, м³/сек"
+    ruvv_table.cell(0, 8).text = "Hср при РУВВ, м БС"
+    ruvv_table.cell(0, 9).text = "Vср при РУВВ, м/сек"
+    ruvv_table.cell(0, 10).text = "B при РУВВ, м"
+    ruvv_table.cell(0, 11).text = "F при РУВВ, м²"
 
     lev_table.cell(0, 0).merge(lev_table.cell(1, 0)).text = param_levels[0][0]
     lev_table.cell(0, 1).merge(lev_table.cell(1, 1)).text = param_levels[0][1]
@@ -219,17 +222,27 @@ def insert_summary_QV_tables(stvors, out_filename):
         for i in range(stvor.sectors_result.index.max() + 1):
             ruvv_cell[0].text = f"{ruvv_n}"
             ruvv_cell[4].text = f"{stvor.sectors_result.loc[i]['name']}"
-            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace("nan", "-")
+            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace(
+                "nan", "-"
+            )
             ruvv_cell[6].text = (
                 f"{stvor.sectors_result.loc[i]['roughness']:.3f}".replace("nan", "-")
             )
             ruvv_cell[7].text = (
                 f"{stvor.sectors_result.loc[i]['consumption']:.2f}".replace("nan", "-")
             )
-            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace("nan", "-")
-            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace("nan", "-")
-            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace("nan", "-")
-            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace("nan", "-")
+            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace(
+                "nan", "-"
+            )
+            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace(
+                "nan", "-"
+            )
+            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace(
+                "nan", "-"
+            )
+            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace(
+                "nan", "-"
+            )
             sector_num += 1
             ruvv_cell = ruvv_table.add_row().cells
             ruvv_n += 1
@@ -308,7 +321,7 @@ def insert_summary_QV_tables(stvors, out_filename):
     report.save(out_filename)
 
 
-def text_sanitize(text, suffix='', prefix='', num_suffix=''):
+def text_sanitize(text, suffix="", prefix="", num_suffix=""):
     """Возвращает входной параметр text. В случае если число целое,
     возвращает без десятичных нулей. Если не целое, с указанием десятых.
     Можно задать префикс и суффикс соответствующими параметрами.
@@ -325,9 +338,9 @@ def text_sanitize(text, suffix='', prefix='', num_suffix=''):
     """
 
     try:
-        return f'{prefix}{text:g}{num_suffix}{suffix}'
+        return f"{prefix}{text:g}{num_suffix}{suffix}"
     except ValueError:
-        return f'{prefix}{str(text)}{suffix}'
+        return f"{prefix}{str(text)}{suffix}"
 
 
 def rmdir(dir_path):
@@ -396,7 +409,9 @@ def split_list_by_min_value(values: list) -> list:
         ValueError: If the input list has less than 2 elements.
     """
     if len(values) < 2:
-        raise ValueError("Input list must have at least 2 elements to split without empty lists")
+        raise ValueError(
+            "Input list must have at least 2 elements to split without empty lists"
+        )
 
     min_val = min(values)
     min_index = values.index(min_val)
@@ -415,6 +430,7 @@ def split_list_by_min_value(values: list) -> list:
 
 def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
     from hydraulic.models import WaterSection
+
     # Участок с минимальной отметкой дна
     min_sector = morfostvor.get_min_sector()
 
@@ -444,23 +460,36 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                 next_min_ele = max(split_list_by_min_value(y)[1])
 
                 # Проверка на перелив левой границы участка
-                if (water_level >= previous_min_ele and
-                    (i - 1) not in calc_sectors and
-                    (i - 1) >= 0
+                if (
+                    water_level >= previous_min_ele
+                    and (i - 1) not in calc_sectors
+                    and (i - 1) >= 0
                 ):
                     # Проверка что вода дошла до левой границы участка
                     # костыль через try, чтобы избежать ошибки определения границы
                     try:
-                        water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point])
+                        water = WaterSection(
+                            x,
+                            y,
+                            water_level,
+                            start_point=morfostvor.x[sector.end_point],
+                        )
                     except ValueError:
-                        water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point] - 1)
+                        water = WaterSection(
+                            x,
+                            y,
+                            water_level,
+                            start_point=morfostvor.x[sector.end_point] - 1,
+                        )
                     if water.water_section_x[0] == x[0]:
                         calc_sectors.append(i - 1)
                         sectors_to_process.append(i - 1)
                 # Проверка на перелив правой границы участка
-                if (water_level >= next_min_ele and
-                    (i + 1) not in calc_sectors and
-                    (i + 1) < len(morfostvor.sectors)):
+                if (
+                    water_level >= next_min_ele
+                    and (i + 1) not in calc_sectors
+                    and (i + 1) < len(morfostvor.sectors)
+                ):
                     calc_sectors.append(i + 1)
                     sectors_to_process.append(i + 1)
             except (ValueError, IndexError) as e:
@@ -474,16 +503,19 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
             # Расчетный участок является участком с минимальными отметками
             if sector.id == min_sector[1].id:
                 min_y_index = sector.coord[1].index(min(sector.coord[1]))
-                water = WaterSection(x, y, water_level,
-                                     start_point=sector.coord[0][min_y_index])
+                water = WaterSection(
+                    x, y, water_level, start_point=sector.coord[0][min_y_index]
+                )
             # Расчетный участок находится слева от начального
             elif sector.id < min_sector[1].id:
-                water = WaterSection(x, y, water_level,
-                                    start_point=morfostvor.x[sector.end_point])
+                water = WaterSection(
+                    x, y, water_level, start_point=morfostvor.x[sector.end_point]
+                )
             # Расчетный участок находится справа от начального
             elif sector.id > min_sector[1].id:
-                water = WaterSection(x, y, water_level,
-                                    start_point=morfostvor.x[sector.start_point])
+                water = WaterSection(
+                    x, y, water_level, start_point=morfostvor.x[sector.start_point]
+                )
 
             if water is not None:
                 result_sections.append(water)
@@ -512,8 +544,8 @@ def calculate_line_length(x_coords, y_coords):
     # Проходим по всем точкам, кроме последней
     for i in range(len(x_coords) - 1):
         # Вычисляем расстояние между текущей и следующей точкой
-        dx = x_coords[i+1] - x_coords[i]
-        dy = y_coords[i+1] - y_coords[i]
+        dx = x_coords[i + 1] - x_coords[i]
+        dy = y_coords[i + 1] - y_coords[i]
         total_length += (dx**2 + dy**2) ** 0.5
 
     return total_length

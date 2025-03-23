@@ -78,7 +78,7 @@ class ProfileSector:
                     float: "десятичное число",
                     str: "строка",
                     list: "список",
-                    tuple: "кортеж"
+                    tuple: "кортеж",
                 }
 
                 readable_name = {
@@ -100,27 +100,27 @@ class SituationSector:
     end_point: int
 
     COLOR_MAPPING: ClassVar[Dict[str, str]] = {
-        'grass': 'honeydew',
-        'concrete': 'gainsboro',
-        'field': 'burlywood',
-        'wood': 'limegreen',
-        'water': 'deepskyblue',
-        'sand': 'lemonchiffon',
-        'gravel': 'tan',
-        'reed': 'cadetblue',
-        'bush': 'darkkhaki',
+        "grass": "honeydew",
+        "concrete": "gainsboro",
+        "field": "burlywood",
+        "wood": "limegreen",
+        "water": "deepskyblue",
+        "sand": "lemonchiffon",
+        "gravel": "tan",
+        "reed": "cadetblue",
+        "bush": "darkkhaki",
     }
 
     CATEGORIES: ClassVar[Dict[str, List[str]]] = {
-        'grass': ['трава', 'луг', 'газон'],
-        'concrete': ['бетон', 'асфальт'],
-        'field': ['пашня', 'поле'],
-        'reed': ['камыш', 'кам', 'кам.', 'осока'],
-        'wood': ['лес', 'редкий лес', 'поросль'],
-        'bush': ['кустарник', 'кусты'],
-        'water': ['вода', 'ув', 'протока', 'ручей'],
-        'sand': ['песок'],
-        'gravel': ['гравий', 'галька', 'аллювий'],
+        "grass": ["трава", "луг", "газон"],
+        "concrete": ["бетон", "асфальт"],
+        "field": ["пашня", "поле"],
+        "reed": ["камыш", "кам", "кам.", "осока"],
+        "wood": ["лес", "редкий лес", "поросль"],
+        "bush": ["кустарник", "кусты"],
+        "water": ["вода", "ув", "протока", "ручей"],
+        "sand": ["песок"],
+        "gravel": ["гравий", "галька", "аллювий"],
     }
 
     def get_color(self) -> str:
@@ -134,7 +134,7 @@ class SituationSector:
         for category, keywords in self.CATEGORIES.items():
             if normalized_type in keywords:
                 return self.COLOR_MAPPING[category]
-        return 'white'
+        return "white"
 
     def _normalize_type(self, type_str: str) -> str:
         """Приводит строку типа к стандартному виду для сравнения"""
@@ -166,6 +166,7 @@ class WaterSection:
     :param r_hydraulic: Гидравлический радиус
     :param start_point: Точка начала расчёта [index, y] (необязательный параметр)
     """
+
     profile_x_coords: List[float] = field(default_factory=list)
     profile_y_coords: List[float] = field(default_factory=list)
     water_level: float = 0.0
@@ -192,7 +193,9 @@ class WaterSection:
             self.segments = [seg for seg in self.segments if self.start_point in seg[0]]
 
             if not self.segments:
-                raise ValueError("Ошибка! Заданная стартовая точка не попадает ни в один сегмент.")
+                raise ValueError(
+                    "Ошибка! Заданная стартовая точка не попадает ни в один сегмент."
+                )
 
         # Списки для хранения параметров по каждому сечению
         widths = []
@@ -207,19 +210,21 @@ class WaterSection:
         # Вычисляем параметры для каждого сечения
         for seg in self.segments:
             params, ws_x, ws_y = self._calculate_parameters(seg)
-            widths.append(params['width'])
-            areas.append(params['area'])
-            avg_depths.append(params['average_depth'])
-            max_depths.append(params['max_depth'])
-            perimeters.append(params['wet_perimeter'])
-            r_hydraulics.append(params['r_hydraulic'])
+            widths.append(params["width"])
+            areas.append(params["area"])
+            avg_depths.append(params["average_depth"])
+            max_depths.append(params["max_depth"])
+            perimeters.append(params["wet_perimeter"])
+            r_hydraulics.append(params["r_hydraulic"])
             combined_ws_x.extend(ws_x)
             combined_ws_y.extend(ws_y)
 
         # Комбинируем результаты по всем сечениям
         self.width = float(round(sum(widths), 3))
         self.area = float(round(sum(areas), 3))
-        self.average_depth = float(round(np.average(avg_depths), 3)) if avg_depths else 0
+        self.average_depth = (
+            float(round(np.average(avg_depths), 3)) if avg_depths else 0
+        )
         self.max_depth = float(round(max(max_depths), 3)) if max_depths else 0
         self.wet_perimeter = float(round(sum(perimeters), 3))
         self.r_hydraulic = float(round(sum(r_hydraulics), 3))
@@ -267,15 +272,15 @@ class WaterSection:
 
         for i in range(n - 1):
             # Переход из надводного в подводное – начало сечения
-            if not in_segment and y[i] > water_level and y[i+1] <= water_level:
-                f = interpolate.interp1d([y[i], y[i+1]], [x[i], x[i+1]])
+            if not in_segment and y[i] > water_level and y[i + 1] <= water_level:
+                f = interpolate.interp1d([y[i], y[i + 1]], [x[i], x[i + 1]])
                 segment_start_x = float(f(water_level))
                 segment_start_index = i
                 in_segment = True
 
             # Переход из подводного в надводное – конец сечения
-            elif in_segment and y[i] <= water_level and y[i+1] > water_level:
-                f = interpolate.interp1d([y[i], y[i+1]], [x[i], x[i+1]])
+            elif in_segment and y[i] <= water_level and y[i + 1] > water_level:
+                f = interpolate.interp1d([y[i], y[i + 1]], [x[i], x[i + 1]])
                 segment_end_x = float(f(water_level))
                 segment_end_index = i + 1
 
@@ -338,7 +343,7 @@ class WaterSection:
 
         # Функция для линейной интерполяции x по дну, зная y
         def interpolate_x(y_target, idx1, idx2):
-            """ Интерполирует x-координату для заданного уровня y по дну. """
+            """Интерполирует x-координату для заданного уровня y по дну."""
             x1, x2 = self.profile_x_coords[idx1], self.profile_x_coords[idx2]
             y1, y2 = self.profile_y_coords[idx1], self.profile_y_coords[idx2]
             if y1 == y2:
@@ -352,8 +357,12 @@ class WaterSection:
         if seg_y[0] == water_level:
             first_index = seg_indices[0]
 
-            if self.profile_y_coords[first_index] < water_level and water_level <= max(seg_y):  # Дно ниже уровня воды
-                x_interp = interpolate_x(self.profile_y_coords[first_index], first_index, first_index + 1)
+            if self.profile_y_coords[first_index] < water_level and water_level <= max(
+                seg_y
+            ):  # Дно ниже уровня воды
+                x_interp = interpolate_x(
+                    self.profile_y_coords[first_index], first_index, first_index + 1
+                )
 
                 # Вставляем точки чтобы избежать срезания углов
                 seg_x.insert(1, x_interp)
@@ -362,11 +371,20 @@ class WaterSection:
 
         # Проверяем правую границу сегмента
         if seg_y[-1] == water_level:
-            last_index = seg_indices[-2] if seg_indices[-1] == self.profile_x_coords else seg_indices[-1]
+            last_index = (
+                seg_indices[-2]
+                if seg_indices[-1] == self.profile_x_coords
+                else seg_indices[-1]
+            )
             if self.profile_y_coords[last_index] < water_level:  # Дно ниже уровня воды
-                x_interp = interpolate_x(self.profile_y_coords[last_index], last_index - 1, last_index)
+                x_interp = interpolate_x(
+                    self.profile_y_coords[last_index], last_index - 1, last_index
+                )
                 # Проверяем не ровное ли дно на последних точках
-                if self.profile_y_coords[last_index] == self.profile_y_coords[last_index - 1]:
+                if (
+                    self.profile_y_coords[last_index]
+                    == self.profile_y_coords[last_index - 1]
+                ):
                     x_interp = self.profile_x_coords[last_index]
                 # Вставляем точки чтобы избежать срезания углов
                 seg_x.insert(-1, x_interp)
@@ -392,11 +410,11 @@ class WaterSection:
             r_hydraulic = 0.00001
 
         params = {
-            'width': width,
-            'area': area,
-            'average_depth': average_depth,
-            'max_depth': max_depth,
-            'wet_perimeter': wet_perimeter,
-            'r_hydraulic': r_hydraulic
+            "width": width,
+            "area": area,
+            "average_depth": average_depth,
+            "max_depth": max_depth,
+            "wet_perimeter": wet_perimeter,
+            "r_hydraulic": r_hydraulic,
         }
         return params, seg_x, seg_y
