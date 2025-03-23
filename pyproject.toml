@@ -3,6 +3,12 @@ name = "hydraulic"
 version = "0.1.0"
 description = "Hydraulic is a Python library for calculating hydraulic parameters (levels, speeds, etc), and generate report."
 readme = "README.md"
+authors = [{ name = "Vladimir Kamenev", email = "dell4valt@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
 requires-python = ">=3.13"
 dependencies = [
     "matplotlib>=3.10.1",
@@ -18,3 +24,10 @@ dependencies = [
 
 [tool.uv.sources]
 report = { git = "https://github.com/dell4valt/report.git", rev = "main" }
+
+[tool.setuptools.packages.find]
+include = ["hydraulic"]
+
+[project.urls]
+"Homepage" = "https://github.com/dell4valt/hydraulic"
+"Repository" = "https://github.com/dell4valt/hydraulic"
