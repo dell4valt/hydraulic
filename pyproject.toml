@@ -1,0 +1,20 @@
+[project]
+name = "hydraulic"
+version = "0.1.0"
+description = "Hydraulic is a Python library for calculating hydraulic parameters (levels, speeds, etc), and generate report."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.1",
+    "matplotlib-label-lines>=0.8.0",
+    "numpy>=2.2.4",
+    "openpyxl>=3.1.5",
+    "pandas>=2.2.3",
+    "pathvalidate>=3.2.3",
+    "python-docx>=1.1.2",
+    "report",
+    "scipy>=1.15.2",
+]
+
+[tool.uv.sources]
+report = { git = "https://github.com/dell4valt/report.git", rev = "main" }
