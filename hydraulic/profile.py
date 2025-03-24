@@ -103,8 +103,8 @@ class Calculation:
             return self.__shezi_pavlovskij()
         elif equation_type == "Павловского-Железнякова":
             return self.__shezi_pavlovskij_zheleznjakov()
-        elif equation_type == "СП 33-101-2003":
-            return self.__shezi_sp33_101_2003()
+        elif equation_type in ["СП 33-101-2003", "СП"]:
+            return self.__shezi_pavlovskij()
         elif equation_type == "Гидрорасчеты":
             if self.h >= 0 and self.h <= 3:
                 return self.__shezi_pavlovskij()
@@ -159,7 +159,7 @@ class Calculation:
         )
         shezi = (1 / self.n) * self.r**y
         self.type__ = (
-            "Коэффициент шези определён по формуле Павловского для глубин 0.1 < h < 3 м"
+            "Коэффициент шези определён по формуле Павловского. Рекомендуется для R < 3 м"
         )
 
         return shezi
@@ -180,12 +180,6 @@ class Calculation:
     def __shezi_agroskina(self):
         shezi = (1 / self.n) + 17.72 * np.log(self.r)
         self.type__ = "Коэффициент шези определён по формуле И.И. Агроскина"
-        return shezi
-
-    def __shezi_sp33_101_2003(self):
-        y = 2.5 * self.n**0.5 - 0.13 - 0.75 * self.r**0.5 * (self.n**0.5 - 0.10)
-        shezi = (1 / self.n) * self.r**y
-        self.type__ = "Коэффициент шези определён по формуле СП 33.101.2003"
         return shezi
 
 
