@@ -71,16 +71,19 @@ class Calculation:
         # Определение коэффициента Шези
         self.shezi = self._get_shezi(config.SHEZI_TYPE, config.SHEZI_TYPE_DEFAULTS)
 
+        if config.USE_H_INSTEAD_R:
+            self.r = self.h
+
         # Тип расчёта, обычная вода или селевой поток
         if config.CALC_TYPE == 1:
             # Расчёт скорости воды
-            self.v = self.shezi * np.sqrt(self.h * (self.i / 1000))
+            self.v = self.shezi * np.sqrt(self.r * (self.i / 1000))
         elif config.CALC_TYPE == 2:
             # Расчёт скорости воды для наносоводных селей
-            self.v = 4.5 * self.h**0.67 * (self.i / 1000) ** 0.17
+            self.v = 4.5 * self.r**0.67 * (self.i / 1000) ** 0.17
         elif config.CALC_TYPE == 3:
             # Расчёт скорости воды для грязекаменных селей селей
-            self.v = 3.75 * self.h**0.50 * (self.i / 1000) ** 0.17
+            self.v = 3.75 * self.r**0.50 * (self.i / 1000) ** 0.17
         else:
             raise ValueError("Ошибка выбора формулы расчёта скорости потока.")
         # Расчёт расхода воды
@@ -119,30 +122,30 @@ class Calculation:
         # Показатель степени по формуле Г. В. Железнякова
         y = (
             1
-            / np.log10(self.h)
+            / np.log10(self.r)
             * np.log10(
-                (1 / 2 - (self.n * np.sqrt(self._g) / 0.26) * (1 - np.log10(self.h)))
+                (1 / 2 - (self.n * np.sqrt(self._g) / 0.26) * (1 - np.log10(self.r)))
                 + self.n
                 * np.sqrt(
                     1
                     / 4
-                    * (1 / self.n - np.sqrt(self._g) / 0.13 * (1 - np.log10(self.h)))
+                    * (1 / self.n - np.sqrt(self._g) / 0.13 * (1 - np.log10(self.r)))
                     ** 2
                     + np.sqrt(self._g)
                     / 0.13
-                    * (1 / self.n + np.sqrt(self._g) * np.log10(self.h))
+                    * (1 / self.n + np.sqrt(self._g) * np.log10(self.r))
                 )
             )
         )
 
-        shezi = (1 / self.n) * self.h**y
+        shezi = (1 / self.n) * self.r**y
         self.type__ = "Коэффициент Шези определён по формуле Павловского, \
                        показатель степени определён по формуле Железнякова"
         return shezi
 
     # Коэффициент шези по формуле Маннинга
     def __shezi_manning(self):
-        shezi = (1 / self.n) * self.h ** (1 / 6)
+        shezi = (1 / self.n) * self.r ** (1 / 6)
         self.type__ = "Коэффициент Шези определён по формуле Маннинга"
         return shezi
 
@@ -152,9 +155,9 @@ class Calculation:
         y = (
             2.5 * np.sqrt(self.n)
             - 0.13
-            - 0.75 * np.sqrt(self.h) * (np.sqrt(self.n) - 0.10)
+            - 0.75 * np.sqrt(self.r) * (np.sqrt(self.n) - 0.10)
         )
-        shezi = (1 / self.n) * self.h**y
+        shezi = (1 / self.n) * self.r**y
         self.type__ = (
             "Коэффициент шези определён по формуле Павловского для глубин 0.1 < h < 3 м"
         )
@@ -164,24 +167,24 @@ class Calculation:
     # Коэффициент шези по формуле Железнякова
     def __shezi_zheleznjakov(self):
         shezi = 1 / 2 * (
-            (1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.h))
+            (1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))
         ) + np.sqrt(
             (1 / 4)
-            * (1 / self.n - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.h))) ** 2
+            * (1 / self.n - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))) ** 2
             + (np.sqrt(self._g) / 0.13)
-            * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.h)))
+            * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.r)))
         )
         self.type__ = "Коэффициент шези определён по формуле Железнякова"
         return shezi
 
     def __shezi_agroskina(self):
-        shezi = (1 / self.n) + 17.72 * np.log(self.h)
+        shezi = (1 / self.n) + 17.72 * np.log(self.r)
         self.type__ = "Коэффициент шези определён по формуле И.И. Агроскина"
         return shezi
 
     def __shezi_sp33_101_2003(self):
-        y = 2.5 * self.n**0.5 - 0.13 - 0.75 * self.h**0.5 * (self.n**0.5 - 0.10)
-        shezi = (1 / self.n) * self.h**y
+        y = 2.5 * self.n**0.5 - 0.13 - 0.75 * self.r**0.5 * (self.n**0.5 - 0.10)
+        shezi = (1 / self.n) * self.r**y
         self.type__ = "Коэффициент шези определён по формуле СП 33.101.2003"
         return shezi
 
