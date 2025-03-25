@@ -212,7 +212,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
 
     sectors_table = report.insert_df_to_table(
         df_sectors,
-        f"Расчётные участки и их параметры",
+        "Расчётные участки и их параметры",
         col_names=(
             "№",
             "Описание",
@@ -324,12 +324,12 @@ def save_graphic(morfostvor, path):
         morfostvor.fig_profile.fig.savefig(Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI))
     if config.CURVE_SAVE_PICTURES:
         if config.HYDRAULIC_CURVE:
-            morfostvor.fig_QH.fig.savefig(Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qh.fig.savefig(Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI))
         if config.HYDRAULIC_AND_SPEED_CURVE:
-            morfostvor.fig_QHV.fig.savefig(Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qhv.fig.savefig(Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI))
         if config.SPEED_CURVE:
-            morfostvor.fig_QV.fig.savefig(Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qv.fig.savefig(Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI))
         if config.AREA_CURVE:
-            morfostvor.fig_QF.fig.savefig(Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qf.fig.savefig(Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI))
         if config.QWVH_CURVE:
-            morfostvor.fig_QWVH.fig.savefig(Path(f"{picture_dir}/{profile_name}_QWVH.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qwvh.fig.savefig(Path(f"{picture_dir}/{profile_name}_QWVH.png", dpi=config.FIG_DPI))
