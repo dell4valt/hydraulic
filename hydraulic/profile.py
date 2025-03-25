@@ -25,7 +25,6 @@ from hydraulic.graph import (
 )
 from hydraulic.lib import (
     chunk_list,
-    insert_summary_QV_tables,
     question_continue_app,
     split_list_by_min_value,
 )
@@ -36,6 +35,7 @@ from hydraulic.models import (
     WaterSection,
 )
 from hydraulic.report import generate_morfostvor_report, save_graphic
+from hydraulic.report_lib import insert_summary_QV_tables
 
 # Отключаем все UserWarning (предупреждения от labellines)
 warnings.filterwarnings("ignore", category=UserWarning)

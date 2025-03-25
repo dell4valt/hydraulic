@@ -1,16 +1,54 @@
+# -*- coding: utf-8 -*-
+"""
+Библиотека вспомогательных функций
+
+Этот модуль содержит набор функций, используемых в гидравлических расчетах, обработке
+данных поперечных профилей водных объектов и формирования отчетной документации.
+
+Функции:
+    question_continue_app: Запрашивает у пользователя продолжение работы программы.
+    poly_area: Вычисляет площадь многоугольника по координатам вершин.
+    chunk_list: Разбивает список на указанное количество частей.
+    insert_summary_QV_tables: Формирует и вставляет таблицы с расчетными данными в отчет.
+    text_sanitize: Форматирует текст или числовые значения для отображения.
+    rmdir: Рекурсивно удаляет директорию и все её содержимое.
+    get_pk: Возвращает строку пикетажа в формате 'км+м'.
+    floor_float: Округляет число вниз с заданной точностью.
+    closest_upper_multiple: Находит ближайшее большее кратное число.
+    split_list_by_min_value: Разделяет список на две части по минимальному значению.
+    get_water_sections: Определяет секторы воды при заданном уровне.
+    calculate_line_length: Вычисляет длину ломаной линии по координатам точек.
+"""
+
 import sys
 from pathlib import Path
 
 import numpy as np
-from report.core import Report
 
 
-def question_continue_app():
+def question_continue_app() -> bool:
+    """
+    Запрашивает у пользователя решение о продолжении работы программы.
+
+    Функция выводит запрос пользователю и ожидает ответа. В зависимости от
+    полученного ответа продолжает выполнение программы или завершает её.
+
+    Допустимые ответы для продолжения: "да", "д", "yes", "y", "ага".
+    Допустимые ответы для завершения: "нет", "н", "no", "n".
+
+    При получении недопустимого ответа запрос повторяется.
+
+    Returns:
+        bool: Функция возвращает True при положительном ответе.
+
+    Raises:
+        SystemExit: При отрицательном ответе программа завершается.
+    """
     while True:
         answer = input("Продолжить расчет? (да/нет)")
         if answer.lower() in ["да", "д", "yes", "y", "ага"]:
             print("Хорошо. Продолжаем расчет.\n")
-            break
+            return True
         elif answer.lower() in ["no", "нет", "n", "н"]:
             print("Программа будет завершена.\n")
             sys.exit()
@@ -18,22 +56,54 @@ def question_continue_app():
             continue
 
 
-def poly_area(x, y):
+def poly_area(x: list, y: list) -> float:
     """
-    Функция определения площади кривой фигуры.
+    Вычисляет площадь многоугольника по координатам вершин.
 
-        :param x: Список координат x
-        :param y: Список координат y
+    Функция использует формулу площади Гаусса (известную также как формула шнурования),
+    которая вычисляет площадь многоугольника через координаты его вершин.
+
+    Args:
+        x (list, numpy.ndarray): Список или массив координат x вершин многоугольника.
+        y (list, numpy.ndarray): Список или массив координат y вершин многоугольника.
+
+    Returns:
+        float: Площадь многоугольника.
+
+    Note:
+        Координаты вершин должны быть упорядочены либо по часовой, либо против
+        часовой стрелки. Функция работает для выпуклых и невыпуклых многоугольников.
+
+    Examples:
+        >>> poly_area([0, 1, 1, 0], [0, 0, 1, 1])
+        1.0
+        >>> poly_area([0, 2, 2, 0], [0, 0, 2, 2])
+        4.0
     """
     return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
 
 
 def chunk_list(seq, num):
     """
-    Функция разбивает заданный список на равные количество списков.
+    Разбивает заданный список на указанное количество примерно равных частей.
 
-        :param seq: Исходный список
-        :param num: Количество разбиваемых списков
+    Функция делит список seq на num подсписков с приблизительно одинаковым
+    количеством элементов в каждом. Размер каждого подсписка определяется
+    средним значением от общего количества элементов, деленного на num.
+
+    Args:
+        seq (list): Исходный список для разбиения.
+        num (int): Количество частей, на которое нужно разбить список.
+
+    Returns:
+        list: Список подсписков, содержащих элементы исходного списка.
+            Количество подсписков равно num.
+
+    Examples:
+        >>> chunk_list([1, 2, 3, 4, 5, 6], 3)
+        [[1, 2], [3, 4], [5, 6]]
+        >>> chunk_list([1, 2, 3, 4, 5], 2)
+        [[1, 2, 3], [4, 5]]
     """
     avg = len(seq) / float(num)
     out = []
@@ -46,264 +116,6 @@ def chunk_list(seq, num):
     return out
 
 
-def insert_summary_QV_tables(stvors, out_filename):
-    print(
-        "Формируем и вставляем сводные таблицы уровней, скоростей и таблиц параметров при РУВВ... ",
-        end="",
-    )
-    # Подготовка данных для записи результирующей таблицы
-    levels_table = []
-    speed_table = []
-    i = 1
-    report = Report(out_filename)
-    report.insert_page_break()
-
-    report.add_paragraph("Сводные таблицы", style="З-приложение-подзаголовок")
-
-    param_levels = (
-        ["№", "Описание", "Мин. отм", "УВ"],
-        [0.85, 7, 1.25, 1.25],
-        ["", "", ":.2f", ":.2f"],
-    )
-
-    param_speed = (
-        [
-            "№",
-            "Описание",
-        ],
-        [
-            0.85,
-            8.5,
-        ],
-        [
-            "",
-            "",
-        ],
-    )
-
-    title_check = False
-    title2_check = False
-
-    for stvor in stvors:
-        levels_table.append([i, stvor.title, stvor.ele_min, stvor.waterline])
-        speed_table.append(
-            [
-                i,
-                stvor.title,
-            ]
-        )
-
-        for obsp in stvor.levels_result.values.tolist():
-            levels_table[i - 1].append(round(obsp[2], 2))
-
-            if title_check is False:
-                try:
-                    param_levels[0].append("P{obsp[0]:g}%")
-                except ValueError:
-                    param_levels[0].append("{obsp[0]}")
-                param_levels[1].append(1.25)
-                param_levels[2].append(":.2f")
-
-        for obsp in stvor.levels_result.values.tolist():
-            speed_table[i - 1].append(round(obsp[3], 3))
-
-            if title2_check is False:
-                try:
-                    param_speed[0].append(f"V{obsp[0]:g}%")
-                except ValueError:
-                    param_speed[0].append(f"{obsp[0]}")
-
-                param_speed[1].append(1.25)
-                param_speed[2].append(":.2f")
-
-        title_check = True
-        title2_check = True
-        i += 1
-
-    cols = len(levels_table[0])
-
-    #############################################
-    # Таблицы расчётных уровней и скоростей воды
-    report.add_paragraph(
-        f"Таблица — Расчётные уровни {stvor.strings['type']}",
-        style="Т-название",
-    )
-    lev_table = report.doc.add_table(2, cols, style="Table Grid")
-
-    report.add_paragraph(
-        f"Таблица — Расчётные скорости {stvor.strings['type']}",
-        style="Т-название",
-    )
-    spd_table = report.doc.add_table(2, cols, style="Table Grid")
-
-    report.add_paragraph(
-        "Таблица — Сводная таблица параметров РУВВ по поперечным профилям",
-        style="Т-название",
-    )
-    ruvv_table = report.doc.add_table(1, 12, style="Table Grid")
-    ruvv_table.cell(0, 0).text = "№"
-    ruvv_table.cell(0, 1).text = "№ про-филя"
-    ruvv_table.cell(0, 2).text = "Описание"
-    ruvv_table.cell(0, 3).text = "Обеспе-ченность РУВВ"
-    ruvv_table.cell(0, 4).text = "Участок"
-    ruvv_table.cell(0, 5).text = "Уклон i, ‰"
-    ruvv_table.cell(0, 6).text = "Коэффициент шероховатости n"
-    ruvv_table.cell(0, 7).text = "Q при РУВВ, м³/сек"
-    ruvv_table.cell(0, 8).text = "Hср при РУВВ, м БС"
-    ruvv_table.cell(0, 9).text = "Vср при РУВВ, м/сек"
-    ruvv_table.cell(0, 10).text = "B при РУВВ, м"
-    ruvv_table.cell(0, 11).text = "F при РУВВ, м²"
-
-    lev_table.cell(0, 0).merge(lev_table.cell(1, 0)).text = param_levels[0][0]
-    lev_table.cell(0, 1).merge(lev_table.cell(1, 1)).text = param_levels[0][1]
-    lev_table.cell(0, 2).merge(lev_table.cell(1, 2)).text = param_levels[0][2]
-    lev_table.cell(0, 3).merge(lev_table.cell(1, 3)).text = param_levels[0][3]
-    lev_table.cell(0, 4).merge(
-        lev_table.cell(0, len(param_levels[0]) - 1)
-    ).text = "Уровни воды (м БС), обеспеченностью Р%"
-
-    spd_table.cell(0, 0).merge(spd_table.cell(1, 0)).text = param_levels[0][0]
-    spd_table.cell(0, 1).merge(spd_table.cell(1, 1)).text = param_levels[0][1]
-    spd_table.cell(0, 2).merge(spd_table.cell(1, 2)).text = param_levels[0][2]
-    spd_table.cell(0, 3).merge(spd_table.cell(1, 3)).text = param_levels[0][3]
-    spd_table.cell(0, 4).merge(
-        spd_table.cell(0, len(param_levels[0]) - 1)
-    ).text = "Скорости воды (м/с), обеспеченностью Р%"
-
-    stvor_num = 1
-    # Подписываем вероятности
-    for i in range(len(stvors[0].probability)):
-        try:
-            lev_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]:g}"
-            spd_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]:g}"
-        except ValueError:
-            lev_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]}"
-            spd_table.cell(1, i + 4).text = f"{stvors[0].probability[i][0]}"
-
-    # Заполняем сводные таблицы данными
-    ruvv_n = 1
-    for stvor in stvors:
-        levels = stvor.levels_result[["P", "H", "Q"]].values.tolist()
-        speed = stvor.levels_result[["P", "H", "V"]].values.tolist()
-
-        lev_cell = lev_table.add_row().cells
-        lev_cell[0].text = str(stvor_num)
-        lev_cell[1].text = str(stvor.title)
-        lev_cell[2].text = f"{stvor.ele_min:.2f}"
-
-        spd_cell = spd_table.add_row().cells
-        spd_cell[0].text = str(stvor_num)
-        spd_cell[1].text = str(stvor.title)
-        spd_cell[2].text = f"{stvor.ele_min:.2f}"
-
-        # Проверка наличия уреза воды и вставка его в таблицу
-        if isinstance(stvor.waterline, float):
-            lev_cell[3].text = f"{stvor.waterline:.2f}"
-            spd_cell[3].text = f"{stvor.waterline:.2f}"
-        else:
-            lev_cell[3].text = "-"
-            spd_cell[3].text = "-"
-
-        for i in range(4, len(levels) + 4):
-            try:
-                lev_cell[i].text = f"{levels[i - 4][1]:.2f}"
-                spd_cell[i].text = f"{speed[i - 4][2]:.2f}"
-            except:
-                print(
-                    "\n\nОшибка соответствия обеспеченностей в профилях.\
-                     Обеспеченности на всех профилях должны быть одинаковые."
-                )
-                print("Сводные таблицы не будут записаны в файл.")
-
-        sector_num = 1
-        ruvv_cell = ruvv_table.add_row().cells
-
-        for i in range(stvor.sectors_result.index.max() + 1):
-            ruvv_cell[0].text = f"{ruvv_n}"
-            ruvv_cell[4].text = f"{stvor.sectors_result.loc[i]['name']}"
-            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace("nan", "-")
-            ruvv_cell[6].text = f"{stvor.sectors_result.loc[i]['roughness']:.3f}".replace("nan", "-")
-            ruvv_cell[7].text = f"{stvor.sectors_result.loc[i]['consumption']:.2f}".replace("nan", "-")
-            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace("nan", "-")
-            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace("nan", "-")
-            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace("nan", "-")
-            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace("nan", "-")
-            sector_num += 1
-            ruvv_cell = ruvv_table.add_row().cells
-            ruvv_n += 1
-
-        # Удаляем пустую ячейку
-        row = ruvv_table.rows[-1]
-        row._element.getparent().remove(row._element)
-
-        # Объединяем ячейки
-        prob_text = text_sanitize(stvor.probability[stvor.design_water_level_index][0], num_suffix="%")
-        ruvv_table.cell(ruvv_n - 1, 1).merge(
-            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)
-        ).text = f"{stvor_num}"
-        ruvv_table.cell(ruvv_n - 1, 2).merge(
-            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 2)
-        ).text = f"{stvor.title}"
-        ruvv_table.cell(ruvv_n - 1, 3).merge(
-            ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 3)
-        ).text = f"{prob_text}"
-        stvor_num += 1
-
-        report._set_table_style(lev_table)
-        report._set_table_columns_width(
-            lev_table,
-            (
-                0.85,
-                7,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-            ),
-        )
-
-        report._set_table_style(spd_table)
-        report._set_table_columns_width(
-            spd_table,
-            (
-                0.85,
-                7,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-                1.25,
-            ),
-        )
-
-        report._set_table_style(ruvv_table)
-        report._set_table_columns_width(
-            ruvv_table,
-            (
-                0.85,
-                0.85,
-                3,
-                1,
-                2,
-                2,
-                2,
-                2,
-                2,
-                2,
-                2,
-                2,
-            ),
-        )
-
-    print("успешно!")
-    report.save(out_filename)
-
-
 def text_sanitize(text, suffix="", prefix="", num_suffix=""):
     """Возвращает входной параметр text. В случае если число целое,
     возвращает без десятичных нулей. Если не целое, с указанием десятых.
@@ -311,10 +123,10 @@ def text_sanitize(text, suffix="", prefix="", num_suffix=""):
 
     Args:
         text (str, int, float): Входящая строка или число
-        suffix (str, optional): Окончание возвращаемой строки. Defaults to ''.
-        prefix (str, optional): Начало возвращаемой строки. Defaults to ''.
+        suffix (str, optional): Окончание возвращаемой строки. По умолчанию ''.
+        prefix (str, optional): Начало возвращаемой строки. По умолчанию ''.
         num_suffix (str, optional): Окончание возвращаемой строки
-        только если на входе число. Defaults to ''.
+        только если на входе число. По умолчанию ''.
 
     Returns:
         _type_: Возвращаемая строка
@@ -326,26 +138,39 @@ def text_sanitize(text, suffix="", prefix="", num_suffix=""):
         return f"{prefix}{str(text)}{suffix}"
 
 
-def rmdir(dir_path):
+def rmdir(dir_path: str) -> None:
+    """
+    Рекурсивно удаляет директорию и все её содержимое.
+
+    Функция проходит по всем файлам и подпапкам в указанной директории,
+    удаляет их, а затем удаляет саму директорию.
+
+    Args:
+        dir_path (str): Путь к директории, которую необходимо удалить.
+
+    Returns:
+        None
+    """
     directory = Path(str(dir_path))
 
     for item in directory.iterdir():
         if item.is_dir():
-            rmdir(item)
+            rmdir(str(item))
         else:
             item.unlink()
     directory.rmdir()
 
 
 def get_pk(distance: float, divider=100, decimal=False) -> str:
-    """Возвращает строку пикетажа в формате 'мкм+мм'.
+    """Возвращает строку пикетажа в формате 'км+мм'.
 
     Args:
-        distance (float): Расстояние в метрах
-        divider (int, optional): Делитель расстояния. Defaults to 100.
+        distance (float): Расстояние в метрах.
+        divider (int, optional): Делитель расстояния. По умолчанию 100.
+        decimal (bool, optional): Флаг отображения десятичной части. По умолчанию False.
 
     Returns:
-        str: Строка пикетажа
+        str: Строка пикетажа.
     """
 
     # Переводим метры в километры и метры
@@ -353,21 +178,68 @@ def get_pk(distance: float, divider=100, decimal=False) -> str:
     second = distance % divider
 
     if decimal:
-        decimal = f".{int(distance - int(distance)):02d}"
+        # Извлекаем десятичную часть числа
+        decimal_part = distance - int(distance)
+        decimal = f".{int(decimal_part * 100):02d}"
     else:
         decimal = ""
 
     # Форматируем строку пикетажа
     if divider < 1000:
         return f"{int(first)}+{int(second):02d}{decimal}"
-    return f"{first}+{second:03d}"
+    return f"{int(first)}+{int(second):03d}{decimal}"
 
 
-def floor_float(a, precision=0):
-    return np.true_divide(np.floor(a * 10**precision), 10**precision)
+def floor_float(n, precision=0):
+    """
+    Округляет число вниз с заданной точностью.
+
+    Функция округляет число 'n' вниз (в сторону отрицательной бесконечности)
+    с заданной точностью, определяемой количеством десятичных знаков.
+
+    Args:
+        n (float): Число, которое нужно округлить.
+        precision (int, optional): Количество десятичных знаков после запятой.
+            По умолчанию 0, что означает округление до целого числа.
+
+    Returns:
+        float: Округленное число с заданной точностью.
+
+    Examples:
+        >>> floor_float(3.75)
+        3.0
+        >>> floor_float(3.75, 1)
+        3.7
+        >>> floor_float(-1.23, 1)
+        -1.3
+    """
+    return np.true_divide(np.floor(n * 10**precision), 10**precision)
 
 
 def closest_upper_multiple(n, k):
+    """
+    Находит ближайшее большее кратное число.
+
+    Функция вычисляет ближайшее число, которое больше или равно n и кратно k.
+
+    Args:
+        n (float, int): Исходное число, для которого ищется ближайшее кратное.
+        k (float, int): Число, на которое должен делиться результат без остатка.
+
+    Returns:
+        float: Ближайшее большее кратное k, которое >= n.
+
+    Raises:
+        ValueError: Если k <= 0, так как кратное число должно быть положительным.
+
+    Examples:
+        >>> closest_upper_multiple(10, 3)
+        12.0
+        >>> closest_upper_multiple(7, 2)
+        8.0
+        >>> closest_upper_multiple(5, 5)
+        5.0
+    """
     # Проверяем, что k больше нуля
     if k <= 0:
         raise ValueError("Второй аргумент (k) должен быть больше нуля.")
@@ -379,20 +251,34 @@ def closest_upper_multiple(n, k):
 
 def split_list_by_min_value(values: list) -> list:
     """
-    Splits a list by the minimum value found in the list, ensuring that neither
-    of the resulting lists is empty.
+    Разделяет список на две части по минимальному значению.
+
+    Функция находит минимальное значение в списке и использует его индекс
+    для разделения списка на две части. Если минимальное значение находится
+    в начале или конце списка, индекс разделения корректируется для
+    предотвращения создания пустых списков.
 
     Args:
-        values (list): The list to be split.
+        values (list): Список для разделения.
 
     Returns:
-        list: A list of two non-empty lists.
+        list: Список из двух непустых списков.
 
     Raises:
-        ValueError: If the input list has less than 2 elements.
+        ValueError: Если входной список содержит менее 2 элементов.
+
+    Examples:
+        >>> split_list_by_min_value([3, 1, 4, 2])
+        [[3], [1, 4, 2]]
+        >>> split_list_by_min_value([1, 3, 4, 2])
+        [[1], [3, 4, 2]]
+        >>> split_list_by_min_value([3, 4, 2, 1])
+        [[3, 4, 2], [1]]
     """
     if len(values) < 2:
-        raise ValueError("Input list must have at least 2 elements to split without empty lists")
+        raise ValueError(
+            "Input list must have at least 2 elements to split without empty lists"
+        )
 
     min_val = min(values)
     min_index = values.index(min_val)
@@ -409,7 +295,32 @@ def split_list_by_min_value(values: list) -> list:
     return [values[:min_index], values[min_index:]]
 
 
-def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
+def get_water_sections(morfostvor, water_level: float, overflow: bool = False) -> tuple:
+    """
+    Определяет секторы воды при заданном уровне на основе морфоствора.
+
+    Функция анализирует заданный морфоствор и определяет участки, которые
+    будут заполнены водой при указанном уровне воды. Может работать в двух
+    режимах: с учетом перелива и без него.
+
+    Args:
+        morfostvor (Morfostvor): Объект морфоствора, содержащий информацию о геометрии русла.
+        water_level (float): Заданный уровень воды для анализа.
+        overflow (bool, optional): Флаг учета перелива между секторами.
+            Если True, происходит моделирование заполнения с учетом возможного
+            перелива воды между секторами. Если False, заполнение рассматривается
+            независимо для каждого участка. По умолчанию False.
+
+    Returns:
+        tuple: Кортеж из двух списков:
+            - Список объектов WaterSection, представляющих секторы воды.
+            - Список секторов морфоствора, соответствующих водным секторам.
+
+    Note:
+        При overflow=True расчет начинается с сектора, имеющего минимальную отметку,
+        и рекурсивно распространяется на соседние секторы, если уровень воды
+        превышает максимальные отметки на границах секторов.
+    """
     from hydraulic.models import WaterSection
 
     # Участок с минимальной отметкой дна
@@ -441,7 +352,11 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                 next_min_ele = max(split_list_by_min_value(y)[1])
 
                 # Проверка на перелив левой границы участка
-                if water_level >= previous_min_ele and (i - 1) not in calc_sectors and (i - 1) >= 0:
+                if (
+                    water_level >= previous_min_ele
+                    and (i - 1) not in calc_sectors
+                    and (i - 1) >= 0
+                ):
                     # Проверка что вода дошла до левой границы участка
                     # костыль через try, чтобы избежать ошибки определения границы
                     try:
@@ -462,7 +377,11 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                         calc_sectors.append(i - 1)
                         sectors_to_process.append(i - 1)
                 # Проверка на перелив правой границы участка
-                if water_level >= next_min_ele and (i + 1) not in calc_sectors and (i + 1) < len(morfostvor.sectors):
+                if (
+                    water_level >= next_min_ele
+                    and (i + 1) not in calc_sectors
+                    and (i + 1) < len(morfostvor.sectors)
+                ):
                     calc_sectors.append(i + 1)
                     sectors_to_process.append(i + 1)
             except (ValueError, IndexError) as e:
@@ -476,13 +395,19 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
             # Расчетный участок является участком с минимальными отметками
             if sector.id == min_sector[1].id:
                 min_y_index = sector.coord[1].index(min(sector.coord[1]))
-                water = WaterSection(x, y, water_level, start_point=sector.coord[0][min_y_index])
+                water = WaterSection(
+                    x, y, water_level, start_point=sector.coord[0][min_y_index]
+                )
             # Расчетный участок находится слева от начального
             elif sector.id < min_sector[1].id:
-                water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point])
+                water = WaterSection(
+                    x, y, water_level, start_point=morfostvor.x[sector.end_point]
+                )
             # Расчетный участок находится справа от начального
             elif sector.id > min_sector[1].id:
-                water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.start_point])
+                water = WaterSection(
+                    x, y, water_level, start_point=morfostvor.x[sector.start_point]
+                )
 
             if water is not None:
                 result_sections.append(water)
@@ -502,7 +427,29 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
     return result_sections, result_sectors
 
 
-def calculate_line_length(x_coords, y_coords):
+def calculate_line_length(x_coords: list[float], y_coords: list[float]) -> float:
+    """
+    Вычисляет длину ломаной линии по координатам точек.
+
+    Функция принимает два списка с координатами точек X и Y,
+    и рассчитывает суммарную длину ломаной линии, соединяющей эти точки.
+
+    Args:
+        x_coords (list): Список координат X точек ломаной линии.
+        y_coords (list): Список координат Y точек ломаной линии.
+
+    Returns:
+        float: Длина ломаной линии. Если списки имеют разную длину или
+               содержат менее 2 точек, возвращает 0.0.
+
+    Examples:
+        >>> calculate_line_length([0, 3, 5], [0, 4, 7])
+        8.0
+        >>> calculate_line_length([1, 1], [1, 2])
+        1.0
+        >>> calculate_line_length([1], [1])
+        0.0
+    """
     # Проверяем, что списки координат имеют одинаковую длину и минимум 2 точки
     if len(x_coords) != len(y_coords) or len(x_coords) < 2:
         return 0.0
