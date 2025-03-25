@@ -116,7 +116,7 @@ LINE_WIDTH = {
     "erosion_limit_line": 3,  # Линия предельного размыва
     "top_limit_line": 2,  # Линия ограничения верхнего сооружения
     "sector_line": 1,  # Линии разделителя участков
-    "profile_bottom": 2,  # Линия дна
+    "profile_bottom": 3,  # Линия дна
     "profile_point_line": 0.8,  # Вертикальные линии от точек до подвала
     "profile_footer_divider": 1,  # Линия разделителя подвала
 }
