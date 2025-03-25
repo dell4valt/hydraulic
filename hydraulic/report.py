@@ -124,10 +124,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     print("    — Записываем таблицу уровней, скоростей и площадей воды ... ", end="")
     report.insert_df_to_table(
         morfostvor.levels_result[["P", "Q", "H", "V", "F"]],
-        (
-            f"Расчётные уровни, скорости и площади "
-            f"к заданным расходам {morfostvor.strings['type']}"
-        ),
+        (f"Расчётные уровни, скорости и площади к заданным расходам {morfostvor.strings['type']}"),
         col_names=(
             "Обеспеченность P, %",
             "Расход Q, м³/сек",
@@ -152,9 +149,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     )
 
     topography_table = morfostvor.get_topography_table()
-    topography_table["x"] = topography_table["x"].apply(
-        lambda x: get_pk(x, decimal=True)
-    )
+    topography_table["x"] = topography_table["x"].apply(lambda x: get_pk(x, decimal=True))
     topo_table = report.insert_df_to_table(
         topography_table,
         "Топографические данные створа",
@@ -197,9 +192,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
                 f"{sector.slope:.2f}",
             )
         else:
-            report.merge_table_cells(
-                topo_table, sector.start_point + 1, sector.end_point, 2, 2, sector.name
-            )
+            report.merge_table_cells(topo_table, sector.start_point + 1, sector.end_point, 2, 2, sector.name)
             report.merge_table_cells(
                 topo_table,
                 sector.start_point + 1,
@@ -233,19 +226,14 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         ),
         col_widths=(1.3, 4, 4, 4, 4, 4, 4, 4, 4),
         col_format=(":d", "", ":g", ":.3f", ":.2f", ":.2f", ":.2f", ":.2f", ":.2f"),
-        footer_text=(
-            "Примечание: Расчетный уровень высоких вод (РУВВ) "
-            f"принят по расходу {prob_text}."
-        ),
+        footer_text=(f"Примечание: Расчетный уровень высоких вод (РУВВ) принят по расходу {prob_text}."),
     )
     print("успешно!")
 
     # Вывод таблицы гидравлической кривой
     print("    — Записываем таблицу кривой расхода воды ... ", end="")
 
-    table = (
-        morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
-    )
+    table = morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
     table_round = table.round(3)  # Округляем
 
     if config.DOC_TABLE_SHORT:
@@ -300,10 +288,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             ":.3f",
             ":.3f",
         ),
-        footer_text=(
-            f"Расчётный шаг: {morfostvor.dh:g} см. "
-            f"В таблице приведён каждый {divider}-й результат расчёта."
-        ),
+        footer_text=(f"Расчётный шаг: {morfostvor.dh:g} см. В таблице приведён каждый {divider}-й результат расчёта."),
     )
 
     set_table_font_size(parameters, 8)
@@ -312,10 +297,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     try:
         report.save(out_filename)
     except PermissionError:
-        print(
-            "\nОшибка! Не удалось сохранить файл. "
-            "Проверьте возможность записи файла по указанному пути."
-        )
+        print("\nОшибка! Не удалось сохранить файл. Проверьте возможность записи файла по указанному пути.")
         print("Возможно записываемый файл уже существует и открыт.")
         sys.exit(1)
 
@@ -339,27 +321,15 @@ def save_graphic(morfostvor, path):
 
     # Сохраняем картинки в отдельные файлы в папку graphics
     if config.PROFILE_SAVE_PICTURES:
-        morfostvor.fig_profile.fig.savefig(
-            Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI)
-        )
+        morfostvor.fig_profile.fig.savefig(Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI))
     if config.CURVE_SAVE_PICTURES:
         if config.HYDRAULIC_CURVE:
-            morfostvor.fig_QH.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI)
-            )
+            morfostvor.fig_QH.fig.savefig(Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI))
         if config.HYDRAULIC_AND_SPEED_CURVE:
-            morfostvor.fig_QHV.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI)
-            )
+            morfostvor.fig_QHV.fig.savefig(Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI))
         if config.SPEED_CURVE:
-            morfostvor.fig_QV.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI)
-            )
+            morfostvor.fig_QV.fig.savefig(Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI))
         if config.AREA_CURVE:
-            morfostvor.fig_QF.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI)
-            )
+            morfostvor.fig_QF.fig.savefig(Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI))
         if config.QWVH_CURVE:
-            morfostvor.fig_QWVH.fig.savefig(
-                Path(f"{picture_dir}/{profile_name}_QWVH.png", dpi=config.FIG_DPI)
-            )
+            morfostvor.fig_QWVH.fig.savefig(Path(f"{picture_dir}/{profile_name}_QWVH.png", dpi=config.FIG_DPI))

@@ -5,7 +5,7 @@ import numpy as np
 from scipy import interpolate
 
 from hydraulic import config
-from hydraulic.lib import poly_area, calculate_line_length
+from hydraulic.lib import calculate_line_length, poly_area
 
 
 @dataclass
@@ -162,7 +162,7 @@ class WaterSection:
     :param area: Площадь водного сечения
     :param average_depth: Средняя глубина
     :param max_depth: Максимальная глубина
-    :param wet_perimeter: Смочённый периметр
+    :param wet_perimeter: Смоченный периметр
     :param r_hydraulic: Гидравлический радиус
     :param start_point: Точка начала расчёта [index, y] (необязательный параметр)
     """
@@ -193,9 +193,7 @@ class WaterSection:
             self.segments = [seg for seg in self.segments if self.start_point in seg[0]]
 
             if not self.segments:
-                raise ValueError(
-                    "Ошибка! Заданная стартовая точка не попадает ни в один сегмент."
-                )
+                raise ValueError("Ошибка! Заданная стартовая точка не попадает ни в один сегмент.")
 
         # Списки для хранения параметров по каждому сечению
         widths = []
@@ -222,9 +220,7 @@ class WaterSection:
         # Комбинируем результаты по всем сечениям
         self.width = float(round(sum(widths), 3))
         self.area = float(round(sum(areas), 3))
-        self.average_depth = (
-            float(round(np.average(avg_depths), 3)) if avg_depths else 0
-        )
+        self.average_depth = float(round(np.average(avg_depths), 3)) if avg_depths else 0
         self.max_depth = float(round(max(max_depths), 3)) if max_depths else 0
         self.wet_perimeter = float(round(sum(perimeters), 3))
         self.r_hydraulic = float(round(sum(r_hydraulics), 3))
@@ -357,12 +353,8 @@ class WaterSection:
         if seg_y[0] == water_level:
             first_index = seg_indices[0]
 
-            if self.profile_y_coords[first_index] < water_level and water_level <= max(
-                seg_y
-            ):  # Дно ниже уровня воды
-                x_interp = interpolate_x(
-                    self.profile_y_coords[first_index], first_index, first_index + 1
-                )
+            if self.profile_y_coords[first_index] < water_level and water_level <= max(seg_y):  # Дно ниже уровня воды
+                x_interp = interpolate_x(self.profile_y_coords[first_index], first_index, first_index + 1)
 
                 # Вставляем точки чтобы избежать срезания углов
                 seg_x.insert(1, x_interp)
@@ -371,20 +363,11 @@ class WaterSection:
 
         # Проверяем правую границу сегмента
         if seg_y[-1] == water_level:
-            last_index = (
-                seg_indices[-2]
-                if seg_indices[-1] == self.profile_x_coords
-                else seg_indices[-1]
-            )
+            last_index = seg_indices[-2] if seg_indices[-1] == self.profile_x_coords else seg_indices[-1]
             if self.profile_y_coords[last_index] < water_level:  # Дно ниже уровня воды
-                x_interp = interpolate_x(
-                    self.profile_y_coords[last_index], last_index - 1, last_index
-                )
+                x_interp = interpolate_x(self.profile_y_coords[last_index], last_index - 1, last_index)
                 # Проверяем не ровное ли дно на последних точках
-                if (
-                    self.profile_y_coords[last_index]
-                    == self.profile_y_coords[last_index - 1]
-                ):
+                if self.profile_y_coords[last_index] == self.profile_y_coords[last_index - 1]:
                     x_interp = self.profile_x_coords[last_index]
                 # Вставляем точки чтобы избежать срезания углов
                 seg_x.insert(-1, x_interp)
@@ -402,7 +385,7 @@ class WaterSection:
             average_depth = 0.00001
         max_depth = max(depths) if depths else 0
 
-        # Вычисляем смочённый периметр как сумму расстояний между соседними точками
+        # Вычисляем смоченный периметр как сумму расстояний между соседними точками
         wet_perimeter = calculate_line_length(seg_x, seg_y)
 
         r_hydraulic = area / wet_perimeter if area > 0 and wet_perimeter > 0 else 0

@@ -8,9 +8,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import interpolate
 from openpyxl import load_workbook
 from report.utils import get_xls_sheet_quantity
+from scipy import interpolate
 
 from hydraulic import config
 from hydraulic.graph import (
@@ -95,7 +95,7 @@ class Calculation:
                 f"Ошибка выбора формулы расчёта коэффициента Шези. Указана: {equation_type}, доступные формулы: {equation_types_available}."
             )
 
-        if equation_type == "Манинга":
+        if equation_type == "Маннинга":
             return self.__shezi_manning()
         elif equation_type == "Железнякова":
             return self.__shezi_zheleznjakov()
@@ -114,7 +114,8 @@ class Calculation:
             return self.__shezi_agroskina()
         else:
             raise ValueError(
-                f"Ошибка выбора формулы расчёта коэффициента Шези. Указана: {equation_type}, доступные формулы: {equation_types_available}."
+                "Ошибка выбора формулы расчёта коэффициента Шези. "
+                f"Указана: {equation_type}, доступные формулы: {equation_types_available}."
             )
 
     # Коэффициент Шези по формуле Н. Н. Павловского, степенной коэффициент по формуле Железнякова
@@ -127,13 +128,8 @@ class Calculation:
                 (1 / 2 - (self.n * np.sqrt(self._g) / 0.26) * (1 - np.log10(self.r)))
                 + self.n
                 * np.sqrt(
-                    1
-                    / 4
-                    * (1 / self.n - np.sqrt(self._g) / 0.13 * (1 - np.log10(self.r)))
-                    ** 2
-                    + np.sqrt(self._g)
-                    / 0.13
-                    * (1 / self.n + np.sqrt(self._g) * np.log10(self.r))
+                    1 / 4 * (1 / self.n - np.sqrt(self._g) / 0.13 * (1 - np.log10(self.r))) ** 2
+                    + np.sqrt(self._g) / 0.13 * (1 / self.n + np.sqrt(self._g) * np.log10(self.r))
                 )
             )
         )
@@ -150,29 +146,19 @@ class Calculation:
         return shezi
 
     # Коэффициент Шези по формуле Павловского
-    # для глубин 0.1 < h < 3 (Гидрорасчёты считают по этой формуле)
+    # для глубин 0.1 < h < 3 (Гидрорасчеты считают по этой формуле)
     def __shezi_pavlovskij(self):
-        y = (
-            2.5 * np.sqrt(self.n)
-            - 0.13
-            - 0.75 * np.sqrt(self.r) * (np.sqrt(self.n) - 0.10)
-        )
+        y = 2.5 * np.sqrt(self.n) - 0.13 - 0.75 * np.sqrt(self.r) * (np.sqrt(self.n) - 0.10)
         shezi = (1 / self.n) * self.r**y
-        self.type__ = (
-            "Коэффициент шези определён по формуле Павловского. Рекомендуется для R < 3 м"
-        )
+        self.type__ = "Коэффициент шези определён по формуле Павловского. Рекомендуется для R < 3 м"
 
         return shezi
 
     # Коэффициент шези по формуле Железнякова
     def __shezi_zheleznjakov(self):
-        shezi = 1 / 2 * (
-            (1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))
-        ) + np.sqrt(
-            (1 / 4)
-            * (1 / self.n - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))) ** 2
-            + (np.sqrt(self._g) / 0.13)
-            * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.r)))
+        shezi = 1 / 2 * ((1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))) + np.sqrt(
+            (1 / 4) * (1 / self.n - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))) ** 2
+            + (np.sqrt(self._g) / 0.13) * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.r)))
         )
         self.type__ = "Коэффициент шези определён по формуле Железнякова"
         return shezi
@@ -223,9 +209,7 @@ class Morfostvor:
         elif config.CALC_TYPE == 3:
             self.strings["type"] = "грязекаменного селевого потока"
         else:
-            print(
-                "Неверно выбран тип расчёта в конфигурационном файле. Программа будет завершена."
-            )
+            print("Неверно выбран тип расчёта в конфигурационном файле. Программа будет завершена.")
             sys.exit(0)
 
         self.qh_title = f"Кривая расхода {self.strings['type']} Q = f(H)"
@@ -242,15 +226,10 @@ class Morfostvor:
             # Открываем лист по заданному номеру
             sheet = data_file.worksheets[page]
         except IndexError:
-            print(
-                "Неверно указан индекс листа .xls файла. Проверьте параметры запуска расчёта."
-            )
+            print("Неверно указан индекс листа .xls файла. Проверьте параметры запуска расчёта.")
             sys.exit(34)
 
-        print(
-            f"\n----- Считываем исходные данные из .xls файла: "
-            f"{file_path}, страница {page} ({sheet.title}) -----\n"
-        )
+        print(f"\n----- Считываем исходные данные из .xls файла: {file_path}, страница {page} ({sheet.title}) -----\n")
 
         __raw_data = []  # Сырые строки xls файла
         i = 0
@@ -287,9 +266,7 @@ class Morfostvor:
                     s1 = __raw_data[line][__situation_col].split(",")[0]
                     s2 = __raw_data[line][__situation_col].split(",")[1]
 
-                    situation_borders.append(
-                        SituationBorder(bnum, s2.strip().lower(), line)
-                    )
+                    situation_borders.append(SituationBorder(bnum, s2.strip().lower(), line))
                     bnum += 1
                 except IndexError:
                     s1 = __raw_data[line][__situation_col]
@@ -305,9 +282,7 @@ class Morfostvor:
 
                     num += 1
 
-                    situation.append(
-                        SituationSector(num, s1, situation[num - 2].end_point, line)
-                    )
+                    situation.append(SituationSector(num, s1, situation[num - 2].end_point, line))
             situation[-1].end_point = len(x) - 1
 
             print("успешно.\n")
@@ -347,14 +322,11 @@ class Morfostvor:
                 # По первой строке создаём первый сектор
                 if line == 0:
                     coord = ()
-                    sectors.append(
-                        ProfileSector(num, name, line, line, roughness, slope, coord)
-                    )
+                    sectors.append(ProfileSector(num, name, line, line, roughness, slope, coord))
 
                 # Сравниваем имя предыдущего участка с текущим,
                 # если не совпадают то создаем новый сектор:
                 elif name.lower() != sectors[num - 1].name.lower():
-
                     # TODO: Проверить это условие
                     if sectors[num - 1].id == 1:  # Если первый участок
                         # Записываем номер последний точки - 1
@@ -382,18 +354,13 @@ class Morfostvor:
                 if sector.roughness == "":
                     print()
                     print("-----------------------------------------------------------")
-                    print(
-                        f"Ошибка! В участке №{sector.id} «{sector.name}» "
-                        "не задан коэффициент шероховатости n."
-                    )
+                    print(f"Ошибка! В участке №{sector.id} «{sector.name}» не задан коэффициент шероховатости n.")
                     print("Программа будет завершена.\n")
                     sys.exit()
                 elif sector.slope == "":
                     print()
                     print("-----------------------------------------------------------")
-                    print(
-                        f"Ошибка! В участке №{sector.id} «{sector.name}» не задан уклон i."
-                    )
+                    print(f"Ошибка! В участке №{sector.id} «{sector.name}» не задан уклон i.")
                     print("Программа будет завершена.\n")
                     sys.exit()
 
@@ -409,10 +376,7 @@ class Morfostvor:
                 if sector.slope <= 0 or sector.slope > 900:
                     print()
                     print("-----------------------------------------------------------")
-                    print(
-                        "Обнаружен подозрительный уклон "
-                        f"на участке №{sector.id} «{sector.name}» — {sector.slope}‰."
-                    )
+                    print(f"Обнаружен подозрительный уклон на участке №{sector.id} «{sector.name}» — {sector.slope}‰.")
                     question_continue_app()
 
             # Номер последней точки в последнем секторе
@@ -465,9 +429,7 @@ class Morfostvor:
 
         # Считываем отметку предела размыва (в скобках можно указать границы)
         try:
-            erosion_limit_list = [
-                float(x.strip()) for x in __raw_data[7][__description_col].split(",")
-            ]
+            erosion_limit_list = [float(x.strip()) for x in __raw_data[7][__description_col].split(",")]
             # Предел размыва
             self.erosion_limit = erosion_limit_list[0]
             # координаты предела размыва
@@ -476,9 +438,7 @@ class Morfostvor:
             self.erosion_limit = __raw_data[7][__description_col]
 
         self.top_limit = __raw_data[8][__description_col]  # Верхняя граница
-        self.top_limit_description = __raw_data[9][
-            __description_col
-        ]  # Описание верхней границы
+        self.top_limit_description = __raw_data[9][__description_col]  # Описание верхней границы
         print("успешно!")
 
         # Считываем и записываем все точки x и y профиля
@@ -538,10 +498,7 @@ class Morfostvor:
 
         for sector in self.sectors:
             try:
-                if (
-                    wl >= df.loc[sector.name].index.min()
-                    and wl <= df.loc[sector.name].index.max()
-                ):
+                if wl >= df.loc[sector.name].index.min() and wl <= df.loc[sector.name].index.max():
                     fq = interpolate.interp1d(
                         df.loc[(sector.name), "Q"].index,
                         df.loc[(sector.name), "Q"].values,
@@ -590,29 +547,17 @@ class Morfostvor:
             # Удаляем столбцы полностью состоящие из NaN для избежания предупреждения
             # Pandas: FutureWarning concatenation with empty or all-NA entries is deprecated
             result.dropna(axis=1, how="all", inplace=True)
-            result = pd.concat(
-                [result, pd.DataFrame.from_records([row])], ignore_index=True
-            )
+            result = pd.concat([result, pd.DataFrame.from_records([row])], ignore_index=True)
             q, h, v, b, f = np.nan, np.nan, np.nan, np.nan, np.nan
 
         # Подбираем параметры суммирующей кривой
         sum_text = "Сумма"
 
-        fq = interpolate.interp1d(
-            df.loc[(sum_text), "Q"].index, df.loc[(sum_text), "Q"].values
-        )
-        fv = interpolate.interp1d(
-            df.loc[(sum_text), "V"].index, df.loc[(sum_text), "V"].values
-        )
-        fh = interpolate.interp1d(
-            df.loc[(sum_text), "Hср"].index, df.loc[(sum_text), "Hср"].values
-        )
-        fb = interpolate.interp1d(
-            df.loc[(sum_text), "B"].index, df.loc[(sum_text), "B"].values
-        )
-        ff = interpolate.interp1d(
-            df.loc[(sum_text), "F"].index, df.loc[(sum_text), "F"].values
-        )
+        fq = interpolate.interp1d(df.loc[(sum_text), "Q"].index, df.loc[(sum_text), "Q"].values)
+        fv = interpolate.interp1d(df.loc[(sum_text), "V"].index, df.loc[(sum_text), "V"].values)
+        fh = interpolate.interp1d(df.loc[(sum_text), "Hср"].index, df.loc[(sum_text), "Hср"].values)
+        fb = interpolate.interp1d(df.loc[(sum_text), "B"].index, df.loc[(sum_text), "B"].values)
+        ff = interpolate.interp1d(df.loc[(sum_text), "F"].index, df.loc[(sum_text), "F"].values)
 
         q = round(float(fq(wl)), 3)
         h = round(float(fh(wl)), 3)
@@ -631,9 +576,7 @@ class Morfostvor:
             "area": f,
         }
 
-        result = pd.concat(
-            [result, pd.DataFrame.from_records([sum_row])], ignore_index=True
-        )
+        result = pd.concat([result, pd.DataFrame.from_records([sum_row])], ignore_index=True)
         return result
 
     def get_min_sector(self):
@@ -698,9 +641,7 @@ class Morfostvor:
         df = pd.concat(
             [
                 df,
-                pd.DataFrame.from_records(
-                    [dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0]))]
-                ),
+                pd.DataFrame.from_records([dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0]))]),
             ],
             ignore_index=True,
         )
@@ -710,8 +651,8 @@ class Morfostvor:
             print(f"Выполняем расчёты для уровня {water_level:.2f}", end="\r")
 
             consumption_summ = 0
-            wc_list = list()
-            area_list = list()
+            wc_list = []
+            area_list = []
 
             if config.OVERFLOW:
                 # Расчёт по переполнению
@@ -725,9 +666,7 @@ class Morfostvor:
             area_summ += sum(area_list)
 
             # Пустые значения для суммирующей кривой
-            r_sum = dict(
-                zip(col, ["Сумма", round(water_level, 2), 0, 0, 0, 0, 0, 0, 0, 0, 0])
-            )
+            r_sum = dict(zip(col, ["Сумма", round(water_level, 2), 0, 0, 0, 0, 0, 0, 0, 0, 0]))
             df = pd.concat([df, pd.DataFrame.from_records([r_sum])], ignore_index=True)
 
             water_level += dh
@@ -740,19 +679,17 @@ class Morfostvor:
         # Заполняем суммирующие данные
         df.loc[(water_levels, "Сумма"), "F"] = df.groupby(level=0)["F"].transform("sum")
         df.loc[(water_levels, "Сумма"), "B"] = df.groupby(level=0)["B"].transform("sum")
-        df.loc[(water_levels, "Сумма"), "Hср"] = df.groupby(level=0)["F"].transform(
-            "sum"
-        ) / df.groupby(level=0)["B"].transform("sum")
-        df.loc[(water_levels, "Сумма"), "Hмакс"] = df.groupby(level=0)[
-            "Hмакс"
-        ].transform("max")
+        df.loc[(water_levels, "Сумма"), "Hср"] = df.groupby(level=0)["F"].transform("sum") / df.groupby(level=0)[
+            "B"
+        ].transform("sum")
+        df.loc[(water_levels, "Сумма"), "Hмакс"] = df.groupby(level=0)["Hмакс"].transform("max")
         df.loc[(water_levels, "Сумма"), "Q"] = df.groupby(level=0)["Q"].transform("sum")
-        df.loc[(water_levels, "Сумма"), "V"] = df.groupby(level=0)["Q"].transform(
-            "sum"
-        ) / df.groupby(level=0)["F"].transform("sum")
-        df.loc[(water_levels, "Сумма"), "Shezi"] = df.groupby(level=0)[
-            "Shezi"
-        ].transform("sum") / (df.groupby(level=0)["Shezi"].transform("count") - 1)
+        df.loc[(water_levels, "Сумма"), "V"] = df.groupby(level=0)["Q"].transform("sum") / df.groupby(level=0)[
+            "F"
+        ].transform("sum")
+        df.loc[(water_levels, "Сумма"), "Shezi"] = df.groupby(level=0)["Shezi"].transform("sum") / (
+            df.groupby(level=0)["Shezi"].transform("count") - 1
+        )
         df.loc[(water_levels, "Сумма"), "R"] = df.groupby(level=0)["R"].transform("sum")
         df.loc[(water_levels, "Сумма"), "W"] = df.groupby(level=0)["W"].transform("sum")
         df = df.fillna(0)
@@ -780,9 +717,7 @@ class Morfostvor:
 
         # Отрисовка верхней границы сооружения
         if self.top_limit:
-            self.fig_profile.draw_top_limit(
-                self.top_limit, text=self.top_limit_description
-            )
+            self.fig_profile.draw_top_limit(self.top_limit, text=self.top_limit_description)
 
         # Отрисовка границы предельного размыва профиля
         if self.erosion_limit and len(self.erosion_limit_coord) == 2:
@@ -809,10 +744,8 @@ class Morfostvor:
         # TODO: сделать отрисовку линий урезов воды по каждому
         # участку УВ из описания ситуации исходного файла
         # Отрисовка урез воды на графике профиля
-        if self.waterline and type(self.waterline) != str:
-            self.fig_profile.draw_waterline(
-                round(self.waterline, 2), color="blue", linestyle="-"
-            )
+        if self.waterline and type(self.waterline) is not str:
+            self.fig_profile.draw_waterline(round(self.waterline, 2), color="blue", linestyle="-")
         return df
 
     def _calc_by_sectors(self, water_level, col, df, wc_list):
@@ -878,17 +811,9 @@ class Morfostvor:
             right_max_ele = max(split_list_by_min_value(y)[1])
 
             # Проверка на перелив через границы участка
-            if (
-                (water_level >= left_max_ele)
-                and (i - 1 not in calc_sectors)
-                and (i - 1 >= 0)
-            ):
+            if (water_level >= left_max_ele) and (i - 1 not in calc_sectors) and (i - 1 >= 0):
                 calc_sectors.append(i - 1)
-            if (
-                (water_level >= right_max_ele)
-                and (i + 1 not in calc_sectors)
-                and (i + 1 <= len(self.sectors) - 1)
-            ):
+            if (water_level >= right_max_ele) and (i + 1 not in calc_sectors) and (i + 1 <= len(self.sectors) - 1):
                 calc_sectors.append(i + 1)
 
             # Сектор воды и основные его параметры
@@ -900,24 +825,18 @@ class Morfostvor:
                     x,
                     y,
                     water_level,
-                    start_point=sector.coord[0][
-                        sector.coord[1].index(min(sector.coord[1]))
-                    ],
+                    start_point=sector.coord[0][sector.coord[1].index(min(sector.coord[1]))],
                 )
 
             # Расчетный участок находится слева от начального
             # начинаем заполнять с крайней правой точки
             elif sector.id < min_sector[1].id:
-                water = WaterSection(
-                    x, y, water_level, start_point=self.x[sector.end_point]
-                )
+                water = WaterSection(x, y, water_level, start_point=self.x[sector.end_point])
 
             # Расчетный участок находится справа от начального
             # начинаем заполнять с крайней левой точки
             elif sector.id > min_sector[1].id:
-                water = WaterSection(
-                    x, y, water_level, start_point=self.x[sector.start_point]
-                )
+                water = WaterSection(x, y, water_level, start_point=self.x[sector.start_point])
 
             # Расчёт параметров для воды
             calc = Calculation(
@@ -972,9 +891,7 @@ class Morfostvor:
             result = pd.concat(
                 [
                     result,
-                    pd.DataFrame.from_records(
-                        [{"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}]
-                    ),
+                    pd.DataFrame.from_records([{"P": prob[0], "H": h, "Q": prob[1], "V": v, "F": f}]),
                 ],
                 ignore_index=True,
             )
@@ -1039,10 +956,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         except FileNotFoundError:
             pass
         except PermissionError:
-            print(
-                f"\nОшибка! Программа не может получить доступ "
-                f"к файлу {out_filename}, возможно он открыт?"
-            )
+            print(f"\nОшибка! Программа не может получить доступ к файлу {out_filename}, возможно он открыт?")
             print("Программа будет завершена.")
             sys.exit(35)
 
@@ -1071,17 +985,10 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
         if config.PROFILE_SAVE_PICTURES or config.CURVE_SAVE_PICTURES:
             save_graphic(stvor, str(Path(out_filename).parents[0]))
 
-        print(
-            f"\n------------------------ "
-            f"Файл {out_filename} сохранён успешно "
-            f"------------------------\n"
-        )
+        print(f"\n------------------------ Файл {out_filename} сохранён успешно ------------------------\n")
         if config.DEBUG:
             print(f"--- Расчеты: {__compute_time:.4f} секунд ---")
-            print(
-                f"--- Сборка отчета: "
-                f"{time.time() - __report_start_time:.4f} секунд ---"
-            )
+            print(f"--- Сборка отчета: {time.time() - __report_start_time:.4f} секунд ---")
             print(f"--- Всего: {time.time() - __start_time:.4f} секунд ---\n")
         return stvor
 
@@ -1095,10 +1002,7 @@ def xls_calculate_hydraulic(in_filename, out_filename, page=None):
             __summary_start_time = time.time()
             insert_summary_QV_tables(stvors, out_filename)
             if config.DEBUG:
-                print(
-                    f"\n--- Вставка сводных таблиц: "
-                    f"{time.time() - __summary_start_time:.4f} секунд ---"
-                )
+                print(f"\n--- Вставка сводных таблиц: {time.time() - __summary_start_time:.4f} секунд ---")
 
     # Расчет только одного листа xls файла
     elif isinstance(page, int):

@@ -48,8 +48,7 @@ def chunk_list(seq, num):
 
 def insert_summary_QV_tables(stvors, out_filename):
     print(
-        "Формируем и вставляем сводные таблицы уровней, "
-        "скоростей и таблиц параметров при РУВВ... ",
+        "Формируем и вставляем сводные таблицы уровней, скоростей и таблиц параметров при РУВВ... ",
         end="",
     )
     # Подготовка данных для записи результирующей таблицы
@@ -222,27 +221,13 @@ def insert_summary_QV_tables(stvors, out_filename):
         for i in range(stvor.sectors_result.index.max() + 1):
             ruvv_cell[0].text = f"{ruvv_n}"
             ruvv_cell[4].text = f"{stvor.sectors_result.loc[i]['name']}"
-            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[6].text = (
-                f"{stvor.sectors_result.loc[i]['roughness']:.3f}".replace("nan", "-")
-            )
-            ruvv_cell[7].text = (
-                f"{stvor.sectors_result.loc[i]['consumption']:.2f}".replace("nan", "-")
-            )
-            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace(
-                "nan", "-"
-            )
+            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace("nan", "-")
+            ruvv_cell[6].text = f"{stvor.sectors_result.loc[i]['roughness']:.3f}".replace("nan", "-")
+            ruvv_cell[7].text = f"{stvor.sectors_result.loc[i]['consumption']:.2f}".replace("nan", "-")
+            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace("nan", "-")
+            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace("nan", "-")
+            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace("nan", "-")
+            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace("nan", "-")
             sector_num += 1
             ruvv_cell = ruvv_table.add_row().cells
             ruvv_n += 1
@@ -252,9 +237,7 @@ def insert_summary_QV_tables(stvors, out_filename):
         row._element.getparent().remove(row._element)
 
         # Объединяем ячейки
-        prob_text = text_sanitize(
-            stvor.probability[stvor.design_water_level_index][0], num_suffix="%"
-        )
+        prob_text = text_sanitize(stvor.probability[stvor.design_water_level_index][0], num_suffix="%")
         ruvv_table.cell(ruvv_n - 1, 1).merge(
             ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)
         ).text = f"{stvor_num}"
@@ -409,9 +392,7 @@ def split_list_by_min_value(values: list) -> list:
         ValueError: If the input list has less than 2 elements.
     """
     if len(values) < 2:
-        raise ValueError(
-            "Input list must have at least 2 elements to split without empty lists"
-        )
+        raise ValueError("Input list must have at least 2 elements to split without empty lists")
 
     min_val = min(values)
     min_index = values.index(min_val)
@@ -460,11 +441,7 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                 next_min_ele = max(split_list_by_min_value(y)[1])
 
                 # Проверка на перелив левой границы участка
-                if (
-                    water_level >= previous_min_ele
-                    and (i - 1) not in calc_sectors
-                    and (i - 1) >= 0
-                ):
+                if water_level >= previous_min_ele and (i - 1) not in calc_sectors and (i - 1) >= 0:
                     # Проверка что вода дошла до левой границы участка
                     # костыль через try, чтобы избежать ошибки определения границы
                     try:
@@ -485,11 +462,7 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
                         calc_sectors.append(i - 1)
                         sectors_to_process.append(i - 1)
                 # Проверка на перелив правой границы участка
-                if (
-                    water_level >= next_min_ele
-                    and (i + 1) not in calc_sectors
-                    and (i + 1) < len(morfostvor.sectors)
-                ):
+                if water_level >= next_min_ele and (i + 1) not in calc_sectors and (i + 1) < len(morfostvor.sectors):
                     calc_sectors.append(i + 1)
                     sectors_to_process.append(i + 1)
             except (ValueError, IndexError) as e:
@@ -503,19 +476,13 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False):
             # Расчетный участок является участком с минимальными отметками
             if sector.id == min_sector[1].id:
                 min_y_index = sector.coord[1].index(min(sector.coord[1]))
-                water = WaterSection(
-                    x, y, water_level, start_point=sector.coord[0][min_y_index]
-                )
+                water = WaterSection(x, y, water_level, start_point=sector.coord[0][min_y_index])
             # Расчетный участок находится слева от начального
             elif sector.id < min_sector[1].id:
-                water = WaterSection(
-                    x, y, water_level, start_point=morfostvor.x[sector.end_point]
-                )
+                water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.end_point])
             # Расчетный участок находится справа от начального
             elif sector.id > min_sector[1].id:
-                water = WaterSection(
-                    x, y, water_level, start_point=morfostvor.x[sector.start_point]
-                )
+                water = WaterSection(x, y, water_level, start_point=morfostvor.x[sector.start_point])
 
             if water is not None:
                 result_sections.append(water)
