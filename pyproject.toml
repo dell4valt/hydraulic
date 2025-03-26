@@ -1,6 +1,6 @@
 [project]
 name = "hydraulic"
-version = "0.1.0"
+version = "0.2.1"
 description = "Hydraulic is a Python library for calculating hydraulic parameters (levels, speeds, etc), and generate report."
 readme = "README.md"
 authors = [{ name = "Vladimir Kamenev", email = "dell4valt@gmail.com" }]

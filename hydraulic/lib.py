@@ -369,7 +369,8 @@ def get_water_sections(morfostvor, water_level: float, overflow: bool = False) -
                         x,
                         y,
                         water_level,
-                        start_point=morfostvor.x[sector.end_point - 1],
+                        # Отключено для проверки результатов
+                        # start_point=morfostvor.x[sector.end_point - 1],
                     )
 
                 if water.water_section_x[0] == x[0]:

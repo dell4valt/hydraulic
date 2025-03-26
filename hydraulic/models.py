@@ -188,13 +188,23 @@ class WaterSection:
         if not self.segments:
             raise ValueError("Ошибка! Не удалось определить сечения.")
 
-        # Если задан start_point, выбираем только сегмент, содержащий его
+        # Учитываем начальную точку расчета, если она указана
         if self.start_point is not np.nan:
-            self.segments = [seg for seg in self.segments if self.start_point in seg[0]]
+            # Отбираем только те сегменты, где координата X содержит указанную точку начала расчета
+            filtered_segments = []
+            for segment in self.segments:
+                segment_x_coords = segment[0]  # Список координат X для сегмента
+                if self.start_point in segment_x_coords:
+                    filtered_segments.append(segment)
 
+            # Обновляем список сегментов
+            self.segments = filtered_segments
+
+            # Если ни один сегмент не содержит указанную точку, выдаем ошибку
             if not self.segments:
-                raise ValueError("Ошибка! Заданная стартовая точка не попадает ни в один сегмент.")
-
+                raise ValueError(
+                    f"Ошибка! Заданная стартовая точка: {self.start_point} не попадает ни в один сегмент ({self.segments})."
+                )
         # Списки для хранения параметров по каждому сечению
         widths = []
         areas = []
