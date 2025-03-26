@@ -459,6 +459,9 @@ class Morfostvor:
                     y[sector.start_point : sector.end_point + 1],
                 )  # Координаты из начальной и конечной точек
 
+            # Определяем последний сектор для анализа
+            last_sector = sectors[-1] if sectors else None
+
             try:
                 if last_sector:
                     # Максимальная отметка участка слева
@@ -469,7 +472,7 @@ class Morfostvor:
                 print("\n\nОшибка в определении участков. Список участков:\n")
                 for sector in sectors:
                     print(sector)
-                print(f"Конкретная ошибка: {str(e)}")
+                print(f"Конкретная ошибка: {str(exc)}")
                 print("Завершаем программу.")
                 raise SystemExit
 
