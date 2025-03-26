@@ -44,7 +44,7 @@ plt.close("all")
 
 
 @dataclass
-class Calculation:
+class ComputeCVQ:
     """
     Класс гидравлических расчётов скорости, расхода воды и коэффициента Шези для водного объекта.
 
@@ -52,7 +52,8 @@ class Calculation:
     :param i: Уклон, промилле
     :param h: Средняя глубина водного сечения
     :param a: Площадь водного сечения
-
+    :param p: Смоченный периметр
+    :param r: Гидравлический радиус
     """
 
     n: float  # Коэффициент шероховатости
@@ -68,102 +69,168 @@ class Calculation:
     type__: str = "Не определен"
 
     def __post_init__(self):
+        """Инициализация расчетов после создания объекта."""
         # Определение коэффициента Шези
-        self.shezi = self._get_shezi(config.SHEZI_TYPE, config.SHEZI_TYPE_DEFAULTS)
+        self.shezi = self._calc_shezi(config.SHEZI_TYPE)
 
         if config.USE_H_INSTEAD_R:
             self.r = self.h
 
-        # Тип расчёта, обычная вода или селевой поток
-        if config.CALC_TYPE == 1:
-            # Расчёт скорости воды
-            self.v = self.shezi * np.sqrt(self.r * (self.i / 1000))
-        elif config.CALC_TYPE == 2:
-            # Расчёт скорости воды для наносоводных селей
-            self.v = 4.5 * self.r**0.67 * (self.i / 1000) ** 0.17
-        elif config.CALC_TYPE == 3:
-            # Расчёт скорости воды для грязекаменных селей селей
-            self.v = 3.75 * self.r**0.50 * (self.i / 1000) ** 0.17
-        else:
-            raise ValueError("Ошибка выбора формулы расчёта скорости потока.")
+        # Расчет скорости потока
+        self.v = self._calc_velocity(self.i, self.shezi, self.r, calc_type=config.CALC_TYPE)
+
         # Расчёт расхода воды
-        self.q = self.a * self.v
+        self.q = self._calc_consumption(self.a, self.v)
 
-    def _get_shezi(self, equation_type, equation_types_available):
-        if equation_type not in equation_types_available:
+    def _calc_velocity(self, slope: float, shezi: float, hydraulic_radius: float, calc_type: int = 1) -> float:
+        """Расчет скорости потока в зависимости от типа.
+
+        Выполняет расчет скорости потока на основе выбранного типа расчета (обычная вода
+        или селевой поток), используя соответствующие формулы.
+
+        Args:
+            slope: Уклон в промилле.
+            shezi: Коэффициент Шези.
+            hydraulic_radius: Гидравлический радиус.
+            calc_type: Тип расчета (1 - обычная вода, 2 - наносоводный сель, 3 - грязекаменный сель).
+
+        Returns:
+            float: Скорость потока в м/с.
+
+        Raises:
+            ValueError: Если указан неподдерживаемый тип расчета в config.CALC_TYPE.
+        """
+        normalized_slope = slope / 1000  # Перевод из промилле
+
+        # Тип расчёта: обычная вода или селевой поток
+        calc_type_funcs = {
+            1: lambda: shezi * np.sqrt(hydraulic_radius * normalized_slope),  # Обычная вода
+            2: lambda: 4.5 * hydraulic_radius**0.67 * normalized_slope**0.17,  # Наносоводный сель
+            3: lambda: 3.75 * hydraulic_radius**0.50 * normalized_slope**0.17,  # Грязекаменный сель
+        }
+
+        if config.CALC_TYPE not in calc_type_funcs:
+            raise ValueError(f"Ошибка выбора формулы расчёта скорости потока. Указан тип: {config.CALC_TYPE}")
+
+        return calc_type_funcs[config.CALC_TYPE]()
+
+    def _calc_shezi(self, equation_type):
+        """Получение коэффициента Шези по выбранной формуле.
+
+        Метод вычисляет коэффициент Шези используя одну из доступных формул
+        в зависимости от переданного типа уравнения.
+
+        Args:
+            equation_type (str): Тип формулы для расчета коэффициента Шези.
+                Допустимые значения: "Маннинга", "Железнякова", "Павловского",
+                "Павловского-Железнякова", "СП 33-101-2003", "СП", "Агроскина",
+                "Гидрорасчеты".
+
+        Returns:
+            float: Значение коэффициента Шези.
+
+        Raises:
+            ValueError: Если указан недопустимый тип формулы.
+        """
+        # Словарь формул расчета коэффициента Шези
+        shezi_formulas = {
+            "Маннинга": self.__shezi_manning,
+            "Железнякова": self.__shezi_zheleznjakov,
+            "Павловского": self.__shezi_pavlovskij,
+            "Павловского-Железнякова": self.__shezi_pavlovskij_zheleznjakov,
+            "СП 33-101-2003": self.__shezi_pavlovskij,
+            "СП": self.__shezi_pavlovskij,
+            "Агроскина": self.__shezi_agroskina,
+            "Гидрорасчеты": (
+                lambda: self.__shezi_pavlovskij() if 0 <= self.r <= 3 else self.__shezi_pavlovskij_zheleznjakov()
+            ),
+        }
+
+        available_equations = list(shezi_formulas.keys())
+
+        if equation_type not in available_equations:
             raise ValueError(
-                f"Ошибка выбора формулы расчёта коэффициента Шези. Указана: {equation_type}, доступные формулы: {equation_types_available}."
+                f"Ошибка выбора формулы расчёта коэффициента Шези. "
+                f"Указана: '{equation_type}'. Доступные формулы: {available_equations}."
             )
 
-        if equation_type == "Маннинга":
-            return self.__shezi_manning()
-        elif equation_type == "Железнякова":
-            return self.__shezi_zheleznjakov()
-        elif equation_type == "Павловского":
-            return self.__shezi_pavlovskij()
-        elif equation_type == "Павловского-Железнякова":
-            return self.__shezi_pavlovskij_zheleznjakov()
-        elif equation_type in ["СП 33-101-2003", "СП"]:
-            return self.__shezi_pavlovskij()
-        elif equation_type == "Гидрорасчеты":
-            if self.h >= 0 and self.h <= 3:
-                return self.__shezi_pavlovskij()
-            else:
-                return self.__shezi_pavlovskij_zheleznjakov()
-        elif equation_type == "Агроскина":
-            return self.__shezi_agroskina()
-        else:
-            raise ValueError(
-                "Ошибка выбора формулы расчёта коэффициента Шези. "
-                f"Указана: {equation_type}, доступные формулы: {equation_types_available}."
-            )
+        if equation_type in shezi_formulas:
+            return shezi_formulas[equation_type]()
 
-    # Коэффициент Шези по формуле Н. Н. Павловского, степенной коэффициент по формуле Железнякова
-    def __shezi_pavlovskij_zheleznjakov(self):
-        # Показатель степени по формуле Г. В. Железнякова
-        y = (
-            1
-            / np.log10(self.r)
-            * np.log10(
-                (1 / 2 - (self.n * np.sqrt(self._g) / 0.26) * (1 - np.log10(self.r)))
-                + self.n
-                * np.sqrt(
-                    1 / 4 * (1 / self.n - np.sqrt(self._g) / 0.13 * (1 - np.log10(self.r))) ** 2
-                    + np.sqrt(self._g) / 0.13 * (1 / self.n + np.sqrt(self._g) * np.log10(self.r))
-                )
-            )
+        raise ValueError(
+            f"Ошибка выбора формулы расчёта коэффициента Шези. "
+            f"Указана: {equation_type}, доступные формулы: {available_equations}."
         )
 
+    def _calc_consumption(self, area: float, velocity: float) -> float:
+        """Расчёт расхода воды.
+
+        Вычисляет расход воды путем умножения площади водного сечения на скорость потока.
+
+        Args:
+            area: Площадь водного сечения в м².
+            velocity: Скорость потока в м/с.
+
+        Returns:
+            float: Расход воды в м³/с.
+        """
+        return area * velocity
+
+    def __shezi_pavlovskij_zheleznjakov(self):
+        """
+        Коэффициент Шези по формуле Н. Н. Павловского,
+        степенной коэффициент по формуле Железнякова.
+        """
+        # Показатель степени по формуле Г. В. Железнякова
+        sqrt_g = np.sqrt(self._g)
+        log_r = np.log10(self.r)
+
+        term1 = 1 / 2 - (self.n * sqrt_g / 0.26) * (1 - log_r)
+        term2 = 1 / 4 * (1 / self.n - sqrt_g / 0.13 * (1 - log_r)) ** 2
+        term3 = sqrt_g / 0.13 * (1 / self.n + sqrt_g * log_r)
+
+        y = (1 / log_r) * np.log10(term1 + self.n * np.sqrt(term2 + term3))
+
         shezi = (1 / self.n) * self.r**y
-        self.type__ = "Коэффициент Шези определён по формуле Павловского, \
-                       показатель степени определён по формуле Железнякова"
+        self.type__ = (
+            "Коэффициент Шези определён по формуле Павловского, показатель степени определён по формуле Железнякова"
+        )
         return shezi
 
-    # Коэффициент шези по формуле Маннинга
     def __shezi_manning(self):
+        """Коэффициент шези по формуле Маннинга."""
         shezi = (1 / self.n) * self.r ** (1 / 6)
         self.type__ = "Коэффициент Шези определён по формуле Маннинга"
         return shezi
 
-    # Коэффициент Шези по формуле Павловского
-    # для глубин 0.1 < h < 3 (Гидрорасчеты считают по этой формуле)
     def __shezi_pavlovskij(self):
-        y = 2.5 * np.sqrt(self.n) - 0.13 - 0.75 * np.sqrt(self.r) * (np.sqrt(self.n) - 0.10)
+        """
+        Коэффициент Шези по формуле Павловского.
+        Рекомендуется для 0.1 < r < 3 (Гидрорасчеты, СП 33-101-2003).
+        """
+        sqrt_n = np.sqrt(self.n)
+        sqrt_r = np.sqrt(self.r)
+
+        y = 2.5 * sqrt_n - 0.13 - 0.75 * sqrt_r * (sqrt_n - 0.10)
         shezi = (1 / self.n) * self.r**y
         self.type__ = "Коэффициент шези определён по формуле Павловского. Рекомендуется для R < 3 м"
-
         return shezi
 
-    # Коэффициент шези по формуле Железнякова
     def __shezi_zheleznjakov(self):
-        shezi = 1 / 2 * ((1 / self.n) - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))) + np.sqrt(
-            (1 / 4) * (1 / self.n - (np.sqrt(self._g) / 0.13) * (1 - np.log10(self.r))) ** 2
-            + (np.sqrt(self._g) / 0.13) * ((1 / self.n) + (np.sqrt(self._g) * np.log10(self.r)))
-        )
+        """Коэффициент шези по формуле Железнякова."""
+        sqrt_g = np.sqrt(self._g)
+        log_r = np.log10(self.r)
+
+        term1 = 1 / 2 * ((1 / self.n) - (sqrt_g / 0.13) * (1 - log_r))
+        term2 = (1 / 4) * (1 / self.n - (sqrt_g / 0.13) * (1 - log_r)) ** 2
+        term3 = (sqrt_g / 0.13) * ((1 / self.n) + (sqrt_g * log_r))
+
+        shezi = term1 + np.sqrt(term2 + term3)
         self.type__ = "Коэффициент шези определён по формуле Железнякова"
         return shezi
 
     def __shezi_agroskina(self):
+        """Коэффициент шези по формуле И.И. Агроскина."""
         shezi = (1 / self.n) + 17.72 * np.log(self.r)
         self.type__ = "Коэффициент шези определён по формуле И.И. Агроскина"
         return shezi
@@ -758,7 +825,7 @@ class Morfostvor:
                 water = WaterSection(x, y, water_level)
 
                 # Расчёт параметров для воды
-                calc = Calculation(
+                calc = ComputeCVQ(
                     h=water.average_depth,
                     n=sector.roughness,
                     i=sector.slope,
@@ -839,7 +906,7 @@ class Morfostvor:
                 water = WaterSection(x, y, water_level, start_point=self.x[sector.start_point])
 
             # Расчёт параметров для воды
-            calc = Calculation(
+            calc = ComputeCVQ(
                 h=water.average_depth,
                 n=sector.roughness,
                 i=sector.slope,
