@@ -25,7 +25,6 @@ from hydraulic.graph import (
     GraphVH,
 )
 from hydraulic.lib import (
-    chunk_list,
     question_continue_app,
     split_list_by_min_value,
 )
@@ -461,11 +460,12 @@ class Morfostvor:
                 )  # Координаты из начальной и конечной точек
 
             try:
-                # Максимальная отметка участка слева
-                self.max_l = max(chunk_list(sector.coord[1], 2)[0])
-                # Максимальная отметка участка справа
-                self.max_r = max(chunk_list(sector.coord[1], 2)[1])
-            except:
+                if last_sector:
+                    # Максимальная отметка участка слева
+                    self.max_l = max(split_list_by_min_value(last_sector.coord[1])[0])
+                    # Максимальная отметка участка справа
+                    self.max_r = max(split_list_by_min_value(last_sector.coord[1])[1])
+            except Exception as exc:
                 print("\n\nОшибка в определении участков. Список участков:\n")
                 for sector in sectors:
                     print(sector)
