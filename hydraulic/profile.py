@@ -4,6 +4,7 @@ import time
 import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
+from pandas import Index
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -262,10 +263,10 @@ class Morfostvor:
     coords: list = field(default_factory=list)
     strings: dict = field(default_factory=dict)
 
-    levels_result: pd.DataFrame = pd.DataFrame
-    hydraulic_result: pd.DataFrame = pd.DataFrame
-    sectors_result: pd.DataFrame = pd.DataFrame
-    hydraulic_table: pd.DataFrame = pd.DataFrame
+    levels_result: pd.DataFrame = field(default_factory=pd.DataFrame)
+    hydraulic_result: pd.DataFrame = field(default_factory=pd.DataFrame)
+    sectors_result: pd.DataFrame = field(default_factory=pd.DataFrame)
+    hydraulic_table: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     def __post_init__(self):
         # Выбор варианта расчёта
@@ -388,7 +389,8 @@ class Morfostvor:
 
                 # По первой строке создаём первый сектор
                 if line == 0:
-                    coord = ()
+                    coord = ([], [])
+
                     sectors.append(ProfileSector(num, name, line, line, roughness, slope, coord))
 
                 # Сравниваем имя предыдущего участка с текущим,
@@ -404,6 +406,8 @@ class Morfostvor:
                         sectors[num - 1].end_point = line
 
                     num += 1  # Увеличиваем номер сектора на 1
+                    # Инициализируем кортеж координат для нового сектора
+                    coord = ([], [])
                     sectors.append(
                         ProfileSector(
                             num,
@@ -431,7 +435,7 @@ class Morfostvor:
                     print("Программа будет завершена.\n")
                     sys.exit()
 
-                if sector.roughness < 0.02 or sector.roughness > 0.2:
+                if sector.roughness < 0.015 or sector.roughness > 0.2:
                     print()
                     print("-----------------------------------------------------------")
                     print(
@@ -465,7 +469,7 @@ class Morfostvor:
                 print("\n\nОшибка в определении участков. Список участков:\n")
                 for sector in sectors:
                     print(sector)
-
+                print(f"Конкретная ошибка: {str(e)}")
                 print("Завершаем программу.")
                 raise SystemExit
 
@@ -551,16 +555,18 @@ class Morfostvor:
         q, h, v, b, f = np.nan, np.nan, np.nan, np.nan, np.nan
 
         result = pd.DataFrame(
-            columns=[
-                "name",
-                "slope",
-                "roughness",
-                "consumption",
-                "depth",
-                "speed",
-                "width",
-                "area",
-            ]
+            columns=Index(
+                [
+                    "name",
+                    "slope",
+                    "roughness",
+                    "consumption",
+                    "depth",
+                    "speed",
+                    "width",
+                    "area",
+                ]
+            ),
         )
 
         for sector in self.sectors:
@@ -702,7 +708,7 @@ class Morfostvor:
         area_summ = 0
         n = 0
 
-        col = ["Участок", "УВ", "F", "B", "W", "Hср", "Hмакс", "R", "V", "Q", "Shezi"]
+        col = Index(["Участок", "УВ", "F", "B", "W", "Hср", "Hмакс", "R", "V", "Q", "Shezi"])
         df = pd.DataFrame(columns=col, dtype=float)
         # Первый расчётный элемент суммирующей кривой со всеми нулями
         df = pd.concat(
@@ -741,7 +747,7 @@ class Morfostvor:
 
         # TODO: remake to use one dataframe
         df = df.set_index(["УВ", "Участок"])
-        water_levels = df.index.levels[0]
+        water_levels = df.index.get_level_values(0).unique()
 
         # Заполняем суммирующие данные
         df.loc[(water_levels, "Сумма"), "F"] = df.groupby(level=0)["F"].transform("sum")
@@ -883,6 +889,9 @@ class Morfostvor:
             if (water_level >= right_max_ele) and (i + 1 not in calc_sectors) and (i + 1 <= len(self.sectors) - 1):
                 calc_sectors.append(i + 1)
 
+            # Инициализация переменной water
+            water = None
+
             # Сектор воды и основные его параметры
             # Расчетный участок является участком с минимальными отметками
             # либо расчёт выполняется с одновременным заполнением
@@ -904,6 +913,10 @@ class Morfostvor:
             # начинаем заполнять с крайней левой точки
             elif sector.id > min_sector[1].id:
                 water = WaterSection(x, y, water_level, start_point=self.x[sector.start_point])
+
+            # Проверка на инициализацию объекта water
+            if water is None:
+                continue
 
             # Расчёт параметров для воды
             calc = ComputeCVQ(
@@ -938,11 +951,12 @@ class Morfostvor:
 
             # Добавляем в список с результирующими значениями значения по секторам
             # для последующего суммирования/вычисления средних значений
-            df = df._append(r, ignore_index=True)
+            df = pd.concat([df, pd.DataFrame.from_records([r])], ignore_index=True)
+
         return df
 
     def get_prob_table(self, df: pd.DataFrame):
-        result = pd.DataFrame(columns=["P", "Q", "H", "F"])
+        result = pd.DataFrame(columns=Index(["P", "Q", "H", "V", "F"]))
 
         for prob in self.probability:
             fq = interpolate.interp1d(df["Q"], df.index)
