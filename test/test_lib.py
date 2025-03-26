@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+# Добавляем родительскую директорию в путь поиска модулей
 p = Path(__file__).parents[1].absolute()
 
 sys.path.append(str(p.absolute()))
