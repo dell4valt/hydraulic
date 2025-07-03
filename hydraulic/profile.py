@@ -543,14 +543,26 @@ class Morfostvor:
             else:
                 self.probability.append([prob_ind, prob_val])
 
-        # Удаляем пустые обеспеченности из списка обеспеченностей
+        # Удаляем пустые обеспеченности из списка обеспеченностей и проверяем их корректность
         self.probability = [x for x in self.probability if x != ["", ""]]
+        self.__check_probability()
 
         print(f"успешно, найдено {len(self.probability)} обеспеченностей.")
 
         # Обработка и получение данных по секторам из "сырых" данных
         self.sectors = get_sectors(self)
         self.situation = get_situation(self)
+
+    def __check_probability(self):
+        """Проверка обеспеченностей на корректность."""
+        for prob in self.probability:
+            if prob[0] == "":
+                raise ValueError(
+                    f"Название обеспеченности не может быть пустым. Обеспеченность: '{prob[1]}', {self.title}"
+                )
+
+            if not isinstance(prob[1], (int, float)):
+                raise ValueError(f"Некорректное значение обеспеченности '{prob[0]}': '{prob[1]}', {self.title}")
 
     def get_sectors_result(self):
         df = self.hydraulic_table.swaplevel(0, 1, axis=0)
