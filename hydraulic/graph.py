@@ -1014,6 +1014,12 @@ class GraphProfile(Graph):
                 alpha=config.TRANSPARENCY["profile_footer_divider"],
             )
 
+        def narrow_check(x, x_prev, min_dist=1):
+            dist = x - x_prev
+            if dist < min_dist:
+                return True
+            return False
+
         def draw_h():
             hs = hs_big
             y_bot = self._footer_y
@@ -1033,6 +1039,10 @@ class GraphProfile(Graph):
             for i in range(len(self.morfostvor.x)):
                 x = self.morfostvor.x[i]
                 y = self.morfostvor.y[i]
+
+                if i > 0 and narrow_check(x, self.morfostvor.x[i - 1], 0.5):
+                    # TODO: необходимо реализовать обработку накладывающихся точек
+                    continue
 
                 # Подписи отметок
                 self.ax_bottom.text(
@@ -1085,6 +1095,10 @@ class GraphProfile(Graph):
             # Цикл по всем точкам
             for i in range(len(self.morfostvor.x)):
                 x = self.morfostvor.x[i]
+
+                if i > 0 and narrow_check(x, self.morfostvor.x[i - 1], 0.5):
+                    # TODO: необходимо реализовать обработку накладывающихся точек
+                    continue
 
                 # Разделители расстояний между точками
                 self.ax_bottom.plot(

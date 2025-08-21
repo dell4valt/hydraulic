@@ -14,6 +14,7 @@ PROFILE_EROSION_LIMIT = True  # Отрисовка отметки предель
 PROFILE_EROSION_LIMIT_FULL = (
     False  # Линия предельного размыва во всю длину профиля (False то только по участкам русла и протоки)
 )
+PROFILE_SIMPLIFY_POINTS = True  # Сокращение накладывающихся точек на профиле
 PROFILE_TOP_LIMIT = True  # Отрисовка низа ограничивающее сооружения
 PROFILE_SAVE_PICTURES = True  # Сохранение рисунков поперечников в отдельные файлы
 HYDRAULIC_CURVE = True  # Отрисовка графика гидравлической кривой
