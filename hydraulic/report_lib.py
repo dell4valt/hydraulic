@@ -8,6 +8,7 @@
 """
 
 from report.core import Report
+from report.core import set_table_font_size
 from hydraulic.lib import text_sanitize
 
 
@@ -283,6 +284,7 @@ def insert_summary_QV_tables(stvors: list, out_filename: str) -> None:
                 2,
             ),
         )
+        set_table_font_size(ruvv_table, 8)
 
     print("успешно!")
     report.save(out_filename)
