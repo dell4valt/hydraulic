@@ -6,6 +6,7 @@ import matplotlib.patches as patches
 import matplotlib.patheffects as path_effects
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.interpolate as interpolate
 from labellines import labelLines
 from matplotlib import gridspec
@@ -1782,8 +1783,9 @@ class GraphProfile(Graph):
                 )
 
         # Если задан урез воды, то добавляем его в список уровней
-        if water_line_level:
-            levels.loc[len(levels)] = ["УВ", 0.5, None, None, None]
+        if self.morfostvor.waterline:
+            new_row = pd.DataFrame([{"P": "УВ", "H": water_line_level, "Q": 0, "V": 0, "F": 0}])
+            levels = pd.concat([levels, new_row], ignore_index=True)
 
         # Сортируем по уровняем и проходим по каждому уровню
         levels_sorted = levels.sort_values(by="H", ascending=False)
@@ -1809,18 +1811,20 @@ class GraphProfile(Graph):
                     insert_water_levels_label(self, x, y, padding)
 
             # Подпись уровня воды в таблице справа
-            try:
-                if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
-                    label.append(
-                        f"$\\mathbf{{ P_{{ {row['P']:2g}\\% }} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n"
-                    )
-                else:
-                    label.append(f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n")
-            except ValueError:
-                if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
-                    label.append(f"$\\mathbf{{ {row['P']} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n")
-                else:
-                    label.append(f"${row['P']} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n")
+            # проверка чтобы не дублировать отметку уреза воды
+            if row["P"] != "УВ":
+                try:
+                    if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
+                        label.append(
+                            f"$\\mathbf{{ P_{{ {row['P']:2g}\\% }} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n"
+                        )
+                    else:
+                        label.append(f"$P_{{{row['P']:2g}\\%}} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n")
+                except ValueError:
+                    if self.morfostvor.levels_result["H"][self.morfostvor.design_water_level_index] == water_level:
+                        label.append(f"$\\mathbf{{ {row['P']} = {water_level:.2f}\\ м\\ {config.ALTITUDE_SYSTEM} }}$\n")
+                    else:
+                        label.append(f"${row['P']} = {water_level:.2f}$ м {config.ALTITUDE_SYSTEM}\n")
 
             # Вывод линий сносок от уровней воды к таблице
             if config.PROFILE_LEVELS_TABLE_LINES:
