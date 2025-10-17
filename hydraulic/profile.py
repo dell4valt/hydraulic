@@ -826,7 +826,7 @@ class Morfostvor:
             self.fig_profile.draw_erosion_limit(self.erosion_limit)
 
         # Отрисовка расчетных уровней воды на графике профиля
-        self.fig_profile.draw_levels_on_profile(self.levels_result)
+        self.fig_profile.draw_levels_on_profile(self.levels_result, self.waterline)
         self.fig_profile._update_limit()
 
         # TODO: сделать отрисовку линий урезов воды по каждому

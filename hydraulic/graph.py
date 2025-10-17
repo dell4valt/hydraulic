@@ -1730,7 +1730,7 @@ class GraphProfile(Graph):
         self._update_limit()
         self.set_style()
 
-    def draw_levels_on_profile(self, levels):
+    def draw_levels_on_profile(self, levels, water_line_level=None):
         """
         Функция отрисовки полученных расчётных уровней воды на поперечном профиле.
 
@@ -1780,6 +1780,10 @@ class GraphProfile(Graph):
                         path_effects.Normal(),
                     ]
                 )
+
+        # Если задан урез воды, то добавляем его в список уровней
+        if water_line_level:
+            levels.loc[len(levels)] = ["УВ", 0.5, None, None, None]
 
         # Сортируем по уровняем и проходим по каждому уровню
         levels_sorted = levels.sort_values(by="H", ascending=False)
