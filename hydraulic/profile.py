@@ -703,7 +703,7 @@ class Morfostvor:
     def calculate(self):
         # Значение расхода до которого необходимо
         # считать (максимальной введенная обеспеченности + 20%)
-        consumption_check = self.get_q_max()[1] + (self.get_q_max()[1] * 0.20)
+        consumption_check = self.get_q_max()[1] + (self.get_q_max()[1] * (config.PRC_CALCS_AFTER_MAX_Q / 100))
 
         # Проверяем задан ли расчётный шаг в исходных данных
         if isinstance(self.dh, str) or self.dh == 0:
