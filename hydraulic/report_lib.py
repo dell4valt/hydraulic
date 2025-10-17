@@ -6,12 +6,10 @@
 с информацией о расчетных уровнях воды, скоростях течения и параметрах РУВВ
 (расчетных уровнях высоких вод) для всех заданных створов.
 """
-import sys
-from pathlib import Path
+
 from report.core import Report
 from hydraulic.lib import text_sanitize
 
-import numpy as np
 
 def insert_summary_QV_tables(stvors: list, out_filename: str) -> None:
     """Формирует и вставляет сводные таблицы уровней воды, скоростей течения и параметров РУВВ.
@@ -207,31 +205,13 @@ def insert_summary_QV_tables(stvors: list, out_filename: str) -> None:
         for i in range(stvor.sectors_result.index.max() + 1):
             ruvv_cell[0].text = f"{ruvv_n}"
             ruvv_cell[4].text = f"{stvor.sectors_result.loc[i]['name']}"
-            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[
-                6
-            ].text = f"{stvor.sectors_result.loc[i]['roughness']:.3f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[
-                7
-            ].text = f"{stvor.sectors_result.loc[i]['consumption']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace(
-                "nan", "-"
-            )
-            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace(
-                "nan", "-"
-            )
+            ruvv_cell[5].text = f"{stvor.sectors_result.loc[i]['slope']:.2f}".replace("nan", "-")
+            ruvv_cell[6].text = f"{stvor.sectors_result.loc[i]['roughness']:.3f}".replace("nan", "-")
+            ruvv_cell[7].text = f"{stvor.sectors_result.loc[i]['consumption']:.2f}".replace("nan", "-")
+            ruvv_cell[8].text = f"{stvor.sectors_result.loc[i]['depth']:.2f}".replace("nan", "-")
+            ruvv_cell[9].text = f"{stvor.sectors_result.loc[i]['speed']:.2f}".replace("nan", "-")
+            ruvv_cell[10].text = f"{stvor.sectors_result.loc[i]['width']:.2f}".replace("nan", "-")
+            ruvv_cell[11].text = f"{stvor.sectors_result.loc[i]['area']:.2f}".replace("nan", "-")
             sector_num += 1
             ruvv_cell = ruvv_table.add_row().cells
             ruvv_n += 1
@@ -241,9 +221,7 @@ def insert_summary_QV_tables(stvors: list, out_filename: str) -> None:
         row._element.getparent().remove(row._element)
 
         # Объединяем ячейки
-        prob_text = text_sanitize(
-            stvor.probability[stvor.design_water_level_index][0], num_suffix="%"
-        )
+        prob_text = text_sanitize(stvor.probability[stvor.design_water_level_index][0], num_suffix="%")
         ruvv_table.cell(ruvv_n - 1, 1).merge(
             ruvv_table.cell(ruvv_n - stvor.sectors_result.shape[0], 1)
         ).text = f"{stvor_num}"
