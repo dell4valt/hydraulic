@@ -126,14 +126,16 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         morfostvor.levels_result[["P", "Q", "H", "V", "F"]],
         (f"Расчётные уровни, скорости и площади к заданным расходам {morfostvor.strings['type']}"),
         col_names=(
+            "№",
             "Обеспеченность P, %",
             "Расход Q, м³/сек",
             f"Уровень H, м {config.ALTITUDE_SYSTEM}",
             "Средняя скорость Vср, м/сек",
             "Площадь живого сечения F, м²",
         ),
-        col_widths=(6, 6, 6, 6, 6),
-        col_format=(":g", ":g", ":.2f", ":.2f", ":.2f"),
+        col_widths=(1, 6, 6, 6, 6, 6),
+        col_format=("", ":g", ":g", ":.2f", ":.2f", ":.2f"),
+        rows_idx=True,
     )
     print("успешно!")
 
@@ -154,14 +156,16 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         topography_table,
         "Топографические данные створа",
         col_names=(
+            "№",
             "ПК",
             f"Отметка, м {config.ALTITUDE_SYSTEM}",
             "Участок",
             "Коэффициент шероховатости, n",
             "Уклон I, ‰",
         ),
-        col_widths=(3, 3, 5, 5, 5),
-        col_format=("", ":.2f", "", ":.3f", ":.2f"),
+        col_widths=(1, 3, 3, 5, 5, 5),
+        col_format=("", "", ":.2f", "", ":.3f", ":.2f"),
+        rows_idx=True,
     )
 
     # Объединение ячеек участков топографии
@@ -171,42 +175,42 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
                 topo_table,
                 sector.start_point + 1,
                 sector.end_point + 1,
-                2,
-                2,
+                2 + 1,
+                2 + 1,
                 sector.name,
             )
             report.merge_table_cells(
                 topo_table,
                 sector.start_point + 1,
                 sector.end_point + 1,
-                3,
-                3,
+                3 + 1,
+                3 + 1,
                 f"{sector.roughness:.3f}",
             )
             report.merge_table_cells(
                 topo_table,
                 sector.start_point + 1,
                 sector.end_point + 1,
-                4,
-                4,
+                4 + 1,
+                4 + 1,
                 f"{sector.slope:.2f}",
             )
         else:
-            report.merge_table_cells(topo_table, sector.start_point + 1, sector.end_point, 2, 2, sector.name)
+            report.merge_table_cells(topo_table, sector.start_point + 1, sector.end_point, 2 + 1, 2 + 1, sector.name)
             report.merge_table_cells(
                 topo_table,
                 sector.start_point + 1,
                 sector.end_point,
-                3,
-                3,
+                3 + 1,
+                3 + 1,
                 f"{sector.roughness:.3f}",
             )
             report.merge_table_cells(
                 topo_table,
                 sector.start_point + 1,
                 sector.end_point,
-                4,
-                4,
+                4 + 1,
+                4 + 1,
                 f"{sector.slope:.2f}",
             )
 
@@ -264,6 +268,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
         table_round,
         f"Параметры расчёта кривой расхода {morfostvor.strings['type']}",
         col_names=(
+            "№",
             f"Отм. уровня H, м {config.ALTITUDE_SYSTEM}",
             "Площадь F, м²",
             "Ширина B, м",
@@ -275,8 +280,9 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Расход Q, м³/сек",
             "Коэффициент Шези",
         ),
-        col_widths=(5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
+        col_widths=(1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
         col_format=(
+            "",
             ":.2f",
             ":.3f",
             ":.3f",
@@ -289,6 +295,7 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             ":.3f",
         ),
         footer_text=(f"Расчётный шаг: {morfostvor.dh:g} см. В таблице приведён каждый {divider}-й результат расчёта."),
+        rows_idx=True,
     )
 
     set_table_font_size(parameters, 8)
