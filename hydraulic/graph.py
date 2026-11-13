@@ -237,52 +237,65 @@ class GraphCurve(Graph):
 
         sectors = set(df.index)  # Удаляем дублирующиеся записи
         sectors.remove("Сумма")  # Удаляем запись суммирующего участка
+        # Подписи размещаются только на сглаженных линиях, чтобы не загромождать график маркерами.
+        label_lines = []
 
-        # Отрисовка суммирующей кривой на графике
-        original_style = {"marker": "o", "linestyle": "None", "markersize": 3} if smooth else {}
+        # В режиме сглаживания исходные расчётные значения показываются только бледными маркерами.
+        original_style = {"marker": "o", "linestyle": "None", "markersize": 3, "alpha": 0.25} if smooth else {}
         ax.plot(
             df.loc[("Сумма"), x],
             df.loc[("Сумма"), y],
-            label="Общая — расчётные точки" if smooth else "Общая",
+            label="_nolegend_" if smooth else "Общая",
             linewidth=3,
             color="red",
             **original_style,
         )
         if smooth:
-            self._draw_smoothed_hydraulic_line(morfostvor, ax, "Сумма", x, y, "Общая — сглаженная", "red", 3)
+            # Общая сглаженная кривая остаётся сплошной и подписывается исходным именем ряда.
+            line = self._draw_smoothed_hydraulic_line(morfostvor, ax, "Сумма", x, y, "Общая", "red", 3, linestyle="-")
+            if line is not None:
+                label_lines.append(line)
 
         # Отрисовка кривых по участкам
         for sector in sectors:
+            # Участки остаются пунктирными; их исходные узлы не создают отдельные элементы легенды.
             ax.plot(
                 df.loc[(sector), x],
                 df.loc[(sector), y],
-                label=f"{sector} — расчётные точки" if smooth else sector,
+                label="_nolegend_" if smooth else sector,
                 color=self.sector_colors[sector],
                 marker="o" if smooth else None,
                 linestyle="None" if smooth else "--",
                 markersize=3 if smooth else None,
+                alpha=0.05 if smooth else 1.0,
             )
             if smooth:
-                self._draw_smoothed_hydraulic_line(
-                    morfostvor, ax, sector, x, y, f"{sector} — сглаженная", self.sector_colors[sector], 1.5
+                line = self._draw_smoothed_hydraulic_line(
+                    morfostvor, ax, sector, x, y, sector, self.sector_colors[sector], 1.5, linestyle="--"
                 )
+                if line is not None:
+                    label_lines.append(line)
         # Подписи на линиях
         try:
-            labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
+            # Маркеры исключены из подписей и легенды: для каждого ряда подписана только сглаженная линия.
+            lines_to_label = label_lines if smooth else ax.get_lines()
+            labelLines(lines_to_label, zorder=2.5, fontsize=12, shrink_factor=0.05)
         except:
             print("Внимание! Подписи на линиях не возможны!")
 
     @staticmethod
-    def _draw_smoothed_hydraulic_line(morfostvor, ax, series_name, x, y, label, color, linewidth):
+    def _draw_smoothed_hydraulic_line(morfostvor, ax, series_name, x, y, label, color, linewidth, linestyle):
+        """Рисует сглаженный ряд из отдельной таблицы, не меняя исходные расчётные данные."""
         smooth_table = morfostvor.smoothed_hydraulic_tables.get(series_name)
         if smooth_table is None or smooth_table.empty or (x, y) != ("Q", "УВ"):
-            return
-        ax.plot(
+            return None
+        return ax.plot(
             smooth_table["Q"],
             smooth_table["УВ"],
             label=label,
             color=color,
             linewidth=linewidth,
+            linestyle=linestyle,
             zorder=5,
         )
 

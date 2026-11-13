@@ -240,6 +240,8 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     table = morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
     table_round = table.round(3)  # Округляем
 
+    # Берём сглаженный расход из той же ограниченной кривой, которая показана на графике.
+    # Исходный Q оставляем отдельной колонкой для сопоставления расчётных и сглаженных значений.
     smoothed_curve = morfostvor.smoothed_hydraulic_table
     if not smoothed_curve.empty:
         table_round["Q сгл."] = np.interp(

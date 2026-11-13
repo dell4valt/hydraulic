@@ -842,7 +842,11 @@ class Morfostvor:
 
     @staticmethod
     def _make_smoothed_hydraulic_tables(hydraulic_table):
-        """Build display-only smoothing-spline tables for total and sector Q(H) curves."""
+        """Создаёт отдельные сглаженные таблицы Q(H) для суммы и каждого участка.
+
+        Исходная таблица расчёта остаётся без изменений; сглаженные значения
+        используются только для графика и дополнительной колонки отчёта.
+        """
         columns = ["УВ", "Q"]
         if not config.HYDRAULIC_CURVE_SMOOTHED:
             return {}
@@ -851,6 +855,7 @@ class Morfostvor:
         tolerance = max(float(config.HYDRAULIC_CURVE_SMOOTHING_TOLERANCE), 0.0)
         intervals = max(int(config.HYDRAULIC_CURVE_SMOOTHING_POINTS_PER_INTERVAL), 1)
         for name, series in hydraulic_table.groupby(level="Участок", sort=False):
+            # Для сплайна нужны уникальные уровни; сортировка задаёт правильный порядок аргумента H.
             points = series.reset_index()[["УВ", "Q"]].dropna().sort_values("УВ")
             points = points.drop_duplicates(subset="УВ", keep="last")
             if len(points) < 4:
@@ -866,9 +871,69 @@ class Morfostvor:
 
             smoothing = len(points) * (flow_range * tolerance) ** 2
             spline = interpolate.UnivariateSpline(levels, flows, k=min(3, len(points) - 1), s=smoothing)
-            smooth_levels = np.linspace(levels[0], levels[-1], (len(levels) - 1) * intervals + 1)
-            result[name] = pd.DataFrame({"УВ": smooth_levels, "Q": spline(smooth_levels)})
+            # Промежуточные узлы повышают гладкость отображения, но не меняют шаг гидравлического расчёта.
+            fit_levels = np.linspace(levels[0], levels[-1], (len(levels) - 1) * intervals + 1)
+            initial_count = min(
+                max(int(config.HYDRAULIC_CURVE_SMOOTHING_PRESERVE_INITIAL_POINTS), 0),
+                len(points),
+            )
+            initial_levels = levels[:initial_count]
+            initial_flows = flows[:initial_count]
+            valid_initial_count = 0
+            previous_flow = 0.0
+            for flow in initial_flows:
+                # Закрепляем только начало, которое уже отвечает ограничениям Q >= 0 и неубывания.
+                if flow < 0 or flow < previous_flow:
+                    break
+                valid_initial_count += 1
+                previous_flow = flow
+
+            fit_levels = np.unique(np.concatenate((fit_levels, initial_levels[:valid_initial_count])))
+            fitted_flows = spline(fit_levels)
+            if valid_initial_count:
+                # Сохраняем выбранные исходные точки точно; между ними линия следует исходным значениям.
+                anchor_levels = initial_levels[:valid_initial_count]
+                anchor_flows = initial_flows[:valid_initial_count]
+                before_anchor_end = fit_levels <= anchor_levels[-1]
+                fitted_flows[before_anchor_end] = np.interp(
+                    fit_levels[before_anchor_end], anchor_levels, anchor_flows
+                )
+                fitted_flows[~before_anchor_end] = Morfostvor._project_monotone_nonnegative(
+                    fitted_flows[~before_anchor_end], minimum=anchor_flows[-1]
+                )
+            else:
+                fitted_flows = Morfostvor._project_monotone_nonnegative(fitted_flows)
+
+            # PCHIP сохраняет монотонность между узлами и не создаёт кубических выбросов.
+            monotone_curve = interpolate.PchipInterpolator(fit_levels, fitted_flows)
+            smooth_levels = np.linspace(levels[0], levels[-1], (len(fit_levels) - 1) * 4 + 1)
+            if valid_initial_count:
+                smooth_levels = np.unique(np.concatenate((smooth_levels, anchor_levels)))
+            result[name] = pd.DataFrame({"УВ": smooth_levels, "Q": monotone_curve(smooth_levels)})
         return result
+
+    @staticmethod
+    def _project_monotone_nonnegative(values, minimum=0.0):
+        """Приводит значения к неотрицательной неубывающей последовательности.
+
+        Соседние блоки, нарушающие порядок, объединяются и заменяются средним
+        (алгоритм изотонической регрессии). ``minimum`` задаёт нижнюю границу,
+        например расход последней закреплённой начальной точки.
+        """
+        blocks = []
+        for value in np.asarray(values, dtype=float):
+            blocks.append([max(value, minimum), 1])
+            while len(blocks) > 1 and blocks[-2][0] > blocks[-1][0]:
+                # Объединяем блоки с учётом числа узлов, чтобы получить среднее по всем значениям.
+                right_value, right_weight = blocks.pop()
+                left_value, left_weight = blocks.pop()
+                weight = left_weight + right_weight
+                blocks.append([(left_value * left_weight + right_value * right_weight) / weight, weight])
+
+        projected = []
+        for value, weight in blocks:
+            projected.extend([value] * weight)
+        return np.asarray(projected, dtype=float)
 
     def _calc_by_sectors(self, water_level, col, df, wc_list):
         for sector in self.sectors:
