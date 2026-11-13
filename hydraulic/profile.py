@@ -784,7 +784,7 @@ class Morfostvor:
 
         # Интерполируем значения гидравлической кривой
         # для необходимых обеспеченностей и обновляем таблицу
-        p_table = df.loc[(water_levels, "Сумма"), :].droplevel(1)
+        p_table = df.xs("Сумма", level="Участок")
         self.levels_result = self.get_prob_table(p_table)
         self.hydraulic_table = df
         self.sectors_result = self.get_sectors_result()
