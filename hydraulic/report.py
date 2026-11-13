@@ -240,6 +240,19 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     table = morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
     table_round = table.round(3)  # Округляем
 
+    smoothed_curve = morfostvor.smoothed_hydraulic_table
+    if not smoothed_curve.empty:
+        table_round["Q сгл."] = np.interp(
+            table_round["УВ"],
+            smoothed_curve["УВ"],
+            smoothed_curve["Q"],
+        ).round(3)
+    else:
+        table_round["Q сгл."] = np.nan
+    table_round = table_round[
+        ["УВ", "F", "B", "W", "Hср", "Hмакс", "R", "V", "Q", "Q сгл.", "Shezi"]
+    ]
+
     if config.DOC_TABLE_SHORT:
         # Количество строк в таблице
         table_quant = table_round["УВ"].count()
@@ -278,12 +291,14 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Гидравлический радиус R",
             "Средняя скорость Vср, м/сек",
             "Расход Q, м³/сек",
+            "Расход Q сгл., м³/сек",
             "Коэффициент Шези",
         ),
-        col_widths=(1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
+        col_widths=(1, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5),
         col_format=(
             "",
             ":.2f",
+            ":.3f",
             ":.3f",
             ":.3f",
             ":.3f",

@@ -266,6 +266,8 @@ class Morfostvor:
     hydraulic_result: pd.DataFrame = field(default_factory=pd.DataFrame)
     sectors_result: pd.DataFrame = field(default_factory=pd.DataFrame)
     hydraulic_table: pd.DataFrame = field(default_factory=pd.DataFrame)
+    smoothed_hydraulic_tables: dict = field(default_factory=dict)
+    smoothed_hydraulic_table: pd.DataFrame = field(default_factory=pd.DataFrame)
 
     def __post_init__(self):
         # Выбор варианта расчёта
@@ -787,6 +789,8 @@ class Morfostvor:
         p_table = df.xs("Сумма", level="Участок")
         self.levels_result = self.get_prob_table(p_table)
         self.hydraulic_table = df
+        self.smoothed_hydraulic_tables = self._make_smoothed_hydraulic_tables(df)
+        self.smoothed_hydraulic_table = self.smoothed_hydraulic_tables.get("Сумма", pd.DataFrame())
         self.sectors_result = self.get_sectors_result()
 
         self.fig_profile = GraphProfile(self)
@@ -835,6 +839,36 @@ class Morfostvor:
         if self.waterline and type(self.waterline) is not str:
             self.fig_profile.draw_waterline(round(self.waterline, 2), color="blue", linestyle="-")
         return df
+
+    @staticmethod
+    def _make_smoothed_hydraulic_tables(hydraulic_table):
+        """Build display-only smoothing-spline tables for total and sector Q(H) curves."""
+        columns = ["УВ", "Q"]
+        if not config.HYDRAULIC_CURVE_SMOOTHED:
+            return {}
+
+        result = {}
+        tolerance = max(float(config.HYDRAULIC_CURVE_SMOOTHING_TOLERANCE), 0.0)
+        intervals = max(int(config.HYDRAULIC_CURVE_SMOOTHING_POINTS_PER_INTERVAL), 1)
+        for name, series in hydraulic_table.groupby(level="Участок", sort=False):
+            points = series.reset_index()[["УВ", "Q"]].dropna().sort_values("УВ")
+            points = points.drop_duplicates(subset="УВ", keep="last")
+            if len(points) < 4:
+                result[name] = pd.DataFrame(columns=columns)
+                continue
+
+            levels = points["УВ"].to_numpy(dtype=float)
+            flows = points["Q"].to_numpy(dtype=float)
+            flow_range = float(np.ptp(flows))
+            if flow_range == 0:
+                result[name] = pd.DataFrame(columns=columns)
+                continue
+
+            smoothing = len(points) * (flow_range * tolerance) ** 2
+            spline = interpolate.UnivariateSpline(levels, flows, k=min(3, len(points) - 1), s=smoothing)
+            smooth_levels = np.linspace(levels[0], levels[-1], (len(levels) - 1) * intervals + 1)
+            result[name] = pd.DataFrame({"УВ": smooth_levels, "Q": spline(smooth_levels)})
+        return result
 
     def _calc_by_sectors(self, water_level, col, df, wc_list):
         for sector in self.sectors:

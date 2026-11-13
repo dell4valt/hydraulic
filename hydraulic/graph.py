@@ -222,7 +222,7 @@ class GraphCurve(Graph):
         except:
             print("Внимание! Вывод расчётных уровней на график не возможен!")
 
-    def draw_curve(self, morfostvor, ax: plt.subplot, x="Q", y="УВ"):
+    def draw_curve(self, morfostvor, ax: plt.subplot, x="Q", y="УВ", smooth=False):
         """Отрисовка кривой на графике по заданным из морфоствора параметрам.
 
         Args:
@@ -239,28 +239,52 @@ class GraphCurve(Graph):
         sectors.remove("Сумма")  # Удаляем запись суммирующего участка
 
         # Отрисовка суммирующей кривой на графике
+        original_style = {"marker": "o", "linestyle": "None", "markersize": 3} if smooth else {}
         ax.plot(
             df.loc[("Сумма"), x],
             df.loc[("Сумма"), y],
-            label="Общая",
+            label="Общая — расчётные точки" if smooth else "Общая",
             linewidth=3,
             color="red",
+            **original_style,
         )
+        if smooth:
+            self._draw_smoothed_hydraulic_line(morfostvor, ax, "Сумма", x, y, "Общая — сглаженная", "red", 3)
 
         # Отрисовка кривых по участкам
         for sector in sectors:
             ax.plot(
                 df.loc[(sector), x],
                 df.loc[(sector), y],
-                "--",
-                label=sector,
+                label=f"{sector} — расчётные точки" if smooth else sector,
                 color=self.sector_colors[sector],
+                marker="o" if smooth else None,
+                linestyle="None" if smooth else "--",
+                markersize=3 if smooth else None,
             )
+            if smooth:
+                self._draw_smoothed_hydraulic_line(
+                    morfostvor, ax, sector, x, y, f"{sector} — сглаженная", self.sector_colors[sector], 1.5
+                )
         # Подписи на линиях
         try:
             labelLines(ax.get_lines(), zorder=2.5, fontsize=12, shrink_factor=0.05)
         except:
             print("Внимание! Подписи на линиях не возможны!")
+
+    @staticmethod
+    def _draw_smoothed_hydraulic_line(morfostvor, ax, series_name, x, y, label, color, linewidth):
+        smooth_table = morfostvor.smoothed_hydraulic_tables.get(series_name)
+        if smooth_table is None or smooth_table.empty or (x, y) != ("Q", "УВ"):
+            return
+        ax.plot(
+            smooth_table["Q"],
+            smooth_table["УВ"],
+            label=label,
+            color=color,
+            linewidth=linewidth,
+            zorder=5,
+        )
 
     def draw_legend(self, ax: plt.subplot):
         # Отрисовка легенды
@@ -761,7 +785,7 @@ class GraphQH(GraphCurve):
 
     def draw(self):
         y_min = min(self.morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)["УВ"])
-        self.draw_curve(self.morfostvor, self.ax, "Q", "УВ")
+        self.draw_curve(self.morfostvor, self.ax, "Q", "УВ", smooth=config.HYDRAULIC_CURVE_SMOOTHED)
         self.draw_water_levels(self.morfostvor, self.ax, "Q", "H", y_min)
         self.draw_legend(self.ax)
 
