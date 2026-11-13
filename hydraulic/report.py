@@ -42,13 +42,13 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
 
     if config.GRAPHICS_TITLES_TEXT:
         profile_title = f"{morfostvor.fig_profile.morfostvor.title}"
-        qh_title = f"{morfostvor.fig_QH._ax_title_text}"
-        qhv_title = f"{morfostvor.fig_QHV._ax_title_text}"
-        qv_title = f"{morfostvor.fig_QV._ax_title_text}"
-        vh_title = f"{morfostvor.fig_VH._ax_title_text}"
-        qf_title = f"{morfostvor.fig_QF._ax_title_text}"
-        fh_title = f"{morfostvor.fig_FH._ax_title_text}"
-        qwvh_title = f"{morfostvor.fig_QWVH._ax_title_text}"
+        qh_title = f"{morfostvor.fig_qh._ax_title_text}"
+        qhv_title = f"{morfostvor.fig_qhv._ax_title_text}"
+        qv_title = f"{morfostvor.fig_qv._ax_title_text}"
+        vh_title = f"{morfostvor.fig_vh._ax_title_text}"
+        qf_title = f"{morfostvor.fig_qf._ax_title_text}"
+        fh_title = f"{morfostvor.fig_fh._ax_title_text}"
+        qwvh_title = f"{morfostvor.fig_qwvh._ax_title_text}"
     else:
         profile_title = ""
         qh_title = ""
