@@ -70,11 +70,11 @@ class ComputeCVQ:
 
     def __post_init__(self):
         """Инициализация расчетов после создания объекта."""
-        # Определение коэффициента Шези
-        self.shezi = self._calc_shezi(config.SHEZI_TYPE)
-
         if config.USE_H_INSTEAD_R:
             self.r = self.h
+
+        # Определение коэффициента Шези
+        self.shezi = self._calc_shezi(config.SHEZI_TYPE)
 
         # Расчет скорости потока
         self.v = self._calc_velocity(self.i, self.shezi, self.r, calc_type=config.CALC_TYPE)
