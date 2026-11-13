@@ -268,6 +268,7 @@ class Morfostvor:
     hydraulic_table: pd.DataFrame = field(default_factory=pd.DataFrame)
     smoothed_hydraulic_tables: dict = field(default_factory=dict)
     smoothed_hydraulic_table: pd.DataFrame = field(default_factory=pd.DataFrame)
+    smoothed_curve_tables: dict = field(default_factory=dict)
 
     def __post_init__(self):
         # Выбор варианта расчёта
@@ -791,6 +792,7 @@ class Morfostvor:
         self.hydraulic_table = df
         self.smoothed_hydraulic_tables = self._make_smoothed_hydraulic_tables(df)
         self.smoothed_hydraulic_table = self.smoothed_hydraulic_tables.get("Сумма", pd.DataFrame())
+        self.smoothed_curve_tables = self._make_smoothed_curve_tables(df, self.smoothed_hydraulic_tables)
         self.sectors_result = self.get_sectors_result()
 
         self.fig_profile = GraphProfile(self)
@@ -934,6 +936,61 @@ class Morfostvor:
         for value, weight in blocks:
             projected.extend([value] * weight)
         return np.asarray(projected, dtype=float)
+
+    @staticmethod
+    def _make_smoothed_curve_tables(hydraulic_table, smoothed_hydraulic_tables):
+        """Строит отдельные таблицы сглаженных координат для всех графических зависимостей."""
+        if not config.HYDRAULIC_CURVE_SMOOTHED:
+            return {}
+
+        result = {}
+        tolerance = max(float(config.HYDRAULIC_CURVE_SMOOTHING_TOLERANCE), 0.0)
+        intervals = max(int(config.HYDRAULIC_CURVE_SMOOTHING_POINTS_PER_INTERVAL), 1)
+        # Для Q(H) используем специальную монотонную кривую с закреплённым началом.
+        for name, table in smoothed_hydraulic_tables.items():
+            if not table.empty:
+                result[(name.lower(), "Q", "УВ")] = table[["Q", "УВ"]].copy()
+
+        # Здесь задаётся графическая пара и независимая переменная аппроксимации.
+        relations = [
+            ("Q", "V", "Q", "V"),
+            ("V", "УВ", "УВ", "V"),
+            ("F", "УВ", "УВ", "F"),
+            ("Q", "F", "Q", "F"),
+        ]
+        for name, series in hydraulic_table.groupby(level="Участок", sort=False):
+            points = series.reset_index()
+            for plot_x, plot_y, independent, dependent in relations:
+                data = points[[independent, dependent]].dropna().sort_values(independent)
+                data = data.drop_duplicates(subset=independent, keep="last")
+                if len(data) < 2:
+                    continue
+
+                x_values = data[independent].to_numpy(dtype=float)
+                y_values = data[dependent].to_numpy(dtype=float)
+                value_range = float(np.ptp(y_values))
+                if value_range == 0:
+                    continue
+
+                smoothing = len(data) * (value_range * tolerance) ** 2
+                spline = interpolate.UnivariateSpline(
+                    x_values,
+                    y_values,
+                    k=min(3, len(data) - 1),
+                    s=smoothing,
+                )
+                fit_x = np.linspace(x_values[0], x_values[-1], (len(data) - 1) * intervals + 1)
+                fit_y = np.maximum(spline(fit_x), 0.0)
+                shape_preserving = interpolate.PchipInterpolator(fit_x, fit_y)
+                smooth_x = np.linspace(x_values[0], x_values[-1], (len(fit_x) - 1) * 4 + 1)
+                smooth_y = shape_preserving(smooth_x)
+
+                if plot_y == "УВ":
+                    curve = pd.DataFrame({plot_x: smooth_y, plot_y: smooth_x})
+                else:
+                    curve = pd.DataFrame({plot_x: smooth_x, plot_y: smooth_y})
+                result[(name.lower(), plot_x, plot_y)] = curve
+        return result
 
     def _calc_by_sectors(self, water_level, col, df, wc_list):
         for sector in self.sectors:
