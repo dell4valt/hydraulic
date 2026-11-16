@@ -335,15 +335,15 @@ def save_graphic(morfostvor, path):
 
     # Сохраняем картинки в отдельные файлы в папку graphics
     if config.PROFILE_SAVE_PICTURES:
-        morfostvor.fig_profile.fig.savefig(Path(f"{picture_dir}/{profile_name}.png", dpi=config.FIG_DPI))
+        morfostvor.fig_profile.fig.savefig(Path(f"{picture_dir}/{profile_name}.png"), dpi=config.FIG_DPI)
     if config.CURVE_SAVE_PICTURES:
         if config.HYDRAULIC_CURVE:
-            morfostvor.fig_qh.fig.savefig(Path(f"{picture_dir}/{profile_name}_QH.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qh.fig.savefig(Path(f"{picture_dir}/{profile_name}_QH.png"), dpi=config.FIG_DPI)
         if config.HYDRAULIC_AND_SPEED_CURVE:
-            morfostvor.fig_qhv.fig.savefig(Path(f"{picture_dir}/{profile_name}_QHV.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qhv.fig.savefig(Path(f"{picture_dir}/{profile_name}_QHV.png"), dpi=config.FIG_DPI)
         if config.SPEED_CURVE:
-            morfostvor.fig_qv.fig.savefig(Path(f"{picture_dir}/{profile_name}_QV.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qv.fig.savefig(Path(f"{picture_dir}/{profile_name}_QV.png"), dpi=config.FIG_DPI)
         if config.AREA_CURVE:
-            morfostvor.fig_qf.fig.savefig(Path(f"{picture_dir}/{profile_name}_QF.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qf.fig.savefig(Path(f"{picture_dir}/{profile_name}_QF.png"), dpi=config.FIG_DPI)
         if config.QWVH_CURVE:
-            morfostvor.fig_qwvh.fig.savefig(Path(f"{picture_dir}/{profile_name}_QWVH.png", dpi=config.FIG_DPI))
+            morfostvor.fig_qwvh.fig.savefig(Path(f"{picture_dir}/{profile_name}_QWVH.png"), dpi=config.FIG_DPI)
