@@ -184,8 +184,8 @@ class GraphCurve(Graph):
                             color=config.COLOR["water_level_text"],
                             fontsize=config.FONT_SIZE["water_level"],
                             weight="bold",
-                            zorder=4,
-                            alpha=0.8,
+                            zorder=25,
+                            alpha=0.9,
                         )
 
                         water_level_text.set_path_effects(
@@ -203,8 +203,8 @@ class GraphCurve(Graph):
                             color=config.COLOR["water_level_text"],
                             fontsize=config.FONT_SIZE["water_level"],
                             weight="bold",
-                            zorder=4,
-                            alpha=0.8,
+                            zorder=25,
+                            alpha=0.9,
                         )
 
                         water_level_text.set_path_effects(
