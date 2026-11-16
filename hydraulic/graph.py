@@ -184,11 +184,13 @@ class GraphCurve(Graph):
                             color=config.COLOR["water_level_text"],
                             fontsize=config.FONT_SIZE["water_level"],
                             weight="bold",
+                            zorder=4,
+                            alpha=0.8,
                         )
 
                         water_level_text.set_path_effects(
                             [
-                                path_effects.Stroke(linewidth=3, foreground="white", alpha=0.55),
+                                path_effects.Stroke(linewidth=3, foreground="white", alpha=0.8),
                                 path_effects.Normal(),
                             ]
                         )
@@ -201,11 +203,13 @@ class GraphCurve(Graph):
                             color=config.COLOR["water_level_text"],
                             fontsize=config.FONT_SIZE["water_level"],
                             weight="bold",
+                            zorder=4,
+                            alpha=0.8,
                         )
 
                         water_level_text.set_path_effects(
                             [
-                                path_effects.Stroke(linewidth=3, foreground="white", alpha=0.55),
+                                path_effects.Stroke(linewidth=3, foreground="white", alpha=0.8),
                                 path_effects.Normal(),
                             ]
                         )
@@ -292,7 +296,7 @@ class GraphCurve(Graph):
         try:
             # Маркеры исключены из подписей и легенды: для каждого ряда подписана только сглаженная линия.
             lines_to_label = label_lines if smooth else ax.get_lines()
-            labelLines(lines_to_label, zorder=2.5, fontsize=12, shrink_factor=0.05)
+            labelLines(lines_to_label, zorder=5, fontsize=12, shrink_factor=0.05)
         except:
             print("Внимание! Подписи на линиях не возможны!")
 
@@ -487,7 +491,7 @@ class GraphQWVH(GraphCurve):
                 color="lightgray",
                 linewidth=1,
                 markersize=1,
-                alpha=1,
+                zorder=1,
             )
 
             # Вертикальная линия
@@ -500,6 +504,7 @@ class GraphQWVH(GraphCurve):
                 linewidth=1,
                 markersize=4,
                 alpha=0.3,
+                zorder=1,
             )
 
     def _draw_water_horizontal_labels(
