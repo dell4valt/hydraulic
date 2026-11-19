@@ -728,11 +728,14 @@ class Morfostvor:
 
         col = Index(["Участок", "УВ", "F", "B", "W", "Hср", "Hмакс", "R", "V", "Q", "Shezi"])
         df = pd.DataFrame(columns=col, dtype=float)
-        # Первый расчётный элемент суммирующей кривой со всеми нулями
+        # Первый расчётный элемент кривых со всеми нулями
         df = pd.concat(
             [
                 df,
                 pd.DataFrame.from_records([dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0]))]),
+                pd.DataFrame.from_records(
+                    [dict(zip(col, [sector.name, self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0])) for sector in self.sectors]
+                ),
             ],
             ignore_index=True,
         )
