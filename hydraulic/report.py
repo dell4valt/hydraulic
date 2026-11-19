@@ -240,6 +240,25 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
     table = morfostvor.hydraulic_table.reset_index(0).loc["Сумма"].reset_index(drop=True)
     table_round = table.round(3)  # Округляем
 
+    # Основной Q берём с ограниченной сглаженной кривой; исходный расчётный расход сохраняем рядом.
+    smoothed_curve = morfostvor.smoothed_hydraulic_table
+    if not smoothed_curve.empty:
+        original_flow = table_round["Q"].copy()
+        table_round["Q"] = np.interp(
+            table_round["УВ"],
+            smoothed_curve["УВ"],
+            smoothed_curve["Q"],
+        ).round(3)
+        table_round["Q расч."] = original_flow
+        table_columns = ["УВ", "F", "B", "W", "Hср", "Hмакс", "R", "V", "Q", "Q расч.", "Shezi"]
+        flow_headers = ("Расход Q, м³/сек", "Расход Q расч., м³/сек")
+    else:
+        table_columns = ["УВ", "F", "B", "W", "Hср", "Hмакс", "R", "V", "Q", "Shezi"]
+        flow_headers = ("Расход Q, м³/сек",)
+    table_round = table_round[table_columns]
+    table_widths = (1,) + (4.5,) * len(table_columns)
+    table_formats = ("", ":.2f") + (":.3f",) * (len(table_columns) - 1)
+
     if config.DOC_TABLE_SHORT:
         # Количество строк в таблице
         table_quant = table_round["УВ"].count()
@@ -277,23 +296,11 @@ def generate_morfostvor_report(morfostvor, out_filename, rewrite=False):
             "Макс. глубина Hмакс, м",
             "Гидравлический радиус R",
             "Средняя скорость Vср, м/сек",
-            "Расход Q, м³/сек",
+            *flow_headers,
             "Коэффициент Шези",
         ),
-        col_widths=(1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5),
-        col_format=(
-            "",
-            ":.2f",
-            ":.3f",
-            ":.3f",
-            ":.3f",
-            ":.3f",
-            ":.3f",
-            ":.3f",
-            ":.3f",
-            ":.3f",
-            ":.3f",
-        ),
+        col_widths=table_widths,
+        col_format=table_formats,
         footer_text=(f"Расчётный шаг: {morfostvor.dh:g} см. В таблице приведён каждый {divider}-й результат расчёта."),
         rows_idx=True,
     )

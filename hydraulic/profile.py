@@ -266,6 +266,9 @@ class Morfostvor:
     hydraulic_result: pd.DataFrame = field(default_factory=pd.DataFrame)
     sectors_result: pd.DataFrame = field(default_factory=pd.DataFrame)
     hydraulic_table: pd.DataFrame = field(default_factory=pd.DataFrame)
+    smoothed_hydraulic_tables: dict = field(default_factory=dict)
+    smoothed_hydraulic_table: pd.DataFrame = field(default_factory=pd.DataFrame)
+    smoothed_curve_tables: dict = field(default_factory=dict)
 
     def __post_init__(self):
         # Выбор варианта расчёта
@@ -787,6 +790,9 @@ class Morfostvor:
         p_table = df.xs("Сумма", level="Участок")
         self.levels_result = self.get_prob_table(p_table)
         self.hydraulic_table = df
+        self.smoothed_hydraulic_tables = self._make_smoothed_hydraulic_tables(df)
+        self.smoothed_hydraulic_table = self.smoothed_hydraulic_tables.get("Сумма", pd.DataFrame())
+        self.smoothed_curve_tables = self._make_smoothed_curve_tables(df, self.smoothed_hydraulic_tables)
         self.sectors_result = self.get_sectors_result()
 
         self.fig_profile = GraphProfile(self)
@@ -835,6 +841,240 @@ class Morfostvor:
         if self.waterline and type(self.waterline) is not str:
             self.fig_profile.draw_waterline(round(self.waterline, 2), color="blue", linestyle="-")
         return df
+
+    @staticmethod
+    def _make_smoothed_hydraulic_tables(hydraulic_table):
+        """Создаёт отдельные адаптивно скорректированные таблицы Q(H).
+
+        Исходная таблица расчёта остаётся без изменений; сглаженные значения
+        используются только для графика и основного столбца Q в отчёте.
+        """
+        columns = ["УВ", "Q"]
+        if not config.HYDRAULIC_CURVE_SMOOTHED:
+            return {}
+
+        result = {}
+        tolerance = max(float(config.HYDRAULIC_CURVE_SMOOTHING_TOLERANCE), 0.0)
+        intervals = max(int(config.HYDRAULIC_CURVE_SMOOTHING_POINTS_PER_INTERVAL), 1)
+        for name, series in hydraulic_table.groupby(level="Участок", sort=False):
+            # Уникальные уровни и сортировка нужны для корректного локального анализа Q(H).
+            points = series.reset_index()[["УВ", "Q"]].dropna().sort_values("УВ")
+            points = points.drop_duplicates(subset="УВ", keep="last")
+            if len(points) < 4:
+                result[name] = points.rename(columns={"УВ": "УВ", "Q": "Q"})[columns].copy()
+                continue
+
+            levels = points["УВ"].to_numpy(dtype=float)
+            flows = points["Q"].to_numpy(dtype=float)
+            flow_range = float(np.ptp(flows))
+            if flow_range == 0:
+                result[name] = pd.DataFrame({"УВ": levels, "Q": flows})
+                continue
+
+            initial_count = min(
+                max(int(config.HYDRAULIC_CURVE_SMOOTHING_PRESERVE_INITIAL_POINTS), 0),
+                len(points),
+            )
+            initial_levels = levels[:initial_count]
+            initial_flows = flows[:initial_count]
+            valid_initial_count = 0
+            previous_flow = 0.0
+            for flow in initial_flows:
+                # Закрепляем только начало, которое уже отвечает ограничениям Q >= 0 и неубывания.
+                if flow < 0 or flow < previous_flow:
+                    break
+                valid_initial_count += 1
+                previous_flow = flow
+
+            smooth_levels, smooth_flows = Morfostvor._adaptively_smooth_curve(
+                levels,
+                flows,
+                tolerance=tolerance,
+                sample_factor=intervals,
+                preserve_initial=valid_initial_count,
+                require_monotone_nonnegative=True,
+            )
+            result[name] = pd.DataFrame({"УВ": smooth_levels, "Q": smooth_flows})
+        return result
+
+    @staticmethod
+    def _project_monotone_nonnegative(values, minimum=0.0):
+        """Приводит значения к неотрицательной неубывающей последовательности.
+
+        Соседние блоки, нарушающие порядок, объединяются и заменяются средним
+        (алгоритм изотонической регрессии). ``minimum`` задаёт нижнюю границу,
+        например расход последней закреплённой начальной точки.
+        """
+        blocks = []
+        for value in np.asarray(values, dtype=float):
+            blocks.append([max(value, minimum), 1])
+            while len(blocks) > 1 and blocks[-2][0] > blocks[-1][0]:
+                # Объединяем блоки с учётом числа узлов, чтобы получить среднее по всем значениям.
+                right_value, right_weight = blocks.pop()
+                left_value, left_weight = blocks.pop()
+                weight = left_weight + right_weight
+                blocks.append([(left_value * left_weight + right_value * right_weight) / weight, weight])
+
+        projected = []
+        for value, weight in blocks:
+            projected.extend([value] * weight)
+        return np.asarray(projected, dtype=float)
+
+    @staticmethod
+    def _adaptively_smooth_curve(
+        independent,
+        dependent,
+        tolerance,
+        sample_factor,
+        preserve_initial=0,
+        require_monotone_nonnegative=False,
+    ):
+        """Корректирует только изолированные скачки и возвращает координаты линии.
+
+        Изолированный скачок определяется по центральным отклонениям от отрезков
+        между соседями: одиночное отклонение или пара соседних отклонений должны
+        заметно превышать локальный фон. Если скачков нет, исходные координаты
+        возвращаются без изменений. При коррекции линия между узлами строится PCHIP.
+        """
+        x_values = np.asarray(independent, dtype=float)
+        original = np.asarray(dependent, dtype=float)
+        corrected = original.copy()
+        threshold = max(float(np.ptp(original)) * max(float(tolerance), 0.0), np.finfo(float).eps)
+        first_check = max(2, int(preserve_initial))
+        detected_regions = []
+        residual = np.zeros(len(original), dtype=float)
+        for index in range(1, len(original) - 1):
+            predicted = np.interp(
+                x_values[index],
+                [x_values[index - 1], x_values[index + 1]],
+                [original[index - 1], original[index + 1]],
+            )
+            residual[index] = original[index] - predicted
+
+        # Пара противоположных отклонений указывает на краткий скачок с возвратом к тренду.
+        corrected_indices = set()
+        for index in range(first_check, len(original) - 2):
+            next_index = index + 1
+            if residual[index] * residual[next_index] >= 0:
+                continue
+            if min(abs(residual[index]), abs(residual[next_index])) <= threshold:
+                continue
+            outer_deviation = max(
+                abs(residual[index - 1]) if index > 1 else 0.0,
+                abs(residual[next_index + 1]) if next_index + 1 < len(original) - 1 else 0.0,
+            )
+            if max(abs(residual[index]), abs(residual[next_index])) <= 2 * outer_deviation:
+                continue
+
+            corrected[index : next_index + 1] = np.interp(
+                x_values[index : next_index + 1],
+                [x_values[index - 1], x_values[next_index + 1]],
+                [original[index - 1], original[next_index + 1]],
+            )
+            corrected_indices.update((index, next_index))
+            detected_regions.append((index, next_index))
+
+        # Дополнительно обрабатываем одиночный выброс, окружённый точками на близком тренде.
+        for index in range(first_check, len(original) - 1):
+            if index in corrected_indices:
+                continue
+            neighbor_deviation = max(abs(residual[index - 1]), abs(residual[index + 1]))
+            if abs(residual[index]) > threshold and abs(residual[index]) > 2 * neighbor_deviation:
+                corrected[index] = np.interp(
+                    x_values[index],
+                    [x_values[index - 1], x_values[index + 1]],
+                    [original[index - 1], original[index + 1]],
+                )
+                detected_regions.append((index, index))
+
+        # Ослабляем колебания по соседству со скачком, плавно уменьшая влияние к границам окна.
+        window = max(int(config.HYDRAULIC_CURVE_SMOOTHING_WINDOW), 0)
+        strength = float(np.clip(config.HYDRAULIC_CURVE_SMOOTHING_STRENGTH, 0.0, 1.0))
+        for region_start, region_end in detected_regions:
+            left = max(region_start - window, int(preserve_initial), 0)
+            right = min(region_end + window, len(corrected) - 1)
+            if right - left < 2 or strength == 0:
+                continue
+
+            baseline = np.interp(
+                x_values[left : right + 1],
+                [x_values[left], x_values[right]],
+                [corrected[left], corrected[right]],
+            )
+            for index in range(left + 1, right):
+                distance = max(region_start - index, index - region_end, 0)
+                taper = 1.0 - distance / (window + 1) if window else 1.0
+                weight = strength * max(taper, 0.0)
+                corrected[index] = corrected[index] * (1.0 - weight) + baseline[index - left] * weight
+
+        if require_monotone_nonnegative and (np.any(corrected < 0) or np.any(np.diff(corrected) < 0)):
+            anchor_count = min(max(int(preserve_initial), 0), len(corrected))
+            if anchor_count:
+                corrected[anchor_count:] = Morfostvor._project_monotone_nonnegative(
+                    corrected[anchor_count:], minimum=corrected[anchor_count - 1]
+                )
+            else:
+                corrected = Morfostvor._project_monotone_nonnegative(corrected)
+
+        # При отсутствии скачков совпадение точек точное: глобальное сглаживание не применяется.
+        if np.array_equal(corrected, original) or len(corrected) < 3:
+            return x_values.copy(), corrected
+
+        curve = interpolate.PchipInterpolator(x_values, corrected)
+        sample_count = max((len(x_values) - 1) * max(int(sample_factor), 1) + 1, len(x_values))
+        sample_x = np.unique(np.concatenate((np.linspace(x_values[0], x_values[-1], sample_count), x_values)))
+        return sample_x, curve(sample_x)
+
+    @staticmethod
+    def _make_smoothed_curve_tables(hydraulic_table, smoothed_hydraulic_tables):
+        """Строит отдельные таблицы сглаженных координат для всех графических зависимостей."""
+        if not config.HYDRAULIC_CURVE_SMOOTHED:
+            return {}
+
+        result = {}
+        tolerance = max(float(config.HYDRAULIC_CURVE_SMOOTHING_TOLERANCE), 0.0)
+        intervals = max(int(config.HYDRAULIC_CURVE_SMOOTHING_POINTS_PER_INTERVAL), 1)
+        # Для Q(H) используем специальную монотонную кривую с закреплённым началом.
+        for name, table in smoothed_hydraulic_tables.items():
+            if not table.empty:
+                result[(name.lower(), "Q", "УВ")] = table[["Q", "УВ"]].copy()
+
+        # Здесь задаётся графическая пара и независимая переменная аппроксимации.
+        relations = [
+            ("Q", "V", "Q", "V"),
+            ("V", "УВ", "УВ", "V"),
+            ("F", "УВ", "УВ", "F"),
+            ("Q", "F", "Q", "F"),
+        ]
+        for name, series in hydraulic_table.groupby(level="Участок", sort=False):
+            points = series.reset_index()
+            for plot_x, plot_y, independent, dependent in relations:
+                data = points[[independent, dependent]].dropna().sort_values(independent)
+                data = data.drop_duplicates(subset=independent, keep="last")
+                if data.empty:
+                    continue
+
+                x_values = data[independent].to_numpy(dtype=float)
+                y_values = data[dependent].to_numpy(dtype=float)
+                value_range = float(np.ptp(y_values))
+                if value_range == 0:
+                    smooth_x = x_values.copy()
+                    smooth_y = y_values.copy()
+                else:
+                    smooth_x, smooth_y = Morfostvor._adaptively_smooth_curve(
+                        x_values,
+                        y_values,
+                        tolerance=tolerance,
+                        sample_factor=intervals,
+                        preserve_initial=config.HYDRAULIC_CURVE_SMOOTHING_PRESERVE_INITIAL_POINTS,
+                    )
+
+                if plot_y == "УВ":
+                    curve = pd.DataFrame({plot_x: smooth_y, plot_y: smooth_x})
+                else:
+                    curve = pd.DataFrame({plot_x: smooth_x, plot_y: smooth_y})
+                result[(name.lower(), plot_x, plot_y)] = curve
+        return result
 
     def _calc_by_sectors(self, water_level, col, df, wc_list):
         for sector in self.sectors:

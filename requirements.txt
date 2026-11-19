@@ -7,3 +7,4 @@ scipy==1.15.1
 openpyxl==3.1.5
 pathvalidate==3.2.3
 git+https://github.com/dell4valt/report.git@main
+streamlit>=1.45.0
