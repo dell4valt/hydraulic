@@ -734,7 +734,11 @@ class Morfostvor:
                 df,
                 pd.DataFrame.from_records([dict(zip(col, ["Сумма", self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0]))]),
                 pd.DataFrame.from_records(
-                    [dict(zip(col, [sector.name, self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0])) for sector in self.sectors]
+                    [
+                        dict(zip(col, [sector.name, self.ele_min, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+                        for sector in self.sectors
+                        if min(sector.coord[1]) < water_level
+                    ]
                 ),
             ],
             ignore_index=True,
